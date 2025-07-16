@@ -49,7 +49,7 @@ const UserRegister = () => {
         // Replace the following code with your actual API call
         try{
         const response = await axios.post(
-            "http://127.0.0.1:8000/api/userauth/register/",
+            `${import.meta.env.VITE_API_BASE_URL || 'https://ezinventory.pythonanywhere.com/'}userauth/register/`,
             {
                
                name: name,

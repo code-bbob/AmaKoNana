@@ -3,7 +3,7 @@ import {jwtDecode} from 'jwt-decode';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 
-const baseURL =  'https://ezinventory.pythonanywhere.com/'; //'https://ezinventory.pythonanywhere.com/' or 'http://127.0.0.1:8000/'
+const baseURL = import.meta.env.VITE_API_BASE_URL;
 
 const useAxios = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);

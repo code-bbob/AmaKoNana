@@ -20,7 +20,7 @@ export default function Signup() {
 
     try {
       const response = await axios.post(
-        `https://ezinventory.pythonanywhere.com/userauth/signup/`,
+        `${import.meta.env.VITE_API_BASE_URL}userauth/signup/`,
         { email },
         { withCredentials: true }
       )
