@@ -349,7 +349,7 @@ const handleNewProductVendorChange = (ids) => {
 
   const handleDelete = async () => {
     try {
-      const url = modifyStock
+      const url = modifyStock === false
         ? `alltransaction/salestransaction/${salesId}/?flag=${modifyStock}`
         : `alltransaction/salestransaction/${salesId}/`;
       await api.delete(url);
