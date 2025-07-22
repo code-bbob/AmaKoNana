@@ -27,8 +27,7 @@ SECRET_KEY = 'django-insecure-e4d2awhn)g2*qtvljkvpn+djj65s!h%0u3tnr0og3*w38wtwt1
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = ['ezinventory.pythonanywhere.com','127.0.0.1']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS','').split(',')
 
 
 # Application definition
@@ -49,6 +48,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -81,15 +81,25 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+# # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'ATOMIC_REQUESTS': False,   # <-- must be False for real per‐request commits
+#     }
+# }
+#
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        'ATOMIC_REQUESTS': False,   # <-- must be False for real per‐request commits
+        'ENGINE':   'django.db.backends.postgresql',
+        'NAME':     os.getenv('POSTGRES_DB'),
+        'USER':     os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST':     os.getenv('POSTGRES_HOST'),
+        'PORT':     os.getenv('POSTGRES_PORT'),
     }
 }
-
 # LOGGING = {
 #   'version': 1,
 #   'disable_existing_loggers': False,
@@ -192,6 +202,13 @@ EMAIL_USE_TLS = True
 
 CORS_ORIGIN_ALLOW_ALL = True    
 
+CSRF_TRUSTED_ORIGINS = ['https://ez.youthtech.com.np','http://*.127.0.0.1']
+
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR,'static')
+
+
+# Trust the X-Forwarded-Proto header so `request.is_secure()` is correct
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
