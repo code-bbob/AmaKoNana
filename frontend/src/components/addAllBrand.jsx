@@ -43,14 +43,14 @@ export default function AddAllBrandDialog({ onBrandAdded, branchId }) {
         name: newBrandName,
         branch: branchId,
       })
-      console.log("New Brand Added:", response.data)
+      console.log("New Category Added:", response.data)
       if (onBrandAdded) {
         onBrandAdded(response.data)
       }
       setNewBrandName("")
       setIsDialogOpen(false)
     } catch (error) {
-      console.error("Error adding brand:", error)
+      console.error("Error adding category:", error)
     }
   }
 
@@ -81,7 +81,7 @@ export default function AddAllBrandDialog({ onBrandAdded, branchId }) {
               value={newBrandName}
               onChange={(e) => setNewBrandName(e.target.value)}
               className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
-              placeholder="Enter brand name"
+              placeholder="Enter category name"
             />
           </div>
           

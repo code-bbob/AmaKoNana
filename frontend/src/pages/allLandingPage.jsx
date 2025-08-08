@@ -166,13 +166,13 @@ export default function AllLandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mb-8">
           <StatCard
-            title="Current Stock"
+            title="Current Products"
             value={stats.stock}
             icon={<Smartphone className="h-6 w-6 text-purple-400" />}
             onClick={() => navigateWithBranch("inventory")}
           />
           <StatCard
-            title="Brands"
+            title="Categories"
             value={stats.brands}
             icon={<Shield className="h-6 w-6 text-indigo-400" />}
             onClick={() => navigateWithBranch("inventory")}
