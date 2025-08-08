@@ -66,15 +66,15 @@ export default function AddAllBrandDialog({ onBrandAdded, branchId }) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
         <DialogHeader>
-          <DialogTitle>Add New Brand</DialogTitle>
+          <DialogTitle>Add New Category</DialogTitle>
           <DialogDescription className="text-slate-400">
-            Enter the name of the new brand you want to add.
+            Enter the name of the new category you want to add.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="newBrandName" className="text-right">
-              Brand Name
+              Category Name
             </Label>
             <Input
               id="newBrandName"
@@ -92,7 +92,7 @@ export default function AddAllBrandDialog({ onBrandAdded, branchId }) {
             onClick={handleAddBrand}
             className="bg-purple-600 hover:bg-purple-700 text-white"
           >
-            Add Brand
+            Add Category
           </Button>
         </DialogFooter>
       </DialogContent>

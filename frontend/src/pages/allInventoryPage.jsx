@@ -138,7 +138,7 @@ export function AllInventoryPageComponent() {
             <div>
 
             <h1 className="text-3xl md:text-4xl font-bold text-white text-center md:text-left">
-              Inventory Brands
+              Inventory Categories
             </h1>
             </div>
             <div className='md:hidden gap-5'>
@@ -244,7 +244,7 @@ export function AllInventoryPageComponent() {
               transition={{ duration: 0.5 }}
               className="text-center text-white mt-8"
             >
-              No brands found matching your search.
+              No categories found matching your search.
             </motion.div>
           )}
         </div>
