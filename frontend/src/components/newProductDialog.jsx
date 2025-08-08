@@ -138,7 +138,7 @@ export default function NewProductDialog({
           {/* Brand Select */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="newProductBrand" className="text-right text-white">
-              Brand
+              Category
             </Label>
             <div className="col-span-3">
               <Popover open={openBrand} onOpenChange={setOpenBrand}>
@@ -151,7 +151,7 @@ export default function NewProductDialog({
                   >
                     {newProductData.brand
                       ? brands.find((b) => b.id.toString() === newProductData.brand)?.name
-                      : "Select a brand..."}
+                      : "Select a category..."}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -162,7 +162,7 @@ export default function NewProductDialog({
                       className="bg-slate-700 text-white"
                     />
                     <CommandList>
-                      <CommandEmpty>No brand found.</CommandEmpty>
+                      <CommandEmpty>No category found.</CommandEmpty>
                       <CommandGroup>
                         {brands.map((brand) => (
                           <CommandItem
@@ -186,7 +186,7 @@ export default function NewProductDialog({
                           className="text-white hover:bg-slate-600"
                         >
                           <PlusCircle className="mr-2 h-4 w-4" />
-                          Add a new brand
+                          Add a new category
                         </CommandItem>
                       </CommandGroup>
                     </CommandList>

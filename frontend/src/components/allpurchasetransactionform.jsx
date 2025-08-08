@@ -966,9 +966,9 @@ const handleNewProductVendorChange = (ids) => {
             >
               <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
                 <DialogHeader>
-                  <DialogTitle>Add New Brand</DialogTitle>
+                  <DialogTitle>Add New Category</DialogTitle>
                   <DialogDescription className="text-slate-300">
-                    Enter the name of the new brand you want to add.
+                    Enter the name of the new category you want to add.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -977,7 +977,7 @@ const handleNewProductVendorChange = (ids) => {
                       htmlFor="newBrandName"
                       className="text-right text-white"
                     >
-                      Brand Name
+                      Category Name
                     </Label>
                     <Input
                       id="newBrandName"
@@ -994,7 +994,7 @@ const handleNewProductVendorChange = (ids) => {
                     onClick={handleAddBrand}
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
-                    Add Brand
+                    Add Category
                   </Button>
                 </DialogFooter>
               </DialogContent>
