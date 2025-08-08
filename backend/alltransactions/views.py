@@ -396,7 +396,8 @@ class VendorTransactionView(APIView):
 class StatsView(APIView):
     # permission_classes = [IsAuthenticated]
 
-    def get(self,request):
+    def get(self,request, branch=None):
+        
         print("HERE")
 
         start_date = request.GET.get('start_date')
@@ -413,8 +414,8 @@ class StatsView(APIView):
 
         enterprise = request.user.person.enterprise
     
-        allstock = Product.objects.filter(brand__enterprise = enterprise).count()
-        allbrands = Brand.objects.filter(enterprise = enterprise).count()
+        allstock = Product.objects.filter(enterprise = enterprise, branch=branch).count()
+        allbrands = Brand.objects.filter(enterprise = enterprise, branch=branch).count()
 
         monthlypurchases = Purchase.objects.filter(purchase_transaction__enterprise = enterprise,purchase_transaction__date__range=(start_date, end_date))
         monthlysales = Sales.objects.filter(sales_transaction__enterprise = enterprise,sales_transaction__date__range=(start_date, end_date))

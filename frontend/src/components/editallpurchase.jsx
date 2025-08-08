@@ -401,7 +401,7 @@ const handleNewProductVendorChange = (ids) => {
       setError("Failed to process return. Please try again.");
     } finally {
       setSubLoading(false);
-      navigate("/purchases");
+      navigate("/purchases/branch/" + branchId);
     }
   };
 

@@ -93,6 +93,8 @@ function App() {
         <Route element={<BranchProtectedRoute />}>
           {/* Original Landing Page */}
           <Route path="/" element={<AllLandingPage />} />
+          {/* Branch-specific Landing Page */}
+          <Route path="/branch/:branchId" element={<AllLandingPage />} />
 
           {/* Main Routes - All use branch from localStorage */}
           <Route path="/purchases/branch/:branchId" element={<AllPurchaseTransactions />} />

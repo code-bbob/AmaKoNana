@@ -14,6 +14,7 @@ urlpatterns = [
     path('vendortransaction/branch/<int:branch>/', views.VendorTransactionView.as_view(), name='vendor'),
     path('vendortransaction/<int:pk>/', views.VendorTransactionView.as_view(), name='vendortransactions'),
     path('stats/', views.StatsView.as_view(), name='stat'),
+    path('stats/branch/<int:branch>/', views.StatsView.as_view(), name='stat'),
 
     path('vendor/statement/<int:vendorId>/',views.VendorStatementView.as_view(), name = 'vendorstatement'),
 

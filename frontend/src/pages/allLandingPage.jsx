@@ -15,7 +15,7 @@ import {
   LogOut,
 } from "lucide-react"
 import useAxios from "../utils/useAxios"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import {
   PieChart,
   Pie,
@@ -34,6 +34,7 @@ import { useBranchManagement } from "../hooks/useBranchManagement"
 export default function AllLandingPage() {
   const api = useAxios()
   const navigate = useNavigate()
+  const { branchId } = useParams()
   const [stats, setStats] = useState(null)
   const [isMonthly, setIsMonthly] = useState(false)
   const [showAmount, setShowAmount] = useState(true)
@@ -55,7 +56,11 @@ export default function AllLandingPage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await api.get("alltransaction/stats/")
+        // Use branch-specific API endpoint if branchId is available from URL
+        const endpoint = branchId 
+          ? `alltransaction/stats/branch/${branchId}/`
+          : "alltransaction/stats/"
+        const response = await api.get(endpoint)
         setStats(response.data)
         setLoading(false)
       } catch (err) {
@@ -66,7 +71,7 @@ export default function AllLandingPage() {
     }
 
     fetchStats()
-  }, [])
+  }, [branchId])
 
   if (loading) return <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">Loading...</div>
   if (error) return <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-red-500">{error}</div>

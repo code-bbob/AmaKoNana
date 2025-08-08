@@ -52,7 +52,7 @@ export default function InitialBranchSelection() {
     const success = selectBranch(branch);
     if (success) {
       // Navigate to dashboard after successful branch selection
-      navigate('/');
+      navigate(`/branch/${branch.id}`);
     }
   };
 
