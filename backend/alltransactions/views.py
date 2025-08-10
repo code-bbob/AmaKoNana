@@ -607,45 +607,38 @@ class SalesReportView(APIView):
 
         count = sales.count()
 
-        # total_profit = 0
-        total_sales = 0
-        total_discount = 0
+        subtotal_sales = 0  # sum before discount
+        total_discount = 0  # sum of per-line discount amounts
         cash_sales = 0
-        sales_transaction = []
-        cash_transaction = []
-        list = []
+        rows = []
         for sale in sales:
-            # purchase = Purchase.objects.filter(product = sale.product).first()
-            # profit = (sale.unit_price - purchase.unit_price) * sale.quantity
-            # total_profit += profit
-            total_sales += sale.total_price
-            list.append({
+            line_subtotal = (sale.unit_price or 0) * (sale.quantity or 0)
+            line_discount = sale.discount or 0
+            line_net = line_subtotal - line_discount
+            subtotal_sales += line_subtotal
+            total_discount += line_discount
+            rows.append({
                 "date": sale.sales_transaction.date,
                 "brand": sale.product.brand.name,
                 "quantity": sale.quantity,
                 "product": sale.product.name,
                 "unit_price": sale.unit_price,
-                "total_price": sale.total_price,
-                "method": sale.sales_transaction.method
+                "line_subtotal": line_subtotal,
+                "discount": line_discount,
+                "total_price": line_net,
+                "method": sale.sales_transaction.method,
             })
-            if sale.sales_transaction.id not in sales_transaction:
-                total_discount += sale.sales_transaction.discount
-                sales_transaction.append(sale.sales_transaction.id)
-            #add up the total cash transactions minus the discount on those transactions
-            if sale.sales_transaction.method == "cash" and sale.sales_transaction.id not in cash_transaction:
-                cash_transaction.append(sale.sales_transaction.id)
-                cash_sales += sale.total_price - sale.sales_transaction.discount
-            
-        
-        list.append({
-            # "total_profit": total_profit,
+            if sale.sales_transaction.method == "cash":
+                cash_sales += line_net
+        net_sales = subtotal_sales - total_discount
+        rows.append({
             "count": count,
-            "subtotal_sales": total_sales,
+            "subtotal_sales": subtotal_sales,
             "total_discount": total_discount,
-            "total_sales": total_sales - total_discount,
-            "cash_sales": cash_sales
+            "total_sales": net_sales,
+            "cash_sales": cash_sales,
         })
-        return Response(list)
+        return Response(rows)
      
 class NextBillNo(APIView):
     def get(self,request):

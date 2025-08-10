@@ -71,11 +71,11 @@ const AllSalesReport = () => {
     }
   
     // Create CSV header
-    let csvContent = "Date,Product,Brand,quantity,Unit Price\n"
+  let csvContent = "Date,Product,Brand,Quantity,Unit Price,Line Subtotal,Discount,Net Total\n"
   
     // Convert each sale into a CSV row
     data.sales.forEach((item) => {
-      const row = `${item.date},${item.product},${item.brand},${item.imei_number},${item.unit_price},${item.total_price}\n`
+      const row = `${item.date},${item.product},${item.brand},${item.quantity},${item.unit_price},${item.line_subtotal ?? ''},${item.discount ?? ''},${item.total_price}`
       csvContent += row + "\n"
     })
   
@@ -105,7 +105,7 @@ const AllSalesReport = () => {
     doc.text("Sales Report", 14, 10)
   
     // Table Headers
-    const headers = [["Date", "Product", "Brand", "Quantity", "Unit Price", "Total Price"]]
+  const headers = [["Date", "Product", "Brand", "Qty", "Unit Price", "Subtotal", "Discount", "Net Total"]]
   
     // Table Data
     const tableData = data.sales.map((item) => [
@@ -114,13 +114,16 @@ const AllSalesReport = () => {
       item.brand,
       item.quantity,
       item.unit_price,
+      item.line_subtotal || (item.unit_price * item.quantity),
+      item.discount || 0,
       item.total_price,
     ])
   
     // Add Summary Row
-    tableData.push(["", "", "", "Total Sales", data.total_sales])
-    // tableData.push(["", "", "", "Total Profit", data.total_profit])
-    tableData.push(["", "", "", "Total Transactions", data.count])
+  tableData.push(["", "", "", "", "Subtotal Sales", data.subtotal_sales])
+  tableData.push(["", "", "", "", "Total Discount", data.total_discount])
+  tableData.push(["", "", "", "", "Net Sales", data.total_sales])
+  tableData.push(["", "", "", "", "Total Transactions", data.count])
   
     // Generate table
     doc.autoTable({
@@ -232,31 +235,35 @@ const AllSalesReport = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[180px] text-white print:text-black">Date</TableHead>
-                <TableHead className="w-[180px] text-white print:text-black">Product</TableHead>
+                <TableHead className="w-[140px] text-white print:text-black">Date</TableHead>
+                <TableHead className="w-[160px] text-white print:text-black">Product</TableHead>
                 <TableHead className="text-white print:text-black">Brand</TableHead>
-                <TableHead className="text-white print:text-black">Quantity</TableHead>
+                <TableHead className="text-white print:text-black">Qty</TableHead>
                 <TableHead className="text-white print:text-black">Method</TableHead>
-                <TableHead className="text-right text-white print:text-black">Unit Price</TableHead>
-                <TableHead className="text-right text-white print:text-black">Total Price</TableHead>
+                <TableHead className="text-right text-white print:text-black">Unit</TableHead>
+                <TableHead className="text-right text-white print:text-black">Subtotal</TableHead>
+                <TableHead className="text-right text-white print:text-black">Discount</TableHead>
+                <TableHead className="text-right text-white print:text-black">Net</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.sales.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium text-white print:text-black">{item.date}</TableCell>
-                  <TableCell className="font-medium text-white print:text-black">{item.product}</TableCell>
-                  <TableCell className="text-white print:text-black">{item.brand}</TableCell>
-                  <TableCell className="text-white print:text-black">{item.quantity}</TableCell>
-                  <TableCell className="text-white print:text-black">{item.method}</TableCell>
-                  <TableCell className="text-right text-white print:text-black">
-                    {item.unit_price.toLocaleString("en-US", { style: "currency", currency: "NPR" })}
-                  </TableCell>
-                  <TableCell className="text-right text-white print:text-black">
-                    {item.total_price.toLocaleString("en-US", { style: "currency", currency: "NPR" })}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {data.sales.map((item, index) => {
+                const lineSubtotal = item.line_subtotal ?? (item.unit_price * item.quantity)
+                const discount = item.discount ?? 0
+                return (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium text-white print:text-black">{item.date}</TableCell>
+                    <TableCell className="font-medium text-white print:text-black">{item.product}</TableCell>
+                    <TableCell className="text-white print:text-black">{item.brand}</TableCell>
+                    <TableCell className="text-white print:text-black">{item.quantity}</TableCell>
+                    <TableCell className="text-white print:text-black">{item.method}</TableCell>
+                    <TableCell className="text-right text-white print:text-black">{lineSubtotal && item.quantity ? (item.unit_price).toLocaleString("en-US", { style: "currency", currency: "NPR" }) : ''}</TableCell>
+                    <TableCell className="text-right text-white print:text-black">{lineSubtotal.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
+                    <TableCell className="text-right text-white print:text-black">{discount.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
+                    <TableCell className="text-right text-white print:text-black">{item.total_price.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
 
