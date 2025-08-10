@@ -76,7 +76,7 @@ class Purchase(models.Model):
         
         # Now the instance is saved, we can safely filter related Items
         #print("Calculating quantity......................")
-        self.total_price = self.quantity * self.unit_price
+        self.total_price = self.quantity * self.unit_price 
 
         # Call save again to update the quantity field
         super().save()
@@ -99,7 +99,8 @@ class SalesTransaction(models.Model):
         return f"Sales Transaction {self.pk} of {self.enterprise.name}"
     
     def calculate_total_amount(self):
-        total = sum((sales.unit_price - sales.discount) for sales in self.sales.all())
+        total = sum((sales.unit_price * sales.quantity - sales.discount) for sales in self.sales.all())
+        print("HERE IS THE TOTAL AMOUNT", total)
         self.total_amount = total
 
         self.save()
@@ -148,8 +149,9 @@ class Sales(models.Model):
         
         # Now the instance is saved, we can safely filter related Items
         #print("Calculating quantity......................")
+        print("here is the discount", self.discount)
         self.total_price = self.quantity * self.unit_price - self.discount
-        print("here?")
+        print("here?",self.total_price)
 
         # Call save again to update the quantity field
         super().save()
