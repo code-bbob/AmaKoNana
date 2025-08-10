@@ -71,11 +71,11 @@ const AllSalesReport = () => {
     }
   
     // Create CSV header
-  let csvContent = "Date,Product,Brand,Quantity,Unit Price,Line Subtotal,Discount,Net Total\n"
+  let csvContent = "Date,Product,Quantity,Unit Price,Line Subtotal,Discount,Net Total\n"
   
     // Convert each sale into a CSV row
     data.sales.forEach((item) => {
-      const row = `${item.date},${item.product},${item.brand},${item.quantity},${item.unit_price},${item.line_subtotal ?? ''},${item.discount ?? ''},${item.total_price}`
+      const row = `${item.date},${item.product},${item.quantity},${item.unit_price},${item.line_subtotal ?? ''},${item.discount ?? ''},${item.total_price}`
       csvContent += row + "\n"
     })
   
@@ -105,13 +105,12 @@ const AllSalesReport = () => {
     doc.text("Sales Report", 14, 10)
   
     // Table Headers
-  const headers = [["Date", "Product", "Brand", "Qty", "Unit Price", "Subtotal", "Discount", "Net Total"]]
+  const headers = [["Date", "Product", "Qty", "Unit Price", "Subtotal", "Discount", "Net Total"]]
   
     // Table Data
     const tableData = data.sales.map((item) => [
       item.date,
       item.product,
-      item.brand,
       item.quantity,
       item.unit_price,
       item.line_subtotal || (item.unit_price * item.quantity),
@@ -237,7 +236,6 @@ const AllSalesReport = () => {
               <TableRow>
                 <TableHead className="w-[140px] text-white print:text-black">Date</TableHead>
                 <TableHead className="w-[160px] text-white print:text-black">Product</TableHead>
-                <TableHead className="text-white print:text-black">Brand</TableHead>
                 <TableHead className="text-white print:text-black">Qty</TableHead>
                 <TableHead className="text-white print:text-black">Method</TableHead>
                 <TableHead className="text-right text-white print:text-black">Unit</TableHead>
@@ -254,7 +252,6 @@ const AllSalesReport = () => {
                   <TableRow key={index}>
                     <TableCell className="font-medium text-white print:text-black">{item.date}</TableCell>
                     <TableCell className="font-medium text-white print:text-black">{item.product}</TableCell>
-                    <TableCell className="text-white print:text-black">{item.brand}</TableCell>
                     <TableCell className="text-white print:text-black">{item.quantity}</TableCell>
                     <TableCell className="text-white print:text-black">{item.method}</TableCell>
                     <TableCell className="text-right text-white print:text-black">{lineSubtotal && item.quantity ? (item.unit_price).toLocaleString("en-US", { style: "currency", currency: "NPR" }) : ''}</TableCell>

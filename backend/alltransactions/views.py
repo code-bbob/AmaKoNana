@@ -639,6 +639,59 @@ class SalesReportView(APIView):
             "cash_sales": cash_sales,
         })
         return Response(rows)
+
+class PurchaseReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, branch=None):
+        search = request.GET.get('search')
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        product = request.GET.get('product')
+
+        purchases = Purchase.objects.filter(purchase_transaction__enterprise=request.user.person.enterprise)
+        if branch:
+            purchases = purchases.filter(purchase_transaction__branch=branch)
+        if search:
+            first_date_of_month = timezone.now().date().replace(day=1)
+            today = timezone.now().date()
+            purchases = purchases.filter(product__brand__name__icontains=search)
+            purchases = purchases.filter(purchase_transaction__date__range=(first_date_of_month, today))
+        if product:
+            purchases = purchases.filter(product__name__startswith=product)
+        if start_date and end_date:
+            start_date = parse_date(start_date)
+            end_date = parse_date(end_date)
+            purchases = purchases.filter(purchase_transaction__date__range=(start_date, end_date))
+        if not search and not start_date and not end_date:
+            purchases = purchases.filter(purchase_transaction__date=timezone.now().date())
+
+        count = purchases.count()
+        subtotal_purchases = 0
+        rows = []
+        cash_purchases = 0
+        for purchase in purchases:
+            line_subtotal = (purchase.unit_price or 0) * (purchase.quantity or 0)
+            subtotal_purchases += line_subtotal
+            rows.append({
+                'date': purchase.purchase_transaction.date,
+                'brand': purchase.product.brand.name,
+                'quantity': purchase.quantity,
+                'product': purchase.product.name,
+                'unit_price': purchase.unit_price,
+                'line_subtotal': line_subtotal,
+                'total_price': line_subtotal,
+                'method': purchase.purchase_transaction.method,
+            })
+            if purchase.purchase_transaction.method == 'cash':
+                cash_purchases += line_subtotal
+        rows.append({
+            'count': count,
+            'subtotal_purchases': subtotal_purchases,
+            'total_purchases': subtotal_purchases,
+            'cash_purchases': cash_purchases,
+        })
+        return Response(rows)
      
 class NextBillNo(APIView):
     def get(self,request):

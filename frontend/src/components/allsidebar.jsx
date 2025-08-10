@@ -68,6 +68,7 @@ export default function Sidebar() {
     { title: 'Sales', icon: TrendingUp, path: 'sales' },
     { title: 'SalesReturn', icon: TrendingDown, path: 'sales-returns' },
     { title: 'SalesReport', icon: TrendingUp, path: 'sales-report' }, // opens in new tab
+  { title: 'PurchaseReport', icon: TrendingDown, path: 'purchase-report' }, // opens in new tab
     { title: 'Staffs', icon: TrendingUp, path: 'staff' },
     { title: 'StaffTransaction', icon: TrendingUp, path: 'staff-transactions' },
     { title: 'Vendors', icon: BookUser, path: 'vendors' },
@@ -177,9 +178,9 @@ export default function Sidebar() {
               
               <nav className="space-y-">
                 {menuItems.map((item) => {
-                  const isSalesReport = item.title === 'SalesReport'
-                  if (isSalesReport) {
-                    // For sales report, we need to construct the full URL with branch
+                  const isExternalReport = ['SalesReport','PurchaseReport'].includes(item.title)
+                  if (isExternalReport) {
+                    // Reports open in a new tab with branch in path
                     const fullPath = currentBranch ? `/${item.path}/branch/${currentBranch.id}` : '#'
                     return (
                       <a
@@ -203,19 +204,16 @@ export default function Sidebar() {
 
                   // For other items, create proper anchor tags that support Ctrl+Click
                   const fullPath = item.path === '/mobile' ? '/mobile' : (currentBranch ? `/${item.path}/branch/${currentBranch.id}` : '#')
-                  
                   return (
                     <a
                       key={item.path}
                       href={fullPath}
                       className={`block ${!currentBranch && item.path !== '/mobile' ? 'opacity-50 pointer-events-none' : ''}`}
                       onClick={(e) => {
-                        // Only prevent default if not Ctrl+Click or middle click
                         if (!e.ctrlKey && !e.metaKey && e.button !== 1) {
                           e.preventDefault()
                           handleNavigation(item.path)
                         }
-                        // For Ctrl+Click, let the browser handle it naturally
                       }}
                     >
                       <Button

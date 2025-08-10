@@ -22,6 +22,7 @@ import AllVendorTransactions from "./pages/allvendortransactions";
 import AllVendorTransactionForm from "./pages/allvendortransactionform";
 import EditAllVendorTransactionForm from "./components/editallvendortransactions";
 import AllSalesReport from "./pages/allSalesReport";
+import AllPurchaseReport from "./pages/allPurchaseReport";
 import AllPurchaseReturns from "./pages/allPurchaseReturn";
 import InvoicePage from "./pages/invoicePage";
 import EditProductForm from "./components/editProductForm";
@@ -78,6 +79,7 @@ function App() {
 
           <Route path="sales-returns/branch/:branchId" element={<AllSalesReturns/>}/>
           <Route path="sales-report/branch/:branchId" element={<AllSalesReport/>}/>
+          <Route path="purchase-report/branch/:branchId" element={<AllPurchaseReport/>}/>
 
           <Route path="staff/branch/:branchId" element={<StaffPage/>}/>
 
