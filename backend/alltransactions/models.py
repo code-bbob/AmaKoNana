@@ -89,7 +89,7 @@ class SalesTransaction(models.Model):
     date = models.DateField()
     bill_no = models.IntegerField()
     branch = models.ForeignKey(Branch,related_name='sales_transaction',on_delete=models.CASCADE, null=True, blank=True)
-    discount = models.FloatField(null=True,blank=True)
+    # discount = models.FloatField(null=True,blank=True)
     subtotal = models.FloatField(null=True,blank=True)
     method = models.CharField(max_length=20,choices=(('cash','cash'),('online','online'),('card','card'),('credit','credit')),default='cash')
     debtor = models.ForeignKey('Debtor', on_delete=models.CASCADE, null=True, blank=True, related_name='all_sales_transaction')
@@ -100,7 +100,7 @@ class SalesTransaction(models.Model):
     
     def calculate_total_amount(self):
         total = sum(sales.total_price for sales in self.sales.all())
-        self.total_amount = total - self.discount   
+        self.total_amount = total
 
         self.save()
         return self.total_amount
@@ -128,6 +128,7 @@ class Sales(models.Model):
     quantity = models.IntegerField()
     unit_price = models.FloatField()
     total_price = models.FloatField(null=True,blank=True)
+    discount = models.FloatField(null=True,blank=True,default=0)
     sales_transaction = models.ForeignKey(SalesTransaction, on_delete=models.CASCADE,related_name='sales')
     returned = models.BooleanField(default=False)
     sales_return = models.ForeignKey(
@@ -240,7 +241,6 @@ class DebtorTransaction(models.Model):
     # base = models.BooleanField(default=False)
     type = models.CharField(max_length=20,choices=(('base','base'),('return','return'),('payment','payment')),default='base')
     all_sales_transaction = models.ForeignKey(SalesTransaction, on_delete=models.CASCADE,related_name="all_debtor_transaction",null=True,blank=True)
-    sales_transaction = models.ForeignKey('transaction.SalesTransaction', on_delete=models.CASCADE, null=True, blank=True, related_name='debtor_transaction')
     desc = models.CharField(max_length=255, null=True, blank=True)
     inventory = models.CharField(max_length=20, choices=(('all','all'),('phone','phone')), null=True, blank=True)
     due = models.FloatField(null=True, blank=True, default=0)

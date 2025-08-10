@@ -128,7 +128,10 @@ function AllPurchaseTransactionForm() {
   const [currentWord, setCurrentWord] = useState("");
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      const scannedCode = currentWord.slice(0, -1);
+      if (currentWord.trim().length === 0){
+        handleSubmit();
+      }
+      const scannedCode = currentWord.slice(-13, -1);
       console.log("Word is:", scannedCode);
       const matchingProduct = products.find(
         (product) => product.uid === scannedCode
@@ -784,7 +787,7 @@ const handleNewProductVendorChange = (ids) => {
                     </div>
                   </div>
 
-                  {index > 0 && (
+                  {formData.purchase.length > 1 && (
                     <Button
                       type="button"
                       variant="destructive"

@@ -258,7 +258,7 @@ const handleNewProductVendorChange = (ids) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     try {
       setSubLoading(true);
       // Convert discount to an amount regardless of type
@@ -336,7 +336,12 @@ const handleNewProductVendorChange = (ids) => {
   const [currentWord, setCurrentWord] = useState("");
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      const scannedCode = currentWord.slice(0, -1);
+
+      if (currentWord.trim().length === 0){
+        handleSubmit();
+      }
+      const scannedCode = currentWord.slice(-13, -1);
+
       console.log("Word is:", scannedCode);
       const matchingProduct = products.find(
         (product) => product.uid === scannedCode
@@ -734,7 +739,7 @@ const handleNewProductVendorChange = (ids) => {
                       />
                     </div>
                   </div>
-                  {index > 0 && (
+                  {formData.sales.length > 1 && (
                     <Button
                       type="button"
                       variant="destructive"

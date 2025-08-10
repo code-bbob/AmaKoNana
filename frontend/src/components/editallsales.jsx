@@ -732,7 +732,7 @@ const handleNewProductVendorChange = (ids) => {
                   </div>
                 </div>
                 {/* Remove sale */}
-                {index > 0 && !sale.returned && (
+                {formData.sales.length > 1 && !sale.returned && (
                   <Button
                     type="button"
                     variant="destructive"

@@ -720,7 +720,7 @@ const handleNewProductVendorChange = (ids) => {
                       />
                     </div>
                   </div>
-                  {index > 0 && (
+                  {formData.purchase.length > 1 && (
                     <Button
                       type="button"
                       variant="destructive"

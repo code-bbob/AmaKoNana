@@ -2,7 +2,7 @@
 set -e
 
 echo "===> Making migrations (auto-detect model changes)..."
-python manage.py makemigrations allinventory alltransactions enterprise userauth inventory transaction --noinput
+python manage.py makemigrations allinventory alltransactions enterprise userauth  --noinput
 
 # 1. Apply database migrations
 echo "===> Running migrations..."
