@@ -58,7 +58,7 @@ function AllSalesTransactionForm() {
     phone_number: "",
     bill_no: "",
     branch: branchId, // New branch field added to state
-    sales: [{ product: "", unit_price: "", quantity: "", total_price: "" }],
+  sales: [{ product: "", unit_price: "", quantity: "", discount_percent: "", line_subtotal: "", total_price: "" }],
     method: "cash",
     debtor: "", // New field for debtor's name
     amount_paid: null,
@@ -86,10 +86,9 @@ function AllSalesTransactionForm() {
   const [branch, setBranch] = useState([]);
   const [userBranch, setUserBranch] = useState({});
 
-  // New state for computed fields
+  // Computed fields
   const [subtotal, setSubtotal] = useState(0);
-  const [discountType, setDiscountType] = useState("amount"); // 'amount' or 'percent'
-  const [discountValue, setDiscountValue] = useState("");
+  const [totalDiscount, setTotalDiscount] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
 
   const [showNewDebtorDialog, setShowNewDebtorDialog] = useState(false);
@@ -173,11 +172,7 @@ function AllSalesTransactionForm() {
     const newSales = [...formData.sales];
     newSales[index] = { ...newSales[index], [name]: value };
 
-    // Calculate total price if unit_price and quantity are provided
-    const { unit_price, quantity } = newSales[index];
-    if (unit_price && quantity) {
-      newSales[index].total_price = calculateTotalPrice(quantity, unit_price);
-    }
+  recalcLine(newSales[index]);
     setFormData({ ...formData, sales: newSales });
   };
 
@@ -197,11 +192,8 @@ const handleNewProductVendorChange = (ids) => {
         (product) => product.id.toString() === value
       );
       const newSales = [...formData.sales];
-      newSales[index] = {
-        ...newSales[index],
-        product: value,
-        unit_price: matchingProduct ? matchingProduct.selling_price : "",
-      };
+  newSales[index] = { ...newSales[index], product: value, unit_price: matchingProduct ? matchingProduct.selling_price : "" };
+  recalcLine(newSales[index]);
       setFormData({ ...formData, sales: newSales });
     }
     const newOpenProduct = [...openProduct];
@@ -231,7 +223,7 @@ const handleNewProductVendorChange = (ids) => {
       ...formData,
       sales: [
         ...formData.sales,
-        { product: "", unit_price: "", quantity: "", total_price: "" },
+  { product: "", unit_price: "", quantity: "", discount_percent: "", line_subtotal: "", total_price: "" },
       ],
     });
     setOpenProduct([...openProduct, false]);
@@ -261,17 +253,28 @@ const handleNewProductVendorChange = (ids) => {
     e?.preventDefault();
     try {
       setSubLoading(true);
-      // Convert discount to an amount regardless of type
-      const discountAmt =
-        discountType === "percent"
-          ? subtotal * ((parseFloat(discountValue) || 0) / 100)
-          : parseFloat(discountValue) || 0;
-
-      // Merge the computed fields into the payload
+      // Prepare lines (ensure discount amount computed)
+      const preparedSales = formData.sales.map((line) => {
+        const clone = { ...line };
+        recalcLine(clone);
+        const qty = parseFloat(clone.quantity) || 0;
+        const price = parseFloat(clone.unit_price) || 0;
+        const lineSubtotal = qty * price;
+        const percent = Math.min(Math.max(parseFloat(clone.discount_percent) || 0, 0), 100);
+        const discountAmt = lineSubtotal * percent / 100;
+        const net = lineSubtotal - discountAmt;
+        return {
+          product: clone.product,
+          unit_price: price,
+          quantity: qty,
+          discount: discountAmt, // backend expects amount
+          total_price: net,
+        };
+      });
       const payload = {
         ...formData,
-        subtotal,
-        discount: discountAmt,
+        sales: preparedSales,
+        subtotal: subtotal,
         total_amount: totalAmount,
       };
       const response = await api.post(
@@ -325,6 +328,19 @@ const handleNewProductVendorChange = (ids) => {
     return quantity * unit_price;
   };
 
+  // Recalculate a single line based on percentage discount
+  const recalcLine = (line) => {
+    const qty = parseFloat(line.quantity) || 0;
+    const price = parseFloat(line.unit_price) || 0;
+    const lineSubtotal = qty * price;
+    let percent = parseFloat(line.discount_percent) || 0;
+    if (percent < 0) percent = 0;
+    if (percent > 100) percent = 100;
+    const discountAmt = lineSubtotal * percent / 100;
+    line.line_subtotal = lineSubtotal ? lineSubtotal.toFixed(2) : "";
+    line.total_price = lineSubtotal ? (lineSubtotal - discountAmt).toFixed(2) : "";
+  };
+
   useEffect(() => {
     setFormData((prevFormData) => ({
       ...prevFormData,
@@ -352,9 +368,7 @@ const handleNewProductVendorChange = (ids) => {
         const productIdStr = matchingProduct.id.toString();
 
         // First, check if a sale already exists for this product
-        const existingSaleIndex = formData.sales.findIndex(
-          (sale) => sale.product === productIdStr
-        );
+  const existingSaleIndex = formData.sales.findIndex((sale) => sale.product === productIdStr);
 
         if (existingSaleIndex !== -1) {
           // Increase quantity for the existing sale
@@ -363,8 +377,7 @@ const handleNewProductVendorChange = (ids) => {
           const currentQuantity = parseInt(existingSale.quantity, 10) || 0;
           const newQuantity = currentQuantity + 1;
           existingSale.quantity = newQuantity;
-          existingSale.total_price =
-            newQuantity * matchingProduct.selling_price;
+          recalcLine(existingSale);
           setFormData((prevFormData) => ({
             ...prevFormData,
             sales: updatedSales,
@@ -376,24 +389,16 @@ const handleNewProductVendorChange = (ids) => {
           );
           if (emptySaleIndex !== -1) {
             const updatedSales = [...formData.sales];
-            updatedSales[emptySaleIndex] = {
-              product: productIdStr,
-              unit_price: matchingProduct.selling_price,
-              quantity: 1,
-              total_price: matchingProduct.selling_price,
-            };
+            updatedSales[emptySaleIndex] = { product: productIdStr, unit_price: matchingProduct.selling_price, quantity: 1, discount_percent: "", line_subtotal: matchingProduct.selling_price, total_price: matchingProduct.selling_price };
+            recalcLine(updatedSales[emptySaleIndex]);
             setFormData((prevFormData) => ({
               ...prevFormData,
               sales: updatedSales,
             }));
           } else {
             // Neither an existing sale nor an empty sale found, so add a new sale entry
-            const newSale = {
-              product: productIdStr,
-              unit_price: matchingProduct.selling_price,
-              quantity: 1,
-              total_price: matchingProduct.selling_price,
-            };
+            const newSale = { product: productIdStr, unit_price: matchingProduct.selling_price, quantity: 1, discount_percent: "", line_subtotal: matchingProduct.selling_price, total_price: matchingProduct.selling_price };
+            recalcLine(newSale);
             setFormData((prevFormData) => ({
               ...prevFormData,
               sales: [...prevFormData.sales, newSale],
@@ -416,23 +421,24 @@ const handleNewProductVendorChange = (ids) => {
     };
   }, [currentWord, products]);
 
-  // Compute subtotal whenever sales change
+  // Recompute summary when sales change
   useEffect(() => {
-    const newSubtotal = formData.sales.reduce((acc, sale) => {
-      const saleTotal = parseFloat(sale.total_price) || 0;
-      return acc + saleTotal;
-    }, 0);
+    let newSubtotal = 0;
+    let newTotalDiscount = 0;
+    formData.sales.forEach((s) => {
+      const qty = parseFloat(s.quantity) || 0;
+      const price = parseFloat(s.unit_price) || 0;
+      const lineSub = qty * price;
+      newSubtotal += lineSub;
+      const percent = Math.min(Math.max(parseFloat(s.discount_percent) || 0, 0), 100);
+      newTotalDiscount += lineSub * percent / 100;
+    });
     setSubtotal(newSubtotal);
+    setTotalDiscount(newTotalDiscount);
+    setTotalAmount(newSubtotal - newTotalDiscount);
   }, [formData.sales]);
 
-  // Compute total amount whenever subtotal, discount type, or discount value changes
-  useEffect(() => {
-    const discountAmt =
-      discountType === "percent"
-        ? subtotal * ((parseFloat(discountValue) || 0) / 100)
-        : parseFloat(discountValue) || 0;
-    setTotalAmount(subtotal - discountAmt);
-  }, [subtotal, discountType, discountValue]);
+  // No separate global discount; totalAmount derived above
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
@@ -594,23 +600,14 @@ const handleNewProductVendorChange = (ids) => {
                 </Select>
               </div> */}
 
-              {/* Sales details */}
+              {/* Sales details simplified */}
               {formData.sales.map((sale, index) => (
-                <div
-                  key={index}
-                  className="bg-slate-700 text-white p-4 rounded-md shadow mb-4"
-                >
-                  <h3 className="text-lg font-semibold mb-4">
-                    Sale {index + 1}
-                  </h3>
+                <div key={index} className="bg-slate-700 text-white p-4 rounded-md shadow mb-4">
+                  <h3 className="text-lg font-semibold mb-4">Sale {index + 1}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Product */}
                     <div className="flex flex-col">
-                      <Label
-                        htmlFor={`product-${index}`}
-                        className="text-sm font-medium text-white mb-2"
-                      >
-                        Product
-                      </Label>
+                      <Label htmlFor={`product-${index}`} className="text-sm font-medium text-white mb-2">Product</Label>
                       <Popover
                         open={openProduct[index]}
                         onOpenChange={(open) => {
@@ -620,60 +617,25 @@ const handleNewProductVendorChange = (ids) => {
                         }}
                       >
                         <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={openProduct[index]}
-                            className="w-full justify-between bg-slate-600 border-slate-500 text-white hover:bg-slate-500"
-                          >
-                            {sale.product
-                              ? products.find(
-                                  (product) =>
-                                    product.id.toString() === sale.product
-                                )?.name
-                              : "Select a product..."}
+                          <Button variant="outline" role="combobox" aria-expanded={openProduct[index]} className="w-full justify-between bg-slate-600 border-slate-500 text-white hover:bg-slate-500">
+                            {sale.product ? products.find(p => p.id.toString() === sale.product)?.name : "Select a product..."}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-full p-0 bg-slate-700 border-slate-600">
                           <Command className="bg-slate-700 border-slate-600">
-                            <CommandInput
-                              placeholder="Search product..."
-                              className="bg-slate-700 text-white"
-                            />
+                            <CommandInput placeholder="Search product..." className="bg-slate-700 text-white" />
                             <CommandList>
                               <CommandEmpty>No product found.</CommandEmpty>
                               <CommandGroup>
-                                {products.map((product) => (
-                                  <CommandItem
-                                    key={product.id}
-                                    onSelect={() =>
-                                      handleProductChange(
-                                        index,
-                                        product.id.toString()
-                                      )
-                                    }
-                                    className="text-white hover:bg-slate-600"
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        sale.product === product.id.toString()
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      )}
-                                    />
+                                {products.map(product => (
+                                  <CommandItem key={product.id} onSelect={() => handleProductChange(index, product.id.toString())} className="text-white hover:bg-slate-600">
+                                    <Check className={cn("mr-2 h-4 w-4", sale.product === product.id.toString() ? "opacity-100" : "opacity-0")} />
                                     {product.name}
                                   </CommandItem>
                                 ))}
-                                <CommandItem
-                                  onSelect={() =>
-                                    handleProductChange(index, "new")
-                                  }
-                                  className="text-white hover:bg-slate-600"
-                                >
-                                  <PlusCircle className="mr-2 h-4 w-4" />
-                                  Add a new product
+                                <CommandItem onSelect={() => handleProductChange(index, "new")} className="text-white hover:bg-slate-600">
+                                  <PlusCircle className="mr-2 h-4 w-4" /> Add a new product
                                 </CommandItem>
                               </CommandGroup>
                             </CommandList>
@@ -681,80 +643,40 @@ const handleNewProductVendorChange = (ids) => {
                         </PopoverContent>
                       </Popover>
                     </div>
+                    {/* Unit Price */}
                     <div className="flex flex-col">
-                      <Label
-                        htmlFor={`unit_price-${index}`}
-                        className="text-sm font-medium text-white mb-2"
-                      >
-                        Unit Price
-                      </Label>
-                      <Input
-                        type="number"
-                        id={`unit_price-${index}`}
-                        name="unit_price"
-                        onChange={(e) => handleChange(index, e)}
-                        value={sale.unit_price}
-                        className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
-                        placeholder="Enter unit price"
-                        required
-                      />
+                      <Label htmlFor={`unit_price-${index}`} className="text-sm font-medium text-white mb-2">Unit Price</Label>
+                      <Input type="number" id={`unit_price-${index}`} name="unit_price" value={sale.unit_price} onChange={(e) => handleChange(index, e)} className="bg-slate-600 border-slate-500 text-white" placeholder="Price" required />
+                    </div>
+                    {/* Quantity */}
+                    <div className="flex flex-col">
+                      <Label htmlFor={`quantity-${index}`} className="text-sm font-medium text-white mb-2">Qty</Label>
+                      <Input type="number" id={`quantity-${index}`} name="quantity" value={sale.quantity} onChange={(e) => handleChange(index, e)} className="bg-slate-600 border-slate-500 text-white" placeholder="Qty" required />
+                    </div>
+                    {/* Subtotal */}
+                    <div className="flex flex-col ">
+                      <Label className="text-sm font-medium text-white mb-2">Subtotal</Label>
+                      <Input type="number" value={sale.line_subtotal} readOnly className="bg-slate-600 border-slate-500 text-white" />
                     </div>
                     <div className="flex flex-col">
-                      <Label
-                        htmlFor={`quantity-${index}`}
-                        className="text-sm font-medium text-white mb-2"
-                      >
-                        Quantity
-                      </Label>
-                      <Input
-                        type="number"
-                        id={`quantity-${index}`}
-                        name="quantity"
-                        onChange={(e) => handleChange(index, e)}
-                        value={sale.quantity}
-                        className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
-                        placeholder="Enter quantity"
-                        required
-                      />
+                      <Label htmlFor={`discount-${index}`} className="text-sm font-medium text-white mb-2">Discount %</Label>
+                      <Input type="number" id={`discount-${index}`} name="discount_percent" value={sale.discount_percent} onChange={(e) => handleChange(index, e)} className="bg-slate-600 border-slate-500 text-white" placeholder="%" />
                     </div>
+                    {/* Net Total */}
                     <div className="flex flex-col">
-                      <Label
-                        htmlFor={`total_price-${index}`}
-                        className="text-sm font-medium text-white mb-2"
-                      >
-                        Total Price
-                      </Label>
-                      <Input
-                        type="number"
-                        id={`total_price-${index}`}
-                        name="total_price"
-                        value={calculateTotalPrice(
-                          sale.quantity,
-                          sale.unit_price
-                        )}
-                        onChange={(e) => handleChange(index, e)}
-                        className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
-                        placeholder="Enter total price"
-                        required
-                      />
+                      <Label className="text-sm font-medium text-white mb-2">Total (Net)</Label>
+                      <Input type="number" value={sale.total_price} readOnly className="bg-slate-600 border-slate-500 text-white" />
                     </div>
                   </div>
                   {formData.sales.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="mt-4 bg-red-600 hover:bg-red-700 text-white"
-                      onClick={() => handleRemoveSale(index)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Remove Sale
+                    <Button type="button" variant="destructive" size="sm" className="mt-4 bg-red-600 hover:bg-red-700 text-white" onClick={() => handleRemoveSale(index)}>
+                      <Trash2 className="w-4 h-4 mr-2" /> Remove Sale
                     </Button>
                   )}
                 </div>
               ))}
 
-              {/* New Fields for Subtotal, Discount, and Total Amount */}
+              {/* Summary Fields */}
               <div className="bg-slate-700 text-white p-4 rounded-md shadow mb-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col">
@@ -774,31 +696,8 @@ const handleNewProductVendorChange = (ids) => {
                     />
                   </div>
                   <div className="flex flex-col">
-                    <Label
-                      htmlFor="discount"
-                      className="text-sm font-medium text-white mb-2"
-                    >
-                      Discount
-                    </Label>
-                    <div className="flex space-x-2">
-                      <select
-                        value={discountType}
-                        onChange={(e) => setDiscountType(e.target.value)}
-                        className="bg-slate-600 border-slate-500 text-white p-2 rounded"
-                      >
-                        <option value="amount">Amount</option>
-                        <option value="percent">Percent</option>
-                      </select>
-                      <Input
-                        type="number"
-                        id="discountValue"
-                        name="discountValue"
-                        value={discountValue}
-                        onChange={(e) => setDiscountValue(e.target.value)}
-                        placeholder="Enter discount"
-                        className="bg-slate-600 border-slate-500 text-white"
-                      />
-                    </div>
+                    <Label className="text-sm font-medium text-white mb-2">Total Discount (Amt)</Label>
+                    <Input type="number" value={totalDiscount.toFixed(2)} readOnly className="bg-slate-600 border-slate-500 text-white" />
                   </div>
                   <div className="flex flex-col">
                     <Label
@@ -1082,9 +981,9 @@ const handleNewProductVendorChange = (ids) => {
             >
               <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
                 <DialogHeader>
-                  <DialogTitle>Add New Brand</DialogTitle>
+                  <DialogTitle>Add New Category</DialogTitle>
                   <DialogDescription>
-                    Enter the name of the new brand you want to add.
+                    Enter the name of the new category you want to add.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -1093,7 +992,7 @@ const handleNewProductVendorChange = (ids) => {
                       htmlFor="newBrandName"
                       className="text-right text-white"
                     >
-                      Brand Name
+                      Category Name
                     </Label>
                     <Input
                       id="newBrandName"
@@ -1110,7 +1009,7 @@ const handleNewProductVendorChange = (ids) => {
                     onClick={handleAddBrand}
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
-                    Add Brand
+                    Add Category
                   </Button>
                 </DialogFooter>
               </DialogContent>

@@ -1051,13 +1051,13 @@ const handleNewProductVendorChange = (ids) => {
       <Dialog open={showNewBrandDialog} onOpenChange={setShowNewBrandDialog}>
         <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
           <DialogHeader>
-            <DialogTitle>Add New Brand</DialogTitle>
-            <DialogDescription>Enter brand name.</DialogDescription>
+            <DialogTitle>Add New Category</DialogTitle>
+            <DialogDescription>Enter category name.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="newBrandName" className="text-right">
-                Brand Name
+                Category Name
               </Label>
               <Input
                 id="newBrandName"

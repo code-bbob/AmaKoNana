@@ -9,8 +9,6 @@ import {
   ArrowLeft,
   BookUser,
   Plus,
-  Check,
-  ChevronsUpDown,
   Trash2,
 } from "lucide-react";
 import useAxios from "../utils/useAxios";
@@ -27,20 +25,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-} from "@/components/ui/command";
-import { cn } from "@/lib/utils";
+// Removed brand selection popover & command imports
 
 export default function AllVendorPage() {
   const api = useAxios();
@@ -49,19 +34,15 @@ export default function AllVendorPage() {
 
   const [phones, setPhones] = useState([]);
   const [filteredPhones, setFilteredPhones] = useState([]);
-  const [brandName, setBrandName] = useState("");
+  // Removed brandName state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [brands, setBrands] = useState([]);
-  const [openBrand, setOpenBrand] = useState(false);
-  const [showNewBrandDialog, setShowNewBrandDialog] = useState(false);
-  const [newBrandName, setNewBrandName] = useState("");
+  // Removed brand-related states
   const [showNewVendorDialog, setShowNewVendorDialog] = useState(false);
   const [newVendorData, setNewVendorData] = useState({
     name: "",
     due: 0,
-    brand: "",
     branch: branchId,
   });
   const [selectedVendors, setSelectedVendors] = useState([]);
@@ -73,13 +54,9 @@ export default function AllVendorPage() {
         const phoneRes = await api.get(
           `alltransaction/vendor/branch/${branchId}/`
         );
-        const brandRes = await api.get(
-          `allinventory/brand/branch/${branchId}/`
-        );
         setPhones(phoneRes.data);
         setFilteredPhones(phoneRes.data);
-        setBrandName(phoneRes?.data[0]?.brand_name || "");
-        setBrands(brandRes.data);
+        // Removed brandName and brands handling
         setLoading(false);
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -118,24 +95,7 @@ export default function AllVendorPage() {
     }
   };
 
-  const handleAddBrand = async () => {
-    try {
-      const response = await api.post("allinventory/brand/", {
-        name: newBrandName,
-        branch: branchId,
-      });
-      setBrands((prev) => [...prev, response.data]);
-      setNewBrandName("");
-      setShowNewBrandDialog(false);
-      setNewVendorData((prev) => ({
-        ...prev,
-        brand: response.data.id.toString(),
-      }));
-    } catch (err) {
-      console.error("Error adding brand:", err);
-      setError("Failed to add new brand");
-    }
-  };
+  // Removed handleAddBrand (brand creation)
 
   const handleCheckboxChange = (id) => {
     setSelectedVendors((prev) =>
@@ -185,9 +145,7 @@ export default function AllVendorPage() {
           transition={{ duration: 0.5 }}
           className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 space-y-4 md:space-y-0"
         >
-          <h1 className="text-2xl md:text-4xl font-bold text-white">
-            {brandName} Vendors
-          </h1>
+          <h1 className="text-2xl md:text-4xl font-bold text-white">Vendors</h1>
           <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <div className="relative w-full sm:w-60">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -221,9 +179,8 @@ export default function AllVendorPage() {
           <CardContent className="p-0">
             <div className="grid grid-cols-12 gap-4 p-4 text-sm font-medium text-slate-300 border-b border-slate-700">
               <div className="col-span-1"></div>
-              <div className="col-span-5">Vendors</div>
-              <div className="col-span-3">Brand</div>
-              <div className="col-span-3 text-right">Due Amount</div>
+              <div className="col-span-7">Vendors</div>
+              <div className="col-span-4 text-right">Due Amount</div>
             </div>
             {filteredPhones.map((vendor) => (
               <motion.div
@@ -243,14 +200,11 @@ export default function AllVendorPage() {
                     className="border-gray-400"
                   />
                 </div>
-                <div className="col-span-5 flex items-center">
+                <div className="col-span-7 flex items-center">
                   <BookUser className="h-5 w-5 text-purple-400 mr-2" />
                   <span className="text-white truncate">{vendor.name}</span>
                 </div>
-                <div className="col-span-3 text-white">
-                  {vendor.brand_name || "N/A"}
-                </div>
-                <div className="col-span-3 text-right text-white">
+                <div className="col-span-4 text-right text-white">
                   {vendor.due ? `RS. ${vendor.due.toLocaleString()}` : "N/A"}
                 </div>
               </motion.div>
@@ -314,75 +268,7 @@ export default function AllVendorPage() {
                 placeholder="Enter due amount"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="vendorBrand" className="text-right text-white">
-                Brand
-              </Label>
-              <div className="col-span-3">
-                <Popover open={openBrand} onOpenChange={setOpenBrand}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openBrand}
-                      className="w-full justify-between bg-slate-700 border-slate-600 text-white"
-                    >
-                      {newVendorData.brand
-                        ? brands.find(
-                            (b) => b.id.toString() === newVendorData.brand
-                          )?.name
-                        : "Select a brand..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 bg-slate-700 border-slate-600">
-                    <Command className="bg-slate-700">
-                      <CommandInput
-                        placeholder="Search brand..."
-                        className="bg-slate-700 text-white"
-                      />
-                      <CommandList>
-                        <CommandEmpty>No brand found.</CommandEmpty>
-                        <CommandGroup>
-                          {brands.map((brand) => (
-                            <CommandItem
-                              key={brand.id}
-                              onSelect={() => {
-                                setNewVendorData((prev) => ({
-                                  ...prev,
-                                  brand: brand.id.toString(),
-                                }));
-                                setOpenBrand(false);
-                              }}
-                              className="text-white hover:bg-slate-600"
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  newVendorData.brand === brand.id.toString()
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                )}
-                              />
-                              {brand.name}
-                            </CommandItem>
-                          ))}
-                          <CommandItem
-                            onSelect={() => {
-                              setShowNewBrandDialog(true);
-                              setOpenBrand(false);
-                            }}
-                            className="text-white hover:bg-slate-600"
-                          >
-                            <Plus className="mr-2 h-4 w-4" /> Add a new brand
-                          </CommandItem>
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
+            {/* Removed brand selector */}
           </div>
           <DialogFooter>
             <Button
@@ -396,40 +282,7 @@ export default function AllVendorPage() {
         </DialogContent>
       </Dialog>
 
-      {/* New Brand Dialog */}
-      <Dialog open={showNewBrandDialog} onOpenChange={setShowNewBrandDialog}>
-        <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
-          <DialogHeader>
-            <DialogTitle>Add New Brand</DialogTitle>
-            <DialogDescription className="text-slate-300">
-              Enter the name of the new brand to add it to the list.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="newBrandName" className="text-right text-white">
-                Brand Name
-              </Label>
-              <Input
-                id="newBrandName"
-                value={newBrandName}
-                onChange={(e) => setNewBrandName(e.target.value)}
-                className="col-span-3 bg-slate-700 border-slate-600 text-white"
-                placeholder="Enter brand name"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              onClick={handleAddBrand}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              Add Brand
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+  {/* Removed New Brand Dialog */}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

@@ -557,9 +557,9 @@ export default function EditAllVendorTransactionForm() {
             >
               <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
                 <DialogHeader>
-                  <DialogTitle>Add New Brand</DialogTitle>
+                  <DialogTitle>Add New Category</DialogTitle>
                   <DialogDescription className="text-slate-300">
-                    Enter the name of the new brand you want to add.
+                    Enter the name of the new category you want to add.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
