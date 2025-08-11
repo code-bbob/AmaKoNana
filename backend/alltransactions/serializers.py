@@ -19,7 +19,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
     product_name = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Purchase
-        fields = ['id','product_name', 'product', 'quantity', 'unit_price', 'total_price','returned']
+        fields = ['id','product_name', 'product', 'quantity', 'unit_price', 'total_price','returned','returned_quantity']
         read_only_fields = ['returned','total_price']
 
     def get_product_name(self, obj):
@@ -86,7 +86,8 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
             'purchase_transaction': purchase_transaction,
             'enterprise': purchase_transaction.enterprise,
             'branch': purchase_transaction.branch,
-            'type': 'base'
+            'type': 'base',
+            'bill_no': purchase_transaction.bill_no
         })
 
         # Handle payment method -> create VendorTransactions if needed
@@ -101,7 +102,8 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
                 'method': 'cash',
                 'purchase_transaction': purchase_transaction,
                 'enterprise': purchase_transaction.enterprise,
-                'type': 'payment'
+                'type': 'payment',
+                'bill_no': purchase_transaction.bill_no
             })
         elif method == 'cheque':
             VendorTransactionSerializer().create({
@@ -115,7 +117,8 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
                 'cashout_date': purchase_transaction.cashout_date,
                 'purchase_transaction': purchase_transaction,
                 'enterprise': purchase_transaction.enterprise,
-                'type': 'payment'
+                'type': 'payment',
+                'bill_no': purchase_transaction.bill_no
             })
 
         return purchase_transaction
@@ -293,6 +296,7 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
                 'method': instance.method,
                 'purchase_transaction': instance,
                 'type': 'base',
+                'bill_no': instance.bill_no,
             }
             VendorTransactionSerializer().create(base)
             if instance.method in ('cash', 'cheque'):
@@ -300,6 +304,8 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
                 pay['amount'] = new_total_amount
                 pay['desc'] = 'Paid for purchase'
                 pay['type'] = 'payment'
+                pay['branch'] = instance.branch
+                pay['enterprise'] = instance.enterprise
                 if instance.method == 'cheque':
                     pay.update({'cheque_number': instance.cheque_number, 'cashout_date': instance.cashout_date})
                 VendorTransactionSerializer().create(pay)
@@ -320,7 +326,7 @@ class SalesSerializer(serializers.ModelSerializer):
     product_name = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Sales
-        fields = ['id', 'product', 'quantity', 'unit_price', 'total_price','product_name','returned']
+        fields = ['id', 'product', 'quantity', 'unit_price', 'total_price','product_name','returned','returned_quantity']
         read_only_fields = ['total_price', 'returned']
 
     def get_product_name(self, obj):
@@ -609,7 +615,7 @@ class VendorTransactionSerializer(serializers.ModelSerializer):
 class PurchaseReturnSerializer(serializers.ModelSerializer):
    
     purchase_transaction = PurchaseTransactionSerializer(read_only=True)
-    purchases = PurchaseSerializer(many=True,read_only=True) ##related name
+    # purchases = PurchaseSerializer(many=True,read_only=True) ##related name
 
     # Write-only fields for accepting the IDs in the request
     purchase_transaction_id = serializers.PrimaryKeyRelatedField(
@@ -617,12 +623,13 @@ class PurchaseReturnSerializer(serializers.ModelSerializer):
         write_only=True,
         source='purchase_transaction'
     )
-    purchase_ids = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Purchase.objects.all(),
-        write_only=True
-    )
-
+    # purchase_ids = serializers.PrimaryKeyRelatedField(
+    #     many=True,
+    #     queryset=Purchase.objects.all(),
+    #     write_only=True
+    # )
+    returns = serializers.ListField(write_only=True, required = False)
+    returned_purchases = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseReturn
@@ -634,110 +641,151 @@ class PurchaseReturnSerializer(serializers.ModelSerializer):
             'enterprise',
             'purchase_transaction',
             'purchase_transaction_id',  # for write
-            'purchases',       # for read
-            'purchase_ids' ,    # for write
+            # 'purchases',       # for read
+            # 'purchase_ids' ,    # for write
+            'returns',
+            'returned_purchases',
         ]
     @transaction.atomic
     def create(self, validated_data):
-        purchase_ids = validated_data.pop('purchase_ids', [])
+        # purchase_ids = validated_data.pop('purchase_ids', [])
+        returns = validated_data.pop('returns', [])
+        purchase_transaction = validated_data.get('purchase_transaction')
         purchase_return = PurchaseReturn.objects.create(**validated_data)
         vendor = purchase_return.purchase_transaction.vendor
-        total_unit_price = 0
+        # total_unit_price = 0
 
+        amount_diff = 0
+        desc = "Purchase return:"
         # Memory cache
         products_cache = {}
         brands_cache = {}
 
-        for purchase in purchase_ids:
+        # for purchase in purchase_ids:
+        for data in returns:
+            purchase = Purchase.objects.get(id=data['id'])
             purchase.purchase_return = purchase_return
             purchase.returned = True
+            purchase.returned_quantity = data['quantity']
             purchase.save()
-            total_unit_price += purchase.unit_price * purchase.quantity
+            # total_unit_price += purchase.unit_price * purchase.quantity
 
-            # Cache product
-            product_id = purchase.product.id
-            if product_id not in products_cache:
-                products_cache[product_id] = purchase.product
-            product = products_cache[product_id]
-            product.count = (product.count or 0) - purchase.quantity
-            product.stock = (product.stock or 0) - purchase.quantity * product.selling_price
+            # # Cache product
+            # product_id = purchase.product.id
+            # if product_id not in products_cache:
+            #     products_cache[product_id] = purchase.product
+            # product = products_cache[product_id]
+            # product.count = (product.count or 0) - purchase.quantity
+            # product.stock = (product.stock or 0) - purchase.quantity * product.selling_price
 
-            # Cache brand
-            brand_id = product.brand.id
-            if brand_id not in brands_cache:
-                brands_cache[brand_id] = product.brand
-            brand = brands_cache[brand_id]
-            brand.count = (brand.count or 0) - purchase.quantity
-            brand.stock = (brand.stock or 0) - purchase.quantity * product.selling_price
+            # # Cache brand
+            # brand_id = product.brand.id
+            # if brand_id not in brands_cache:
+            #     brands_cache[brand_id] = product.brand
+            # brand = brands_cache[brand_id]
+            # brand.count = (brand.count or 0) - purchase.quantity
+            # brand.stock = (brand.stock or 0) - purchase.quantity * product.selling_price
+            desc += f"{data['quantity']} x {purchase.product.name}, \n"
 
+
+            pid = purchase.product.id
+            if pid not in products_cache:
+                products_cache[pid] = purchase.product
+            product = products_cache[pid]
+            product.count = (product.count or 0) - data['quantity']
+            product.stock = (product.stock or 0) - data['quantity'] * product.selling_price
+
+            bid = product.brand.id
+            if bid not in brands_cache:
+                brands_cache[bid] = product.brand
+            brand = brands_cache[bid]
+            brand.count = (brand.count or 0) - data['quantity']
+            brand.stock = (brand.stock or 0) - data['quantity'] * product.selling_price
+
+            returned_quantity = data['quantity']
+            amount_diff += returned_quantity * purchase.unit_price
         # Save all cached products and brands
         for product in products_cache.values():
             product.save()
         for brand in brands_cache.values():
             brand.save()
 
-        if vendor.due is None:
-            vendor.due = 0
-
-        VendorTransactionSerializer().create({
-            'vendor': vendor,
-            'date': purchase_return.date,
-            'amount': total_unit_price,
-            'desc': f'Purchase return for transaction {purchase_return.purchase_transaction.bill_no}',
-            'method': purchase_return.purchase_transaction.method,
-            'purchase_transaction': purchase_return.purchase_transaction,
-            'enterprise': purchase_return.enterprise,
-            'branch': purchase_return.branch,
-            'type': 'return'
-        })
-        vendor.refresh_from_db()
+        if purchase_transaction.vendor:
+            vendor = purchase_transaction.vendor
+            if vendor.due is None:
+                vendor.due = 0
+            
+            VendorTransactionSerializer().create({
+                'vendor': vendor,
+                'date': purchase_return.date,
+                'amount': amount_diff,
+                'desc': desc,
+                'purchase_transaction': purchase_return.purchase_transaction,
+                'enterprise': purchase_return.enterprise,
+                'branch': purchase_return.branch,
+                'enterprise': purchase_return.enterprise,
+                'bill_no': purchase_return.purchase_transaction.bill_no,
+                'type': 'return'
+            })
 
         return purchase_return
     
     @transaction.atomic
     def delete(self, instance):
-        purchase_ids = instance.purchases.all()
-        vendor = instance.purchase_transaction.vendor
-        total_unit_price = 0
-
+        purchases = instance.purchases.all()
         # Memory cache
         products_cache = {}
         brands_cache = {}
 
-        for purchase in purchase_ids:
+        for purchase in purchases:
             purchase.returned = False
+            returned_quantity = purchase.returned_quantity
+            purchase.returned_quantity = 0
+            purchase.purchase_return = None
             purchase.save()
-            total_unit_price += purchase.unit_price * purchase.quantity
 
-            # Cache product
-            product_id = purchase.product.id
-            if product_id not in products_cache:
-                products_cache[product_id] = purchase.product
-            product = products_cache[product_id]
-            product.count = (product.count or 0) + purchase.quantity
-            product.stock = (product.stock or 0) + purchase.quantity * product.selling_price
 
-            # Cache brand
-            brand_id = product.brand.id
-            if brand_id not in brands_cache:
-                brands_cache[brand_id] = product.brand
-            brand = brands_cache[brand_id]
-            brand.count = (brand.count or 0) + purchase.quantity
-            brand.stock = (brand.stock or 0) + purchase.quantity * product.selling_price
+            pid = purchase.product.id
+            if pid not in products_cache:
+                products_cache[pid] = purchase.product
+            product = products_cache[pid]
+            product.count = (product.count or 0) + returned_quantity
+            product.stock = (product.stock or 0) + returned_quantity * product.selling_price
+
+            bid = product.brand.id
+            if bid not in brands_cache:
+                brands_cache[bid] = product.brand
+            brand = brands_cache[bid]
+            brand.count = (brand.count or 0) + returned_quantity
+            brand.stock = (brand.stock or 0) + returned_quantity * product.selling_price
+
 
         for product in products_cache.values():
             product.save()
         for brand in brands_cache.values():
             brand.save()
 
-        vt = VendorTransactions.objects.filter(purchase_transaction=instance.purchase_transaction, type="return").first()
-        print(vt)
+        vt = VendorTransactions.objects.filter(purchase_transaction=instance.purchase_transaction, type="return")
         if vt:
-            vt.delete()
+            for v in vt:
+                v.delete()
 
         instance.delete()
         return instance
 
+    def get_returned_purchases(self, obj):
+        
+        purchases = Purchase.objects.filter(purchase_return=obj, returned = True)
+        result = []
+        for purchase in purchases:
+            result.append({
+                'id': purchase.id,
+                'product_name': purchase.product.name,
+                'quantity': purchase.returned_quantity,
+                'unit_price': purchase.unit_price,
+                'total_price': purchase.returned_quantity * purchase.unit_price
+            })
+        return result
 
 class SalesReturnSerializer(serializers.ModelSerializer):
    

@@ -65,6 +65,7 @@ class Purchase(models.Model):
         blank=True,
         related_name='purchases'
     )
+    returned_quantity = models.IntegerField(null=True, blank=True, default=0)
 
     
     def __str__(self):
@@ -139,6 +140,7 @@ class Sales(models.Model):
         blank=True,
         related_name='sales'
     )
+    returned_quantity = models.IntegerField(null=True, blank=True, default=0)
     
     def __str__(self):
         return self.product.name
@@ -171,6 +173,7 @@ class VendorTransactions(models.Model):
     base = models.BooleanField(default=False)
     type = models.CharField(max_length=20,choices=(('base','base'),('return','return'),('payment','payment')),default='base')
     due = models.FloatField(null=True,blank=True,default=0)
+    bill_no = models.CharField(max_length=20, null=True, blank=True)
     def __str__(self):
         return f"Vendor Transaction {self.pk} of {self.vendor.name}"
     
