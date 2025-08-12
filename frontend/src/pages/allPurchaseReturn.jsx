@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Calendar, ChevronLeft, ChevronRight, Search, ArrowLeft } from "lucide-react"
 import useAxios from "@/utils/useAxios"
 import { format } from "date-fns"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import Sidebar from "@/components/allsidebar"
 import {
   Dialog,
@@ -19,9 +19,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { useParams } from "react-router-dom"
 
-export default function AllPurchaseReturns() {
+export default function PurchaseReturns() {
+  const {branchId} = useParams()
   const api = useAxios()
   const [returns, setReturns] = useState([])
   const [loading, setLoading] = useState(true)
@@ -31,7 +31,6 @@ export default function AllPurchaseReturns() {
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [localSearchTerm, setLocalSearchTerm] = useState("")
-  const { branchId } = useParams()
   const [metadata, setMetadata] = useState({
     next: null,
     previous: null,
@@ -61,7 +60,7 @@ export default function AllPurchaseReturns() {
 
   const fetchInitData = async () => {
     try {
-      const response = await api.get("alltransaction/purchase-return/branch/"+branchId+"/")
+      const response = await api.get(`alltransaction/purchase-return/branch/${branchId}/`)
       setReturns(response.data.results)
       setMetadata({
         next: response.data.next,
@@ -72,6 +71,7 @@ export default function AllPurchaseReturns() {
       setCurrentPage(response.data.page)
     } catch (err) {
       setError("Failed to fetch initial data")
+      console.error(err)
     } finally {
       setLoading(false)
     }
@@ -102,6 +102,7 @@ export default function AllPurchaseReturns() {
     }
   }
 
+  console.log(returns)
   const handleDateSearch = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -225,7 +226,7 @@ export default function AllPurchaseReturns() {
                 <CardHeader className="border-b border-slate-700">
                   <CardTitle className="text-lg lg:text-xl font-medium text-white flex flex-col lg:flex-row justify-between items-start lg:items-center">
                     <div>
-                      <p>{returnItem.purchase_transaction.vendor_name}</p>
+                      <p>{returnItem.purchase_transaction.vendor.name}</p>
                       <p className="text-sm text-gray-400">Bill No: {returnItem.purchase_transaction.bill_no}</p>
                     </div>
                     <span className="mt-2 lg:mt-0 text-sm lg:text-base">
@@ -235,7 +236,7 @@ export default function AllPurchaseReturns() {
                 </CardHeader>
                 <CardContent className="pt-4">
                   <div className="mb-4">
-                    <p className="text-blue-500 hover:text-blue-800" onClick={()=>{navigate(`/purchases/branch/${branchId}/editform/${returnItem.purchase_transaction.id}`)}}>
+                    <p className="text-blue-500 hover:text-blue-800 cursor-pointer" onClick={()=>{navigate(`/purchases/editform/${returnItem.purchase_transaction.id}/branch/${branchId}`)}}>
                       Original Transaction: {returnItem.purchase_transaction.id}
                     </p>
                     <div className="flex justify-between items-center text-sm mt-1 text-slate-300">
@@ -245,18 +246,15 @@ export default function AllPurchaseReturns() {
                     <p className="text-white">Payment Method: {returnItem.purchase_transaction.method}</p>
                     </div>
                   </div>
-                  {returnItem.purchases.length > 0 ? (
-                    returnItem.purchases.map((purchase, index) => (
+                  {returnItem?.returned_purchases.length > 0 ? (
+                    returnItem.returned_purchases.map((purchase, index) => (
                       <div
                         key={index}
                         className="mb-4 last:mb-0 p-3 lg:p-4 bg-slate-800 rounded-lg hover:bg-slate-750 transition-colors duration-300"
                       >
                         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-2">
                           <span className="text-white font-medium mb-2 lg:mb-0">{purchase.product_name}</span>
-                          <span className="text-purple-400 text-sm">Quantity: {purchase.quantity}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm text-slate-300">
-                          <span>Unit Price: RS. {purchase.unit_price.toLocaleString()}</span>
+                          <span className="text-purple-400 text-sm">Quantity Returned: {purchase.quantity}</span>
                         </div>
                       </div>
                     ))
@@ -265,7 +263,7 @@ export default function AllPurchaseReturns() {
                   )}
                    <div className="flex justify-end" >
                     <Dialog>
-                      <DialogTrigger asChild>
+                      <DialogTrigger>
                       <Button className="bg-red-600 m-2">Delete</Button>
                       </DialogTrigger>
                       <DialogContent>Are you absolutely sure you wanna delete this return? This action is permanent and cannot be undone.
@@ -308,4 +306,3 @@ export default function AllPurchaseReturns() {
     </div>
   )
 }
-

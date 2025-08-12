@@ -23,6 +23,7 @@ import {
   ChevronsUpDown,
   ArrowLeft,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
   Command,
@@ -89,6 +90,11 @@ function EditAllPurchaseTransactionForm() {
   const [openBrand, setOpenBrand] = useState(false);
   const [subLoading, setSubLoading] = useState(false);
   const [returns, setReturns] = useState([]);
+  
+  // Return dialog state
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+  const [currentReturnPurchase, setCurrentReturnPurchase] = useState(null);
+  const [returnQuantity, setReturnQuantity] = useState("");
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -181,13 +187,8 @@ function EditAllPurchaseTransactionForm() {
     setFormData({ ...formData, method: value });
   };
 
-  // add this alongside your other handlers
-const handleNewProductVendorChange = (ids) => {
-  setNewProductData(prev => ({ ...prev, vendor: ids }));
-};
-
-
   const handlePurchaseChange = (index, e) => {
+    if (formData.purchase[index].returned) return;
     const { name, value } = e.target;
     const newPurchase = [...formData.purchase];
     newPurchase[index] = { ...newPurchase[index], [name]: value };
@@ -203,11 +204,8 @@ const handleNewProductVendorChange = (ids) => {
     if (value === "new") {
       setShowNewProductDialog(true);
     } else {
-       const matchingProduct = products.find(
-        (product) => product.id.toString() === value
-      );
       const newPurchase = [...formData.purchase];
-      newPurchase[index] = { ...newPurchase[index], product: value, cost_price: matchingProduct.cost_price};
+      newPurchase[index] = { ...newPurchase[index], product: value };
       setFormData((prevState) => ({
         ...prevState,
         purchase: newPurchase,
@@ -230,16 +228,9 @@ const handleNewProductVendorChange = (ids) => {
         (vendor) => vendor.id.toString() === value
       );
       if (selectedVendor) {
-        const filtered = products.filter((prod) => {
-          console.log(prod)
-          if (Array.isArray(prod.vendor)) {
-            return prod.vendor.includes(selectedVendor.id);
-          }
-          if (Array.isArray(prod.vendors)) {
-            return prod.vendors.some((v) => v.id === selectedVendor.id);
-          }
-          return prod.vendor === selectedVendor.id;
-        });
+        const filtered = products.filter(
+          (product) => product.brand === selectedVendor.brand
+        );
         setFilteredProducts(filtered);
       }
     }
@@ -290,6 +281,7 @@ const handleNewProductVendorChange = (ids) => {
   };
 
   const handleRemovePurchase = (index) => {
+    if (formData.purchase[index].returned) return;
     setFormData((prevState) => ({
       ...prevState,
       purchase: prevState.purchase.filter((_, i) => i !== index),
@@ -376,32 +368,59 @@ const handleNewProductVendorChange = (ids) => {
     return (price * quantity).toFixed(2);
   };
 
-  const appendReturn = (id) => {
-    setReturns((prevReturns) => [...prevReturns, id]);
-    setFormData((prevState) => ({
-      ...prevState,
-      purchase: prevState.purchase.map((purchase) =>
-        purchase.id === id ? { ...purchase, returned: true } : purchase
+  // Modified return handlers
+  const handleReturnClick = (purchase) => {
+    setCurrentReturnPurchase(purchase);
+    setReturnQuantity("");
+    setReturnDialogOpen(true);
+  };
+
+  const handleReturnConfirm = () => {
+    if (!currentReturnPurchase || !returnQuantity) return;
+
+    const qty = parseFloat(returnQuantity);
+    const maxQty = parseFloat(currentReturnPurchase.quantity);
+
+    if (qty <= 0 || qty > maxQty) {
+      setError(`Return quantity must be between 1 and ${maxQty}`);
+      return;
+    }
+
+    setReturns((r) => [
+      ...r,
+      {
+        id: currentReturnPurchase.id,
+        quantity: qty,
+      },
+    ]);
+
+    setFormData((prev) => ({
+      ...prev,
+      purchase: prev.purchase.map((p) =>
+        p.id === currentReturnPurchase.id ? { ...p, returned: true } : p
       ),
     }));
-    console.log(returns);
+
+    setReturnDialogOpen(false);
+    setCurrentReturnPurchase(null);
+    setReturnQuantity("");
   };
 
   const handleReturn = async (e) => {
+    e.preventDefault();
+    setSubLoading(true);
     try {
-      setSubLoading(true);
-      const response = await api.post("alltransaction/purchase-return/", {
-        purchase_ids: returns,
+      await api.post("alltransaction/purchase-return/", {
+        returns: returns, // Changed to send array of {id, quantity}
         purchase_transaction_id: purchaseId,
         branch: branchId,
       });
-      console.log("Returned:", response.data);
-    } catch (error) {
-      console.error("Error returning purchase:", error);
+      navigate("/purchases/branch/" + branchId);
+    } catch (err) {
+      console.error(err);
       setError("Failed to process return. Please try again.");
     } finally {
       setSubLoading(false);
-      navigate("/purchases/branch/" + branchId);
     }
   };
 
@@ -581,31 +600,14 @@ const handleNewProductVendorChange = (ids) => {
                 <div key={index} className="bg-slate-700 p-4 rounded-md shadow mb-4">
                   <div className="flex justify-between">
                     <h4 className="text-lg font-semibold mb-4 text-white">Purchase {index + 1}</h4>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button className="bg-blue-500" disabled={purchase.returned}>
-                          Returned
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-slate-800 text-white">
-                        <DialogHeader>
-                          <DialogTitle>Are you absolutely sure?</DialogTitle>
-                          <DialogDescription className="text-slate-300">
-                            This action cannot be undone. This will permanently save your purchase as returned.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogClose asChild>
-                          <Button
-                            type="button"
-                            disabled={subLoading}
-                            className="w-full bg-red-600 mt-6 hover:bg-red-700 text-white"
-                            onClick={() => appendReturn(purchase.id)}
-                          >
-                            Yes
-                          </Button>
-                        </DialogClose>
-                      </DialogContent>
-                    </Dialog>
+                    <Button
+                      type="button"
+                      className="bg-blue-500 hover:bg-blue-600"
+                      disabled={purchase.returned}
+                      onClick={() => handleReturnClick(purchase)}
+                    >
+                      Return
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -720,7 +722,7 @@ const handleNewProductVendorChange = (ids) => {
                       />
                     </div>
                   </div>
-                  {formData.purchase.length > 1 && (
+                  {index > 0 && !purchase.returned && (
                     <Button
                       type="button"
                       variant="destructive"
@@ -783,24 +785,15 @@ const handleNewProductVendorChange = (ids) => {
                   </div>
                 </div>
               )}
-
-              <Button
-                type="button"
-                onClick={handleAddPurchase}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Add Another Purchase
-              </Button>
-
-              <Button
-                type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                disabled={!hasFormChanged() || subLoading || returned}
-              >
-                Update Purchase Transaction
-              </Button>
             </form>
+
+            {
+              returned && (
+                <p className="text-red-400 mt-4">
+                  Returned purchases cannot be modified or deleted. Please delete the purchase return if you want to make changes.
+                </p>
+              )
+            }
 
             <Button
               type="button"
@@ -808,12 +801,12 @@ const handleNewProductVendorChange = (ids) => {
               onClick={(e) => handleReturn(e)}
               disabled={returns.length === 0 || subLoading || returned}
             >
-              Return Purchase
+              Process Returns
             </Button>
 
             <Dialog>
               <DialogTrigger asChild>
-                <Button type="button" className="w-full bg-red-600 mt-6 hover:bg-red-700 text-white">
+                <Button type="button" className="w-full bg-red-600 mt-6 hover:bg-red-700 text-white" disabled={returned}>
                   Delete Transaction
                 </Button>
               </DialogTrigger>
@@ -834,6 +827,49 @@ const handleNewProductVendorChange = (ids) => {
               </DialogContent>
             </Dialog>
 
+            {/* Return Quantity Dialog */}
+            <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
+              <DialogContent className="bg-slate-800 text-white">
+                <DialogHeader>
+                  <DialogTitle>Return Item</DialogTitle>
+                  <DialogDescription className="text-slate-300">
+                    Enter the quantity you'd like to return for this item. Maximum
+                    allowed: {currentReturnPurchase?.quantity}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="mt-4">
+                  <Label htmlFor="returnQuantity" className="text-sm mb-1 block">
+                    Quantity to return
+                  </Label>
+                  <Input
+                    id="returnQuantity"
+                    type="number"
+                    value={returnQuantity}
+                    min="1"
+                    max={currentReturnPurchase?.quantity}
+                    onChange={(e) => setReturnQuantity(e.target.value)}
+                    className="bg-slate-600 border-slate-500 text-white"
+                  />
+                </div>
+                {error && <p className="text-red-400 mt-2">{error}</p>}
+                <DialogFooter className="flex justify-end space-x-2 mt-4">
+                  <Button
+                    onClick={() => setReturnDialogOpen(false)}
+                    variant="outline"
+                    className="text-white bg-gray-600 hover:bg-gray-700 hover:text-white"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleReturnConfirm}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    Confirm Return
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             {/* New Product Dialog */}
             <NewProductDialog
               open={showNewProductDialog}
@@ -841,7 +877,6 @@ const handleNewProductVendorChange = (ids) => {
               newProductData={newProductData}
               handleNewProductChange={handleNewProductChange}
               handleNewProductBrandChange={handleNewProductBrandChange}
-              handleNewProductVendorChange={handleNewProductVendorChange}
               handleAddProduct={handleAddProduct}
               brands={brands}
               openBrand={openBrand}
@@ -849,7 +884,6 @@ const handleNewProductVendorChange = (ids) => {
               branches={branch}
               userBranch={userBranch}
               selectedBranch={formData.branch}
-              vendors={vendors}
             />
 
             {/* Add New Vendor Dialog */}
