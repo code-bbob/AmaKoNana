@@ -56,8 +56,14 @@ export default function AllSalesReturns() {
         previous: response.data.previous,
         count: response.data.count,
       });
-      setTotalPages(response.data.total_pages); // Assuming 10 items per page
-      setCurrentPage(response.data.page);
+      
+      // Calculate current page from URL or use default
+      const currentPageFromUrl = url.includes('page=') 
+        ? parseInt(url.split('page=')[1].split('&')[0]) 
+        : 1
+      
+      setCurrentPage(currentPageFromUrl);
+      setTotalPages(Math.ceil(response.data.count / 10)); // Assuming 10 items per page
     } catch (err) {
       setError("Failed to fetch data");
     } finally {
@@ -76,8 +82,8 @@ export default function AllSalesReturns() {
         previous: response.data.previous,
         count: response.data.count,
       });
-      setTotalPages(response.data.total_pages); // Assuming 10 items per page
-      setCurrentPage(response.data.page);
+      setCurrentPage(1); // Initial page is always 1
+      setTotalPages(Math.ceil(response.data.count / 10)); // Assuming 10 items per page
     } catch (err) {
       setError("Failed to fetch initial data");
     } finally {
@@ -100,10 +106,10 @@ export default function AllSalesReturns() {
       setMetadata({
         next: response.data.next,
         previous: response.data.previous,
-        count: response.data.length,
+        count: response.data.count,
       });
-      setTotalPages(response.data.total_pages); // Assuming 10 items per page
-      setCurrentPage(response.data.page);
+      setTotalPages(Math.ceil(response.data.count / 10)); // Assuming 10 items per page
+      setCurrentPage(1);
     } catch (err) {
       setError("Failed to search sales returns");
     } finally {
@@ -124,8 +130,8 @@ export default function AllSalesReturns() {
         previous: response.data.previous,
         count: response.data.count,
       });
-      setTotalPages(response.data.total_pages); // Assuming 10 items per page
-      setCurrentPage(response.data.page);
+      setTotalPages(Math.ceil(response.data.count / 10)); // Assuming 10 items per page
+      setCurrentPage(1);
     } catch (err) {
       setError("Failed to filter sales returns by date");
     } finally {
@@ -157,6 +163,7 @@ export default function AllSalesReturns() {
       </div>
     );
   }
+  console.log(returns[0])
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
@@ -282,8 +289,8 @@ export default function AllSalesReturns() {
                       </p>
                     </div>
                   </div>
-                  {returnItem.sales.length > 0 ? (
-                    returnItem.sales.map((sale, index) => (
+                  {returnItem.returned_sales.length > 0 ? (
+                    returnItem.returned_sales.map((sale, index) => (
                       <div
                         key={index}
                         className="mb-4 last:mb-0 p-3 lg:p-4 bg-slate-800 rounded-lg hover:bg-slate-750 transition-colors duration-300"
@@ -296,11 +303,11 @@ export default function AllSalesReturns() {
                             Quantity: {sale.quantity}
                           </span>
                         </div>
-                        <div className="flex justify-between items-center text-sm text-slate-300">
+                        {/* <div className="flex justify-between items-center text-sm text-slate-300">
                           <span>
                             Unit Price: RS. {sale.unit_price.toLocaleString()}
                           </span>
-                        </div>
+                        </div> */}
                       </div>
                     ))
                   ) : (
@@ -341,18 +348,19 @@ export default function AllSalesReturns() {
           <Button
             onClick={() => fetchPaginatedData(metadata.previous)}
             disabled={!metadata.previous}
-            className="bg-slate-700 hover:bg-slate-600 text-white"
+            className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-4 h-4 mr-2" />
             Previous
           </Button>
-          <span className="text-white self-center">
-            Page {currentPage} of {totalPages}
-          </span>
+          <div className="flex items-center space-x-2 text-white">
+            <span>Page {currentPage} of {totalPages}</span>
+            <span className="text-slate-400">({metadata.count} total items)</span>
+          </div>
           <Button
             onClick={() => fetchPaginatedData(metadata.next)}
             disabled={!metadata.next}
-            className="bg-slate-700 hover:bg-slate-600 text-white"
+            className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
             <ChevronRight className="w-4 h-4 ml-2" />
