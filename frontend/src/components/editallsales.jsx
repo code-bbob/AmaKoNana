@@ -104,6 +104,11 @@ export default function EditAllSalesTransactionForm() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [modifyStock, setModifyStock] = useState(true);
 
+  // Return dialog state
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+  const [currentReturnSale, setCurrentReturnSale] = useState(null);
+  const [returnQuantity, setReturnQuantity] = useState("");
+
   // Computed fields
   const [subtotal, setSubtotal] = useState(0);
   const [totalDiscount, setTotalDiscount] = useState(0);
@@ -311,7 +316,7 @@ const handleNewProductVendorChange = (ids) => {
     setSubLoading(true);
     try {
       await api.post("alltransaction/sales-return/", {
-        sales_ids: returns,
+        returns: returns, // Changed to send array of {id, quantity}
         sales_transaction_id: salesId,
         branch: branchId,
       });
@@ -322,6 +327,44 @@ const handleNewProductVendorChange = (ids) => {
     } finally {
       setSubLoading(false);
     }
+  };
+
+  // Modified return handlers
+  const handleReturnClick = (sale) => {
+    setCurrentReturnSale(sale);
+    setReturnQuantity("");
+    setReturnDialogOpen(true);
+  };
+
+  const handleReturnConfirm = () => {
+    if (!currentReturnSale || !returnQuantity) return;
+
+    const qty = parseFloat(returnQuantity);
+    const maxQty = parseFloat(currentReturnSale.quantity);
+
+    if (qty <= 0 || qty > maxQty) {
+      setError(`Return quantity must be between 1 and ${maxQty}`);
+      return;
+    }
+
+    setReturns((r) => [
+      ...r,
+      {
+        id: currentReturnSale.id,
+        quantity: qty,
+      },
+    ]);
+
+    setFormData((prev) => ({
+      ...prev,
+      sales: prev.sales.map((s) =>
+        s.id === currentReturnSale.id ? { ...s, returned: true } : s
+      ),
+    }));
+
+    setReturnDialogOpen(false);
+    setCurrentReturnSale(null);
+    setReturnQuantity("");
   };
 
   const handleAddSale = () => {
@@ -354,6 +397,7 @@ const handleNewProductVendorChange = (ids) => {
 
   const handleDelete = async () => {
     try {
+      setSubLoading(true);
       const url = modifyStock === false
         ? `alltransaction/salestransaction/${salesId}/?flag=${modifyStock}`
         : `alltransaction/salestransaction/${salesId}/`;
@@ -362,6 +406,7 @@ const handleNewProductVendorChange = (ids) => {
     } catch (err) {
       console.error(err);
       setError("Failed to delete sales transaction. Please try again.");
+      setSubLoading(false);
     }
   };
 
@@ -636,46 +681,17 @@ const handleNewProductVendorChange = (ids) => {
               className="bg-slate-700 text-white p-4 rounded-md shadow mb-4"
               >
                 <div className="flex justify-between">
-
-                <h3 className="text-lg font-semibold mb-4">Sale {index + 1}</h3>
-                
-                {!sale.returned && (
-                  <div className="mb-4">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          type="button"
-                      className="bg-blue-500 hover:bg-blue-600"
-                          disabled={returned || sale.returned}
-                          >
-                          Return
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-slate-800 text-white">
-                        <DialogHeader>
-                          <DialogTitle>Return Sale</DialogTitle>
-                          <DialogDescription className="py-5">
-                            Returning this sale will remove it from the total and add
-                            the quantity back to the inventory. This action is
-                            irreversible.
-                            <div className="text-right">
-                              <DialogClose>
-                                <Button
-                                  className="mt-6 hover:scale-110"
-                                  type="button"
-                                  onClick={() => appendReturn(sale.id)}
-                                  >
-                                  Return
-                                </Button>
-                              </DialogClose>
-                            </div>
-                          </DialogDescription>
-                        </DialogHeader>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                )}
+                  <h3 className="text-lg font-semibold mb-4 text-white">Sale {index + 1}</h3>
+                  <Button
+                    type="button"
+                    className="bg-blue-500 hover:bg-blue-600"
+                    disabled={sale.returned}
+                    onClick={() => handleReturnClick(sale)}
+                  >
+                    Return
+                  </Button>
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Product */}
                   <div className="flex flex-col">
@@ -1054,6 +1070,13 @@ const handleNewProductVendorChange = (ids) => {
               Update Sales Transaction
             </Button>
           </form>
+
+          {returned && (
+            <p className="text-red-400 mt-4">
+              Returned sales cannot be modified or deleted. Please delete the sales return if you want to make changes.
+            </p>
+          )}
+          
           {/* Return & delete actions */}
           <Button
             type="button"
@@ -1061,11 +1084,14 @@ const handleNewProductVendorChange = (ids) => {
             disabled={returns.length === 0 || subLoading || returned}
             className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
           >
-            Return Sales
+            Process Returns
           </Button>
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="w-full bg-red-600 hover:bg-red-700 text-white mt-4">
+              <Button 
+                disabled={subLoading || returned} 
+                className="w-full bg-red-600 hover:bg-red-700 text-white mt-4"
+              >
                 Delete Transaction
               </Button>
             </DialogTrigger>
@@ -1075,46 +1101,20 @@ const handleNewProductVendorChange = (ids) => {
                 <DialogDescription className="text-slate-300">
                   This action cannot be undone. Permanently delete this
                   transaction.
-                  <div className="flex items-center my-4 space-x-2">
-                    <Checkbox
-                      id="terms"
-                      checked={isChecked}
-                      onCheckedChange={handleCheckboxClick}
-                      className="border-white"
-                    />
-                    <Label htmlFor="terms" className="text-sm leading-none">
-                      Do not modify stock
-                    </Label>
-                  </div>
-                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Confirm Action</DialogTitle>
-                        <DialogDescription>
-                          Are you sure you do not want to modify the stock?
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter className="flex justify-end space-x-2">
-                        <Button onClick={handleCancel}>Cancel</Button>
-                        <Button
-                          onClick={handleConfirm}
-                          className="bg-red-700 hover:bg-red-900"
-                        >
-                          Confirm
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
                 </DialogDescription>
               </DialogHeader>
-              <DialogClose asChild>
+              <DialogFooter className="flex justify-end space-x-2">
+                <DialogClose asChild>
+                  <Button variant="outline" className="bg-white text-black">Cancel</Button>
+                </DialogClose>
                 <Button
                   onClick={handleDelete}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  disabled={subLoading}
                 >
-                  Delete Transaction
+                  {subLoading ? "Deleting..." : "Delete Transaction"}
                 </Button>
-              </DialogClose>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -1226,6 +1226,49 @@ const handleNewProductVendorChange = (ids) => {
               className="w-full bg-green-600 hover:bg-green-700 text-white"
             >
               Add Debtor
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Return Quantity Dialog */}
+      <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
+        <DialogContent className="bg-slate-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Return Item</DialogTitle>
+            <DialogDescription className="text-slate-300">
+              Enter the quantity you'd like to return for this item. Maximum
+              allowed: {currentReturnSale?.quantity}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <Label htmlFor="returnQuantity" className="text-sm mb-1 block">
+              Quantity to return
+            </Label>
+            <Input
+              id="returnQuantity"
+              type="number"
+              value={returnQuantity}
+              min="1"
+              max={currentReturnSale?.quantity}
+              onChange={(e) => setReturnQuantity(e.target.value)}
+              className="bg-slate-600 border-slate-500 text-white"
+            />
+          </div>
+          {error && <p className="text-red-400 mt-2">{error}</p>}
+          <DialogFooter className="flex justify-end space-x-2 mt-4">
+            <Button
+              onClick={() => setReturnDialogOpen(false)}
+              variant="outline"
+              className="text-white bg-gray-600 hover:bg-gray-700 hover:text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleReturnConfirm}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Confirm Return
             </Button>
           </DialogFooter>
         </DialogContent>
