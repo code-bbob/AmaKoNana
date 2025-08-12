@@ -516,18 +516,21 @@ const handleNewProductVendorChange = (ids) => {
             <ArrowLeft className="mr-2 h-4 w-3" /> Back to Sales
           </Button>
         </div>
-        <div className="max-w-2xl mx-auto bg-slate-800 p-4 sm:p-8 rounded-lg shadow-lg">
+        <div className="max-w-4xl mx-auto bg-slate-800 p-4 sm:p-8 rounded-lg shadow-lg">
           <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-white">
             Edit Sales Transaction
           </h2>
           {error && <p className="text-red-400 mb-4">{error}</p>}
           <form onSubmit={handleSubmit} className="space-y-6">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
             {/* Date */}
             <div className="flex flex-col">
               <Label
                 htmlFor="date"
                 className="text-lg font-medium text-white mb-2"
-              >
+                >
                 Date
               </Label>
               <Input
@@ -545,7 +548,7 @@ const handleNewProductVendorChange = (ids) => {
               <Label
                 htmlFor="name"
                 className="text-lg font-medium text-white mb-2"
-              >
+                >
                 Customer's Name
               </Label>
               <Input
@@ -562,7 +565,7 @@ const handleNewProductVendorChange = (ids) => {
               <Label
                 htmlFor="phone_number"
                 className="text-lg font-medium flex justify-between text-white mb-2"
-              >
+                >
                 <span>Customer's Phone number</span>
                 {customerTotal && (
                   <span className="text-green-400">{customerTotal}</span>
@@ -576,7 +579,7 @@ const handleNewProductVendorChange = (ids) => {
                   value={formData.phone_number}
                   onChange={handleChange}
                   className="w-full bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
-                />
+                  />
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button type="button" className="ml-2">Check</Button>
@@ -595,7 +598,7 @@ const handleNewProductVendorChange = (ids) => {
                               onClick={(e) =>
                                 handleCheck(e, formData.phone_number)
                               }
-                            >
+                              >
                               Check
                             </Button>
                           </DialogClose>
@@ -611,7 +614,7 @@ const handleNewProductVendorChange = (ids) => {
               <Label
                 htmlFor="bill_no"
                 className="text-lg font-medium text-white mb-2"
-              >
+                >
                 Bill No.
               </Label>
               <Input
@@ -622,31 +625,29 @@ const handleNewProductVendorChange = (ids) => {
                 onChange={handleChange}
                 className="w-full bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
                 required
-              />
+                />
+            </div>
             </div>
             {/* Sales items */}
             <h3 className="text-xl font-semibold mb-2 text-white">Sales</h3>
             {formData.sales.map((sale, index) => (
               <div
-                key={index}
-                className="bg-slate-700 text-white p-4 rounded-md shadow mb-4"
+              key={index}
+              className="bg-slate-700 text-white p-4 rounded-md shadow mb-4"
               >
+                <div className="flex justify-between">
+
                 <h3 className="text-lg font-semibold mb-4">Sale {index + 1}</h3>
-                {sale.returned && (
-                  <div className="mb-2 p-2 bg-red-800 rounded text-white text-sm">
-                    This sale has been returned and cannot be edited.
-                  </div>
-                )}
+                
                 {!sale.returned && (
                   <div className="mb-4">
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button
                           type="button"
-                          size="sm"
-                          className="bg-purple-600 hover:bg-purple-700 text-white"
+                      className="bg-blue-500 hover:bg-blue-600"
                           disabled={returned || sale.returned}
-                        >
+                          >
                           Return
                         </Button>
                       </DialogTrigger>
@@ -663,7 +664,7 @@ const handleNewProductVendorChange = (ids) => {
                                   className="mt-6 hover:scale-110"
                                   type="button"
                                   onClick={() => appendReturn(sale.id)}
-                                >
+                                  >
                                   Return
                                 </Button>
                               </DialogClose>
@@ -674,6 +675,7 @@ const handleNewProductVendorChange = (ids) => {
                     </Dialog>
                   </div>
                 )}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Product */}
                   <div className="flex flex-col">
