@@ -157,7 +157,14 @@ function AllManufactureTransactionForm() {
     setSubLoading(true);
     setError(null);
     try {
-      const payload = { ...formData }; // manufacture_items already matches backend serializer
+      // Backend ManufactureItemSerializer only expects product & quantity
+      const payload = { 
+        ...formData,
+        manufacture_items: formData.manufacture_items.map(it => ({
+          product: it.product,
+          quantity: it.quantity || 0
+        }))
+      }; // strip frontend-only unit_cost
       const response = await api.post("allinventory/manufacture/", payload);
       console.log("Manufacture created", response.data);
       navigate(`/manufacture/branch/${branchId}`);

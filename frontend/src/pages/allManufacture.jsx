@@ -208,28 +208,25 @@ export default function AllManufactureTransactions() {
                 <CardHeader className='border-b border-slate-700'>
                   <CardTitle className='text-lg lg:text-xl font-medium text-white flex flex-col lg:flex-row justify-between items-start lg:items-center'>
                     <div>
-                      <p>Batch: {transaction.bill_no || transaction.id}</p>
-                      <p className='text-sm text-gray-400'>Ref: {transaction.reference || '—'}</p>
+                      <p>Batch: {transaction.id}</p>
                     </div>
                     <span className='mt-2 lg:mt-0 text-sm lg:text-base'>{format(new Date(transaction.date), 'dd MMM yyyy')}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className='pt-4'>
                   {(transaction?.manufacture_items || []).map((item, index) => (
-                    <div key={`${transaction.id}-${index}`} className='mb-4 last:mb-0 p-3 lg:p-4 bg-slate-800 rounded-lg hover:bg-slate-750 transition-colors duration-300'>
+                    <div key={`${transaction.id}-${index}`} onClick={() => navigate(`/manufacture/branch/${branchId}/editform/${transaction.id}`)} className='cursor-pointer mb-4 last:mb-0 p-3 lg:p-4 bg-slate-800 rounded-lg hover:bg-slate-750 transition-colors duration-300'>
                       <div className='flex flex-col lg:flex-row justify-between items-start lg:items-center mb-2'>
                         <span className='text-white font-medium mb-2 lg:mb-0'>{item.product_name}</span>
                       </div>
                       <div className='flex justify-between items-center text-sm text-slate-300'>
                         <span className='text-purple-400 text-sm'>Qty: {item.quantity}</span>
-                        {/* <span className='text-blue-400'>Unit Cost: Rs. {(item.unit_cost || item.unit_price || 0).toLocaleString()}</span> */}
-                        {/* <span className='font-bold text-green-400 text-l'>Total: Rs. {(item.total_cost || item.total_price || (item.quantity * (item.unit_cost || item.unit_price || 0))).toLocaleString()}</span> */}
                       </div>
                     </div>
                   ))}
-                  {/* <div className='mt-4 text-right text-white font-bold'>
-                    Total Amount: Rs. {transaction?.total_amount?.toLocaleString()}
-                  </div> */}
+                  <div className='mt-2 text-right text-xs text-slate-400'>
+                    Total Items: {(transaction.manufacture_items || []).reduce((acc,i)=>acc + (parseFloat(i.quantity)||0),0)}
+                  </div>
                 </CardContent>
               </Card>
             ))

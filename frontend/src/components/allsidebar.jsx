@@ -61,23 +61,67 @@ export default function Sidebar() {
     closed: { x: '-100%' },
   }
 
-  const menuItems = [
-    { title: 'Inventory', icon: Container, path: 'inventory' },
-  { title: 'Manufacture', icon: Zap, path: 'manufacture' },
-    { title: 'Purchases', icon: ShoppingCart, path: 'purchases' },
-    { title: 'PurchaseReturn', icon: ShoppingCart, path: 'purchase-returns' },
-    { title: 'Sales', icon: TrendingUp, path: 'sales' },
-    { title: 'SalesReturn', icon: TrendingDown, path: 'sales-returns' },
-    { title: 'SalesReport', icon: TrendingUp, path: 'sales-report' }, // opens in new tab
-  { title: 'PurchaseReport', icon: TrendingDown, path: 'purchase-report' }, // opens in new tab
-    { title: 'Staffs', icon: TrendingUp, path: 'staff' },
-    { title: 'StaffTransaction', icon: TrendingUp, path: 'staff-transactions' },
-    { title: 'Vendors', icon: BookUser, path: 'vendors' },
-    { title: 'VendorTransactions', icon: BookUser, path: 'vendor-transactions' },
-    // { title: 'Debtors', icon: BookUser, path: 'debtors' },
-    // { title: 'DebtorTransactions', icon: BookUser, path: 'debtor-transactions' },
-    // { title: 'Phone Only', icon: Smartphone, path: '/mobile' },
+  // Grouped menu structure for collapsible dropdowns
+  const groupedMenu = [
+    {
+      label: 'Inventory',
+      icon: Container,
+      items: [
+        { title: 'Inventory', icon: Container, path: 'inventory' },
+        { title: 'Manufacture', icon: Zap, path: 'manufacture' }
+      ]
+    },
+    {
+      label: 'Purchase',
+      icon: ShoppingCart,
+      items: [
+        { title: 'Purchases', icon: ShoppingCart, path: 'purchases' },
+        { title: 'PurchaseReturn', icon: TrendingDown, path: 'purchase-returns' },
+        { title: 'PurchaseReport', icon: TrendingDown, path: 'purchase-report', externalReport: true }
+      ]
+    },
+    {
+      label: 'Sales',
+      icon: TrendingUp,
+      items: [
+        { title: 'Sales', icon: TrendingUp, path: 'sales' },
+        { title: 'SalesReturn', icon: TrendingDown, path: 'sales-returns' },
+        { title: 'SalesReport', icon: TrendingUp, path: 'sales-report', externalReport: true }
+      ]
+    },
+    {
+      label: 'Staff',
+      icon: Shield,
+      items: [
+        { title: 'Staffs', icon: TrendingUp, path: 'staff' },
+        { title: 'StaffTransaction', icon: TrendingUp, path: 'staff-transactions' }
+      ]
+    },
+    {
+      label: 'Vendors',
+      icon: BookUser,
+      items: [
+        { title: 'Vendors', icon: BookUser, path: 'vendors' },
+        { title: 'VendorTransactions', icon: BookUser, path: 'vendor-transactions' }
+      ]
+    },
+    // Future groups could include Debtors, etc.
   ]
+
+  const [openGroups, setOpenGroups] = useState(() => {
+    // Default open top 1-2 core groups
+    return {
+      Inventory: true,
+      Purchase: false,
+      Sales: false,
+      Staff: false,
+      Vendors: false,
+    }
+  })
+
+  const toggleGroup = (label) => {
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }))
+  }
 
   const handleNavigation = (path) => {
     setIsOpen(false)
@@ -177,58 +221,77 @@ export default function Sidebar() {
                 </div>
               )}
               
-              <nav className="space-y-">
-                {menuItems.map((item) => {
-                  const isExternalReport = ['SalesReport','PurchaseReport'].includes(item.title)
-                  if (isExternalReport) {
-                    // Reports open in a new tab with branch in path
-                    const fullPath = currentBranch ? `/${item.path}/branch/${currentBranch.id}` : '#'
-                    return (
-                      <a
-                        key={item.path}
-                        href={fullPath}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`w-full justify-start text-slate-300 hover:text-white hover:bg-slate-700 ${!currentBranch ? 'opacity-50 pointer-events-none' : ''}`}
-                      >
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-700"
-                          disabled={!currentBranch}
-                        >
-                          <item.icon className="mr-2 h-4 w-4" />
-                          {item.title}
-                        </Button>
-                      </a>
-                    )
-                  }
-
-                  // For other items, create proper anchor tags that support Ctrl+Click
-                  const fullPath = item.path === '/mobile' ? '/mobile' : (currentBranch ? `/${item.path}/branch/${currentBranch.id}` : '#')
+              <nav className="space-y-2">
+                {groupedMenu.map(group => {
+                  const isGroupOpen = openGroups[group.label]
                   return (
-                    <a
-                      key={item.path}
-                      href={fullPath}
-                      className={`block ${!currentBranch && item.path !== '/mobile' ? 'opacity-50 pointer-events-none' : ''}`}
-                      onClick={(e) => {
-                        if (!e.ctrlKey && !e.metaKey && e.button !== 1) {
-                          e.preventDefault()
-                          handleNavigation(item.path)
-                        }
-                      }}
-                    >
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-700"
-                        disabled={!currentBranch && item.path !== '/mobile'}
-                        asChild
+                    <div key={group.label} className="border border-slate-700/40 rounded-md overflow-hidden">
+                      <button
+                        onClick={() => toggleGroup(group.label)}
+                        className="w-full flex items-center justify-between px-4 py-2 bg-slate-700/40 hover:bg-slate-700 text-slate-200 text-sm font-medium"
                       >
-                        <div>
-                          <item.icon className="mr-2 h-4 w-4" />
-                          {item.title}
-                        </div>
-                      </Button>
-                    </a>
+                        <span className="flex items-center">
+                          <group.icon className="mr-2 h-4 w-4" />
+                          {group.label}
+                        </span>
+                        <ChevronDown className={`h-4 w-4 transition-transform ${isGroupOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {isGroupOpen && (
+                          <motion.ul
+                            key="content"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex flex-col"
+                          >
+                            {group.items.map(item => {
+                              const isExternalReport = item.externalReport
+                              if (isExternalReport) {
+                                const fullPath = currentBranch ? `/${item.path}/branch/${currentBranch.id}` : '#'
+                                return (
+                                  <li key={item.path} className="border-t border-slate-700/30">
+                                    <a
+                                      href={fullPath}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className={`block px-6 py-2 text-slate-300 text-sm hover:bg-slate-700 hover:text-white ${!currentBranch ? 'opacity-50 pointer-events-none' : ''}`}
+                                    >
+                                      <div className="flex items-center">
+                                        <item.icon className="mr-2 h-4 w-4" />
+                                        {item.title}
+                                        <span className="ml-auto text-[10px] uppercase tracking-wide bg-slate-600/60 px-1.5 py-0.5 rounded">Report</span>
+                                      </div>
+                                    </a>
+                                  </li>
+                                )
+                              }
+                              const fullPath = item.path === '/mobile' ? '/mobile' : (currentBranch ? `/${item.path}/branch/${currentBranch.id}` : '#')
+                              return (
+                                <li key={item.path} className="border-t border-slate-700/30">
+                                  <a
+                                    href={fullPath}
+                                    className={`block px-6 py-2 text-slate-300 text-sm hover:bg-slate-700 hover:text-white ${!currentBranch && item.path !== '/mobile' ? 'opacity-50 pointer-events-none' : ''}`}
+                                    onClick={(e) => {
+                                      if (!e.ctrlKey && !e.metaKey && e.button !== 1) {
+                                        e.preventDefault()
+                                        handleNavigation(item.path)
+                                      }
+                                    }}
+                                  >
+                                    <div className="flex items-center">
+                                      <item.icon className="mr-2 h-4 w-4" />
+                                      {item.title}
+                                    </div>
+                                  </a>
+                                </li>
+                              )
+                            })}
+                          </motion.ul>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   )
                 })}
               </nav>
