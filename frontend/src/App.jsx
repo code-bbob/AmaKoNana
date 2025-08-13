@@ -11,6 +11,8 @@ import AllLandingPage from "./pages/allLandingPage";
 import AllPurchaseTransactions from "./pages/allPurchase";
 import AllPurchaseTransactionForm from "./components/allpurchasetransactionform";
 import EditAllPurchaseTransactionForm from "./components/editallpurchase";
+import AllManufactureTransactions from "./pages/allManufacture";
+import AllManufactureTransactionForm from "./components/allmanufacturetransactionform";
 import {AllInventoryPageComponent} from "./pages/allInventoryPage";
 import AllBrandProducts from "./pages/allsinglebrand";
 import AllSalesTransactions from "./pages/allSales";
@@ -66,6 +68,9 @@ function App() {
           <Route path="/purchases/branch/:branchId" element={<AllPurchaseTransactions />} />
           <Route path="/purchases/form/branch/:branchId" element={<AllPurchaseTransactionForm />} />
           <Route path="purchases/branch/:branchId/editform/:purchaseId" element={<EditAllPurchaseTransactionForm />} />
+
+          <Route path="manufacture/branch/:branchId" element={<AllManufactureTransactions />} />
+          <Route path="manufacture/form/branch/:branchId" element={<AllManufactureTransactionForm />} />
 
           <Route path="purchase-returns/branch/:branchId" element={<AllPurchaseReturns/>}/>
 

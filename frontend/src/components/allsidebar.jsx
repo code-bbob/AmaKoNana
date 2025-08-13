@@ -63,6 +63,7 @@ export default function Sidebar() {
 
   const menuItems = [
     { title: 'Inventory', icon: Container, path: 'inventory' },
+  { title: 'Manufacture', icon: Zap, path: 'manufacture' },
     { title: 'Purchases', icon: ShoppingCart, path: 'purchases' },
     { title: 'PurchaseReturn', icon: ShoppingCart, path: 'purchase-returns' },
     { title: 'Sales', icon: TrendingUp, path: 'sales' },

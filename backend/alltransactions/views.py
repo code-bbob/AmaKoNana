@@ -488,91 +488,6 @@ class StatsView(APIView):
         return Response(stat)
     
 
-# class PurchaseReturnView(APIView):
-
-#     permission_classes = [IsAuthenticated]
-
-
-#     def get(self, request,branch=None):
-#         enterprise = request.user.person.enterprise
-#         search = request.GET.get('search')
-#         start_date = request.GET.get('start_date')
-#         end_date = request.GET.get('end_date')
-
-#         # Base QuerySet
-#         purchase_returns = PurchaseReturn.objects.filter(enterprise=enterprise)
-
-#         if branch:
-#             purchase_returns = purchase_returns.filter(branch=branch)
-
-#         # -----------------
-#         # 1) Search Filter
-#         # -----------------
-#         if search:
-#             name_filter = purchase_returns.filter(purchase_transaction__vendor__name__icontains=search)
-#             # amount_filter = purchase_returns.filter(amount__icontains=search)
-#             product_name = purchase_returns.filter(purchases__product__name__icontains=search)
-            
-#             # union() will merge the two QuerySets without duplicates.
-#             purchase_returns = name_filter.union(product_name)
-#             if search.isdigit():
-#                 id = purchase_returns.filter(id__icontains=search)
-#                 purchase_returns = purchase_returns.union(id)
-
-#         # ---------------------
-#         # 2) Date Range Filter
-#         # ---------------------
-#         # Only attempt date range filter if both start and end date are provided
-#         if start_date and end_date:
-#             start_datetime = parse_date(start_date)
-#             end_datetime = parse_date(end_date)
-#             if start_datetime and end_datetime:
-#                 # Combine with min and max time to capture full day range
-
-#                 purchase_returns = purchase_returns.filter(
-#                     date__range=(start_datetime, end_datetime)
-#                 )
-
-#         # ---------------------------------
-#         # 3) Sort and Paginate the Results
-#         # ---------------------------------
-#         purchase_returns = purchase_returns.order_by('-id')  # Sorting
-
-#         paginator = PageNumberPagination()
-#         paginator.page_size = 5  # Set your desired page size
-#         paginated_data = paginator.paginate_queryset(purchase_returns, request)
-
-#         serializer = PurchaseReturnSerializer(paginated_data, many=True)
-#         return paginator.get_paginated_response(serializer.data)
-    
-#     def post(self,request):
-#         data = request.data 
-#         user = request.user
-#         enterprise = user.person.enterprise
-#         data['enterprise'] = enterprise.id 
-#         if "date" in data:
-#             date_str = data["date"]
-#             # Assuming the format is 'YYYY-MM-DD'
-#             date_object = datetime.strptime(date_str, '%Y-%m-%d').date()
-#             data["date"] = date_object
-#         serializer = PurchaseReturnSerializer(data=data)
-#         if serializer.is_valid(raise_exception=True):
-#             serializer.save()
-#             return Response(serializer.data)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-#     def delete(self,request,pk):
-#         role = request.user.person.role
-#         if role != "Admin":
-#             return Response("Unauthorized")
-#         purchase_return = PurchaseReturn.objects.filter(id=pk).first()
-#         purchase = purchase_return.purchases.first()
-#         purchase.returned = False
-#         serializer = PurchaseReturnSerializer()
-#         serializer.delete(purchase_return)
-#         return Response(status=status.HTTP_204_NO_CONTENT)
-    
-
 class PurchaseReturnView(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -621,7 +536,7 @@ class PurchaseReturnView(APIView):
         # ---------------------------------
         # 3) Sort and Paginate the Results
         # ---------------------------------
-        purchase_returns = purchase_returns.order_by('-date','-id')  # Sorting
+        purchase_returns = purchase_returns.order_by('-id')  # Sorting
 
         paginator = PageNumberPagination()
         paginator.page_size = 5  # Set your desired page size
@@ -651,11 +566,12 @@ class PurchaseReturnView(APIView):
         if role != "Admin":
             return Response("Unauthorized")
         purchase_return = PurchaseReturn.objects.filter(id=pk).first()
+        purchase = purchase_return.purchases.first()
+        purchase.returned = False
         serializer = PurchaseReturnSerializer()
         serializer.delete(purchase_return)
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-
 class SalesReportView(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -891,89 +807,6 @@ class CustomerTotalView(APIView):
             customer = Customer.objects.create(phone_number=pk,enterprise=request.user.person.enterprise)
             return Response("Customer created")
 
-# class SalesReturnView(APIView):
-
-#     permission_classes = [IsAuthenticated]
-
-
-#     def get(self, request,branch=None):
-#         enterprise = request.user.person.enterprise
-#         search = request.GET.get('search')
-#         start_date = request.GET.get('start_date')
-#         end_date = request.GET.get('end_date')
-
-#         # Base QuerySet
-#         sales_returns = SalesReturn.objects.filter(enterprise=enterprise)
-
-#         if branch:
-#             sales_returns = sales_returns.filter(branch=branch)
-
-#         # -----------------
-#         # 1) Search Filter
-#         # -----------------
-#         if search:
-#             name_filter = sales_returns.filter(sales_transaction__customer_name=search)
-#             # amount_filter = purchase_returns.filter(amount__icontains=search)
-#             product_name = sales_returns.filter(sales__product__name__icontains=search)
-            
-#             # union() will merge the two QuerySets without duplicates.
-#             sales_returns = name_filter.union(product_name)
-#             if search.isdigit():
-#                 id = sales_returns.filter(id__icontains=search)
-#                 sales_returns = sales_returns.union(id)
-
-#         # ---------------------
-#         # 2) Date Range Filter
-#         # ---------------------
-#         # Only attempt date range filter if both start and end date are provided
-#         if start_date and end_date:
-#             start_datetime = parse_date(start_date)
-#             end_datetime = parse_date(end_date)
-#             if start_datetime and end_datetime:
-#                 # Combine with min and max time to capture full day range
-
-#                 sales_returns = sales_returns.filter(
-#                     date__range=(start_datetime, end_datetime)
-#                 )
-
-#         # ---------------------------------
-#         # 3) Sort and Paginate the Results
-#         # ---------------------------------
-#         sales_returns = sales_returns.order_by('-id')  # Sorting
-
-#         paginator = PageNumberPagination()
-#         paginator.page_size = 5  # Set your desired page size
-#         paginated_data = paginator.paginate_queryset(sales_returns, request)
-
-#         serializer = SalesReturnSerializer(paginated_data, many=True)
-#         return paginator.get_paginated_response(serializer.data)
-    
-#     def post(self,request):
-#         data = request.data 
-#         user = request.user
-#         enterprise = user.person.enterprise
-#         data['enterprise'] = enterprise.id 
-#         if "date" in data:
-#             date_str = data["date"]
-#             # Assuming the format is 'YYYY-MM-DD'
-#             date_object = datetime.strptime(date_str, '%Y-%m-%d').date()
-#             data["date"] = date_object
-#         serializer = SalesReturnSerializer(data=data)
-#         if serializer.is_valid(raise_exception=True):
-#             serializer.save()
-#             return Response(serializer.data)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-#     def delete(self,request,pk):
-#         role = request.user.person.role
-#         if role != "Admin":
-#             return Response("Unauthorized")
-#         purchase_return = SalesReturn.objects.filter(id=pk).first()
-#         serializer = SalesReturnSerializer()
-#         serializer.delete(purchase_return)
-#         return Response(status=status.HTTP_204_NO_CONTENT)
-    
-
 class SalesReturnView(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -1022,7 +855,7 @@ class SalesReturnView(APIView):
         # ---------------------------------
         # 3) Sort and Paginate the Results
         # ---------------------------------
-        sales_returns = sales_returns.order_by('-date','-id')  # Sorting
+        sales_returns = sales_returns.order_by('-id')  # Sorting
 
         paginator = PageNumberPagination()
         paginator.page_size = 5  # Set your desired page size
@@ -1051,12 +884,11 @@ class SalesReturnView(APIView):
         role = request.user.person.role
         if role != "Admin":
             return Response("Unauthorized")
-        sales_return = SalesReturn.objects.filter(id=pk).first()
+        purchase_return = SalesReturn.objects.filter(id=pk).first()
         serializer = SalesReturnSerializer()
-        serializer.delete(sales_return)
+        serializer.delete(purchase_return)
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-
 
 class DebtorsView(APIView):
     permission_classes = [IsAuthenticated]

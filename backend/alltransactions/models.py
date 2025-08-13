@@ -255,4 +255,4 @@ class DebtorTransaction(models.Model):
         self.debtor.due = self.debtor.due + self.amount if self.debtor.due is not None else self.amount
         self.debtor.save() 
         super().delete(*args, **kwargs)
-    
+
