@@ -198,22 +198,23 @@ const EditProductForm = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 to-slate-800">
       <Sidebar />
-      <Button
-        onClick={() => navigate("/")}
-        variant="outline"
-        className="mb-4 w-48 md:ml-80 px-5 my-4 text-black border-white hover:bg-gray-700 hover:text-white"
-      >
-        <ArrowLeft className="mr-2 h-4 w-3" />
-        Back to Dashboard
-      </Button>
+      <div className="flex-1 px-4 sm:px-6 lg:px-8">
+        <Button
+          onClick={() => navigate("/")}
+          variant="outline"
+          className="mb-4 w-full sm:w-48 md:ml-72 lg:ml-80 px-5 my-4 text-black border-white hover:bg-gray-700 hover:text-white"
+        >
+          <ArrowLeft className="mr-2 h-4 w-3" />
+          Back to Dashboard
+        </Button>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 mx-10 my-10 md:ml-80 p-5 bg-slate-800"
-      >
-        {error && <p className="text-red-500">{error}</p>}
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6 max-w-4xl mx-auto md:ml-72 lg:ml-80 md:mr-8 p-4 sm:p-6 bg-slate-800 rounded-lg"
+        >
+          {error && <p className="text-red-500">{error}</p>}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Product Name */}
           <div className="flex flex-col">
             <Label
@@ -322,7 +323,7 @@ const EditProductForm = () => {
             type="file"
             accept="image/*"
             onChange={handleImageChange}
-            className="bg-slate-700 border-slate-600 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+            className="bg-slate-700 border-slate-600 text-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
           />
           
           {/* Image Preview */}
@@ -332,9 +333,9 @@ const EditProductForm = () => {
                 <img 
                   src={imagePreview || currentImageUrl} 
                   alt="Product Pattern Preview" 
-                  className="max-w-64 max-h-64 object-contain rounded border border-slate-600"
+                  className="max-w-48 max-h-48 w-full h-auto object-contain rounded border border-slate-600"
                 />
-                <p className="text-sm text-slate-400 text-center mt-2">
+                <p className="text-xs text-slate-400 text-center mt-2">
                   {imagePreview ? "New image selected" : "Current image"}
                 </p>
               </div>
@@ -345,7 +346,8 @@ const EditProductForm = () => {
         <Button type="submit" className="w-full hover:bg-black" disabled={loading}>
           Submit
         </Button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

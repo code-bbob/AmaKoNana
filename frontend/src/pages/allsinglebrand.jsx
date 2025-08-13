@@ -541,7 +541,7 @@ export default function AllBrandProducts() {
                 Details for {selectedProduct?.name}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 text-sm sm:text-base">
+            <div className="grid grid-cols-3 gap-4 text-sm sm:text-base">
               {[
                 ["Name", selectedProduct?.name],
                 ["Quantity", selectedProduct?.count],
@@ -569,7 +569,7 @@ export default function AllBrandProducts() {
                 </div>
               </div>
             )}
-            
+{/*             
             <div className="mt-4">
               <p className="font-semibold mb-2 text-sm sm:text-base">Barcode:</p>
               {barcode ? (
@@ -581,7 +581,7 @@ export default function AllBrandProducts() {
               ) : (
                 <p className="text-sm sm:text-base">No barcode available</p>
               )}
-            </div>
+            </div> */}
           </DialogContent>
         </Dialog>
 
@@ -733,14 +733,14 @@ export default function AllBrandProducts() {
                     type="file"
                     accept="image/*"
                     onChange={handleImageChange}
-                    className="bg-slate-700 border-slate-600 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                    className="bg-slate-700 border-slate-600 text-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
                   />
                   {imagePreview && (
                     <div className="mt-2 flex justify-center">
                       <img 
                         src={imagePreview} 
                         alt="Preview" 
-                        className="max-w-32 max-h-32 object-contain rounded border border-slate-600"
+                        className="max-w-24 max-h-24 w-full h-auto object-contain rounded border border-slate-600"
                       />
                     </div>
                   )}

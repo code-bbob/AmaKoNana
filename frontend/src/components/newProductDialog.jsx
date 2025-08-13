@@ -84,17 +84,17 @@ export default function NewProductDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto bg-slate-800 text-white">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>
           <DialogDescription className="text-slate-300">
             Enter the details of the new product you want to add.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4 px-1">
           {/* Name */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="newProductName" className="text-right text-white">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+            <Label htmlFor="newProductName" className="sm:text-right text-white">
               Name
             </Label>
             <Input
@@ -102,14 +102,14 @@ export default function NewProductDialog({
               name="name"
               value={newProductData.name}
               onChange={handleNewProductChange}
-              className="col-span-3 bg-slate-700 border-slate-600 text-white"
+              className="col-span-1 sm:col-span-3 bg-slate-700 border-slate-600 text-white"
               placeholder="Enter product name"
             />
           </div>
 
           {/* Cost Price */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="newProductCostPrice" className="text-right text-white">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+            <Label htmlFor="newProductCostPrice" className="sm:text-right text-white">
               Cost Price
             </Label>
             <Input
@@ -117,14 +117,14 @@ export default function NewProductDialog({
               name="cost_price"
               value={newProductData.cost_price}
               onChange={handleNewProductChange}
-              className="col-span-3 bg-slate-700 border-slate-600 text-white"
+              className="col-span-1 sm:col-span-3 bg-slate-700 border-slate-600 text-white"
               placeholder="Enter cost price"
             />
           </div>
 
           {/* Selling Price */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="newProductSellingPrice" className="text-right text-white">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+            <Label htmlFor="newProductSellingPrice" className="sm:text-right text-white">
               Selling Price
             </Label>
             <Input
@@ -132,17 +132,17 @@ export default function NewProductDialog({
               name="selling_price"
               value={newProductData.selling_price}
               onChange={handleNewProductChange}
-              className="col-span-3 bg-slate-700 border-slate-600 text-white"
+              className="col-span-1 sm:col-span-3 bg-slate-700 border-slate-600 text-white"
               placeholder="Enter selling price"
             />
           </div>
 
           {/* Brand Select */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="newProductBrand" className="text-right text-white">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+            <Label htmlFor="newProductBrand" className="sm:text-right text-white">
               Category
             </Label>
-            <div className="col-span-3">
+            <div className="col-span-1 sm:col-span-3">
               <Popover open={openBrand} onOpenChange={setOpenBrand}>
                 <PopoverTrigger asChild>
                   <Button
@@ -199,11 +199,11 @@ export default function NewProductDialog({
           </div>
 
           {/* Branch Display - Now shows selected branch from localStorage */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="newProductBranch" className="text-right text-white">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+            <Label htmlFor="newProductBranch" className="sm:text-right text-white">
               Branch
             </Label>
-            <div className="col-span-3">
+            <div className="col-span-1 sm:col-span-3">
               <div className="w-full bg-slate-700 border border-slate-600 text-white rounded px-3 py-2">
                 {currentBranch ? currentBranch.name : "No branch selected"}
               </div>
@@ -214,11 +214,11 @@ export default function NewProductDialog({
           </div>
 
           {/* Vendors Multi‑Select */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="newProductVendors" className="text-right text-white">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+            <Label htmlFor="newProductVendors" className="sm:text-right text-white">
               Vendors
             </Label>
-            <div className="col-span-3">
+            <div className="col-span-1 sm:col-span-3">
               <ReactSelect
                 id="newProductVendors"
                 isMulti
@@ -238,24 +238,24 @@ export default function NewProductDialog({
           </div>
 
           {/* Print Pattern Image */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="newProductImage" className="text-right text-white">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+            <Label htmlFor="newProductImage" className="sm:text-right text-white">
               Print Pattern
             </Label>
-            <div className="col-span-3">
+            <div className="col-span-1 sm:col-span-3">
               <Input
                 id="newProductImage"
                 type="file"
                 accept="image/*"
                 onChange={handleNewProductImageChange}
-                className="bg-slate-700 border-slate-600 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                className="bg-slate-700 border-slate-600 text-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
               />
               {imagePreview && (
                 <div className="mt-2 flex justify-center">
                   <img 
                     src={imagePreview} 
                     alt="Preview" 
-                    className="max-w-32 max-h-32 object-contain rounded border border-slate-600"
+                    className="max-w-24 max-h-24 w-full h-auto object-contain rounded border border-slate-600"
                   />
                 </div>
               )}
