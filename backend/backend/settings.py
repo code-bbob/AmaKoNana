@@ -206,6 +206,10 @@ CSRF_TRUSTED_ORIGINS = ['https://ez.youthtech.com.np','http://*.127.0.0.1']
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR,'static')
 
+# Media files (user uploaded files)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 # Trust the X-Forwarded-Proto header so `request.is_secure()` is correct
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

@@ -23,6 +23,7 @@ class Product(models.Model):
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
     stock = models.IntegerField(null=True,blank=True,default=0)
     count = models.IntegerField(null=True,blank=True,default=0)
+    print_pattern = models.ImageField(upload_to='product_patterns/', null=True, blank=True)
     # vendor = models.ForeignKey('alltransactions.Vendor', on_delete=models.CASCADE,related_name='all_product')
     vendor = models.ManyToManyField('alltransactions.Vendor', related_name='all_product', blank=True)
     enterprise = models.ForeignKey('enterprise.Enterprise', on_delete=models.CASCADE,related_name='all_product')

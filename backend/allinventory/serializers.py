@@ -10,11 +10,22 @@ class BrandSerializer(ModelSerializer):
     
 class ProductSerializer(ModelSerializer):
     brandName = SerializerMethodField()
+    print_pattern_url = SerializerMethodField()
+    
     class Meta:
         model = Product
         fields = '__all__'
+    
     def get_brandName(self,obj):
         return obj.brand.name
+    
+    def get_print_pattern_url(self, obj):
+        if obj.print_pattern:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.print_pattern.url)
+            return obj.print_pattern.url
+        return None
 
 
 class ManufactureItemSerializer(ModelSerializer):

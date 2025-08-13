@@ -66,7 +66,9 @@ export default function AllBrandProducts() {
     selling_price: "",
     branch: branchId,
     vendor: [],
+    print_pattern: null,
   });
+  const [imagePreview, setImagePreview] = useState(null);
 
   // react‑select styling to match your Tailwind theme
   const selectStyle = {
@@ -192,10 +194,47 @@ export default function AllBrandProducts() {
       vendor: opts ? opts.map((o) => o.value) : [],
     }));
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewProductData((prev) => ({
+        ...prev,
+        print_pattern: file,
+      }));
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleAddProduct = async (e) => {
     e.preventDefault();
     try {
-      const r = await api.post("allinventory/product/", newProductData);
+      const formData = new FormData();
+      
+      // Append all form fields
+      Object.keys(newProductData).forEach(key => {
+        if (key === 'vendor') {
+          // Handle vendor array
+          newProductData.vendor.forEach(vendorId => {
+            formData.append('vendor', vendorId);
+          });
+        } else if (key === 'print_pattern' && newProductData.print_pattern) {
+          // Handle file upload
+          formData.append('print_pattern', newProductData.print_pattern);
+        } else if (newProductData[key] !== null && newProductData[key] !== '') {
+          formData.append(key, newProductData[key]);
+        }
+      });
+
+      const r = await api.post("allinventory/product/", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
       setProducts((prev) => [...prev, r.data]);
       setFilteredProducts((prev) => [...prev, r.data]);
       setNewProductData({
@@ -205,7 +244,9 @@ export default function AllBrandProducts() {
         selling_price: "",
         branch: branchId,
         vendor: [],
+        print_pattern: null,
       });
+      setImagePreview(null);
       setShowNewProductDialog(false);
     } catch (err) {
       console.error(err);
@@ -514,6 +555,21 @@ export default function AllBrandProducts() {
                 </div>
               ))}
             </div>
+            
+            {/* Print Pattern Image */}
+            {selectedProduct?.print_pattern_url && (
+              <div className="mt-4">
+                <p className="font-semibold mb-2 text-sm sm:text-base">Print Pattern:</p>
+                <div className="flex justify-center">
+                  <img 
+                    src={`${selectedProduct.print_pattern_url}`} 
+                    alt="Print Pattern" 
+                    className="max-w-full max-h-48 object-contain rounded border border-slate-600"
+                  />
+                </div>
+              </div>
+            )}
+            
             <div className="mt-4">
               <p className="font-semibold mb-2 text-sm sm:text-base">Barcode:</p>
               {barcode ? (
@@ -580,7 +636,22 @@ export default function AllBrandProducts() {
         </Button>
 
         {/* New Product Dialog */}
-        <Dialog open={showNewProductDialog} onOpenChange={setShowNewProductDialog}>
+        <Dialog open={showNewProductDialog} onOpenChange={(open) => {
+          setShowNewProductDialog(open);
+          if (!open) {
+            // Reset form when closing
+            setNewProductData({
+              name: "",
+              brand: id,
+              cost_price: "",
+              selling_price: "",
+              branch: branchId,
+              vendor: [],
+              print_pattern: null,
+            });
+            setImagePreview(null);
+          }
+        }}>
           <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
@@ -648,6 +719,31 @@ export default function AllBrandProducts() {
                     className=" bg-slate-700 border-slate-600 text-sm"
                     placeholder="Select vendors"
                   />
+                </div>
+              </div>
+              
+              {/* Print Pattern Image */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="newProductImage" className="text-right text-white">
+                  Print Pattern
+                </Label>
+                <div className="col-span-3">
+                  <Input
+                    id="newProductImage"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="bg-slate-700 border-slate-600 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                  />
+                  {imagePreview && (
+                    <div className="mt-2 flex justify-center">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="max-w-32 max-h-32 object-contain rounded border border-slate-600"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
