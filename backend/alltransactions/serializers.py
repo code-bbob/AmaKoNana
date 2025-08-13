@@ -320,7 +320,7 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
         return representation
 
     def get_vendor_name(self, obj):
-        return obj.vendor.name
+        return obj.vendor.name if obj.vendor else None
 
 
 class SalesSerializer(serializers.ModelSerializer):
@@ -571,7 +571,7 @@ class VendorTransactionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_vendor_name(self,obj):
-        return obj.vendor.name
+        return obj.vendor.name if obj.vendor else None
     
     @transaction.atomic
     def create(self, validated_data):

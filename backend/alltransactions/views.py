@@ -1064,11 +1064,12 @@ class ProductTransferView(APIView):
         # date = request.data.get('date')
         date = timezone.now().date()  # Use current date for transfer
         products = request.data.get('products')
+        print("This is products: ", products)
 
         # branch = request.user.person.branch
         # if branch != from_branch:
             # return Response("Unauthorized branch for transfer", status=status.HTTP_403_FORBIDDEN)
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.person.enterprise.id
 
         sales = []
         purchase = []
@@ -1077,13 +1078,13 @@ class ProductTransferView(APIView):
             if product_barcode:
                 # Perform the transfer logic for each product
                 sales.append({
-                    'product': Product.objects.get(barcode=product_barcode, branch=from_branch).id,
+                    'product': Product.objects.get(uid=product_barcode, branch=from_branch).id,
                     'quantity': product.get('quantity', 0),
                     'unit_price': product.get('unit_price', 0),
                 })
 
                 purchase.append({
-                    'product': Product.objects.get(barcode=product_barcode, branch=to_branch).id,
+                    'product': Product.objects.get(uid=product_barcode, branch=to_branch).id,
                     'quantity': product.get('quantity', 0),
                     'unit_price': product.get('unit_price', 0),
                 })
@@ -1091,22 +1092,48 @@ class ProductTransferView(APIView):
         print("This is sales: ", sales)
         print("###########################\nThis is purchases: ", purchase)
 
-        sale_transaction = SalesTransactionSerializer.create({
+
+        sales_data = {
             'enterprise': enterprise,
             'branch': from_branch,
             'date': date,
             'sales': sales,
-            'bill_no': 'transfer',
+            'bill_no': '000',
             'method': 'transfer',
-        })
+        }
 
-        purchase_transaction = PurchaseTransactionSerializer.create({
+        purchase_data = {
             'enterprise': enterprise,
             'branch': to_branch,
             'date': date,
             'purchase': purchase,
-            'bill_no': 'transfer',
+            'bill_no': '000',
             'method': 'transfer',
-        })
+        }
+        # sale_transaction = SalesTransactionSerializer().create({
+        #     'enterprise': enterprise,
+        #     'branch': from_branch,
+        #     'date': date,
+        #     'sales': sales,
+        #     'bill_no': 'transfer',
+        #     'method': 'transfer',
+        # })
 
-        return Response(f"Product transferred successfully from {from_branch} to {to_branch}", status=status.HTTP_200_OK)
+        # purchase_transaction = PurchaseTransactionSerializer().create({
+        #     'enterprise': enterprise,
+        #     'branch': to_branch,
+        #     'date': date,
+        #     'purchase': purchase,
+        #     'bill_no': 'transfer',
+        #     'method': 'transfer',
+        # })
+
+        sales_transaction_serializer = SalesTransactionSerializer(data=sales_data)
+        purchase_transaction_serializer = PurchaseTransactionSerializer(data=purchase_data)
+
+        if sales_transaction_serializer.is_valid(raise_exception=True) and purchase_transaction_serializer.is_valid(raise_exception=True):
+            sales_transaction_serializer.save()
+            purchase_transaction_serializer.save()
+            return Response(f"Product transferred successfully from {from_branch} to {to_branch}", status=status.HTTP_200_OK)
+
+        return Response(f"Failed to transfer product from {from_branch} to {to_branch}", status=status.HTTP_400_BAD_REQUEST)
