@@ -41,11 +41,13 @@ export default function NewProductDialog({
   handleNewProductChange,
   handleNewProductBrandChange,
   handleNewProductVendorChange,
+  handleNewProductImageChange,
   handleAddProduct,
   brands,
   openBrand,
   setOpenBrand,
-  vendors
+  vendors,
+  imagePreview
 }) {
   const { currentBranch } = useBranchManagement();
 
@@ -232,6 +234,31 @@ export default function NewProductDialog({
                 className="text-white"
                 placeholder="Select one or more vendors..."
               />
+            </div>
+          </div>
+
+          {/* Print Pattern Image */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="newProductImage" className="text-right text-white">
+              Print Pattern
+            </Label>
+            <div className="col-span-3">
+              <Input
+                id="newProductImage"
+                type="file"
+                accept="image/*"
+                onChange={handleNewProductImageChange}
+                className="bg-slate-700 border-slate-600 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+              />
+              {imagePreview && (
+                <div className="mt-2 flex justify-center">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="max-w-32 max-h-32 object-contain rounded border border-slate-600"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

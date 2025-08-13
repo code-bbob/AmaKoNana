@@ -25,10 +25,13 @@ const EditProductForm = () => {
     cost_price: "",
     selling_price: "",
     vendor: [],        // ← new
+    print_pattern: null,
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [currentImageUrl, setCurrentImageUrl] = useState(null);
 
   // Vendors list for select
   const [vendors, setVendors] = useState([]);
@@ -51,7 +54,13 @@ const EditProductForm = () => {
           cost_price: prodRes.data.cost_price ?? "",
           selling_price: prodRes.data.selling_price ?? "",
           vendor: prodRes.data.vendor || [],    // assumes API returns vendor_ids[]
+          print_pattern: null,
         });
+
+        // Set current image URL if it exists
+        if (prodRes.data.print_pattern_url) {
+          setCurrentImageUrl(prodRes.data.print_pattern_url);
+        }
 
         // Load vendors for selection
         setVendors(venRes.data);
@@ -82,6 +91,21 @@ const EditProductForm = () => {
     }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((f) => ({
+        ...f,
+        print_pattern: file,
+      }));
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -92,7 +116,36 @@ const EditProductForm = () => {
       return;
     }
     try {
-      await api.patch(`allinventory/product/${productId}/`, formData);
+      // Use FormData if image is being uploaded
+      if (formData.print_pattern) {
+        const formDataToSend = new FormData();
+        
+        // Append all form fields
+        Object.keys(formData).forEach(key => {
+          if (key === 'vendor') {
+            // Handle vendor array
+            formData.vendor.forEach(vendorId => {
+              formDataToSend.append('vendor', vendorId);
+            });
+          } else if (key === 'print_pattern' && formData.print_pattern) {
+            // Handle file upload
+            formDataToSend.append('print_pattern', formData.print_pattern);
+          } else if (formData[key] !== null && formData[key] !== '') {
+            formDataToSend.append(key, formData[key]);
+          }
+        });
+
+        await api.patch(`allinventory/product/${productId}/`, formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      } else {
+        // Regular JSON update if no image
+        const { print_pattern, ...dataToSend } = formData;
+        await api.patch(`allinventory/product/${productId}/`, dataToSend);
+      }
+      
       navigate("/"); 
     } catch (err) {
       console.error("Error updating product", err);
@@ -254,6 +307,39 @@ const EditProductForm = () => {
             className="text-white"
             placeholder="Select one or more vendors..."
           />
+        </div>
+
+        {/* Print Pattern Image */}
+        <div className="flex flex-col">
+          <Label
+            htmlFor="image"
+            className="text-lg font-medium text-white mb-2"
+          >
+            Print Pattern Image
+          </Label>
+          <Input
+            id="image"
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="bg-slate-700 border-slate-600 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+          />
+          
+          {/* Image Preview */}
+          {(imagePreview || currentImageUrl) && (
+            <div className="mt-4 flex justify-center">
+              <div className="relative">
+                <img 
+                  src={imagePreview || currentImageUrl} 
+                  alt="Product Pattern Preview" 
+                  className="max-w-64 max-h-64 object-contain rounded border border-slate-600"
+                />
+                <p className="text-sm text-slate-400 text-center mt-2">
+                  {imagePreview ? "New image selected" : "Current image"}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <Button type="submit" className="w-full hover:bg-black" disabled={loading}>
