@@ -120,6 +120,14 @@ export default function Sidebar() {
         { title: 'Debtors', icon: BookUser, path: 'debtors' },
         { title: 'DebtorTransactions', icon: BookUser, path: 'debtor-transactions' }
       ]
+    },
+    {
+      label: 'Transfer',
+      icon: RefreshCw,
+      mainPath: 'transfer/form',
+      items: [
+        { title: 'Add Transfer', icon: RefreshCw, path: 'transfer/form' }
+      ]
     }
   ]
 
