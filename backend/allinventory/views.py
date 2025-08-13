@@ -22,7 +22,7 @@ class ProductView(APIView):
         if pk:
             try:
                 product = Product.objects.get(pk=pk)
-                serializer = ProductSerializer(product)
+                serializer = ProductSerializer(product, context={'request': request})
                 return Response(serializer.data)
             except Product.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
@@ -30,21 +30,21 @@ class ProductView(APIView):
 
         if branch:
             products = Product.objects.filter(enterprise=request.user.person.enterprise,branch=branch)
-            serializer = ProductSerializer(products, many=True)
+            serializer = ProductSerializer(products, many=True, context={'request': request})
             return Response(serializer.data)
         if search:
             products = Product.objects.filter(enterprise=request.user.person.enterprise,name__icontains=search)
-            serializer = ProductSerializer(products, many=True)
+            serializer = ProductSerializer(products, many=True, context={'request': request})
             return Response(serializer.data)
         
         products = Product.objects.filter(enterprise=request.user.person.enterprise)
-        serializer = ProductSerializer(products, many=True)
+        serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
     
     def post(self, request, format=None):
         data = request.data
         data['enterprise'] = request.user.person.enterprise.id
-        serializer = ProductSerializer(data=request.data)
+        serializer = ProductSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -62,7 +62,7 @@ class ProductView(APIView):
         except Product.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        serializer = ProductSerializer(product,data=data,partial=True)
+        serializer = ProductSerializer(product,data=data,partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             old_stock = product.stock if product.stock else 0
@@ -86,13 +86,13 @@ class BrandView(APIView):
             brand = Brand.objects.get(id=pk)
             products = Product.objects.filter(brand = brand)
             if products:
-                serializer = ProductSerializer(products,many=True)
+                serializer = ProductSerializer(products,many=True, context={'request': request})
                 return Response(serializer.data)
             else:
                 return Response([])
         if branch:
             brands = Brand.objects.filter(branch=branch)
-            serializer = BrandSerializer(brands,many=True)
+            serializer = BrandSerializer(brands,many=True, context={'request': request})
             return Response(serializer.data)
         
         # search = request.GET.get('search')
@@ -101,7 +101,7 @@ class BrandView(APIView):
         #     serializer = BrandSerializer(brands, many=True)
         #     return Response(serializer.data)
         brands = Brand.objects.filter(enterprise=request.user.person.enterprise)
-        serializer = BrandSerializer(brands, many=True)
+        serializer = BrandSerializer(brands, many=True, context={'request': request})
         return Response(serializer.data)
     
     def post(self, request, format=None):
