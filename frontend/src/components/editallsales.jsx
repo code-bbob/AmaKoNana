@@ -97,16 +97,21 @@ export default function EditAllSalesTransactionForm() {
   const [subLoading, setSubLoading] = useState(false);
   const [returns, setReturns] = useState([]);
   const [returned, setReturned] = useState(false);
+  const [customerTotal, setCustomerTotal] = useState("");
 
   // Delete confirmation
   const [isChecked, setIsChecked] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [modifyStock, setModifyStock] = useState(true);
 
+  // Return dialog state
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+  const [currentReturnSale, setCurrentReturnSale] = useState(null);
+  const [returnQuantity, setReturnQuantity] = useState("");
+
   // Computed fields
   const [subtotal, setSubtotal] = useState(0);
-  const [discountType, setDiscountType] = useState("amount");
-  const [discountValue, setDiscountValue] = useState(0);
+  const [totalDiscount, setTotalDiscount] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
 
   // Fetch initial data: products, brands, transaction, debtors
@@ -138,16 +143,16 @@ export default function EditAllSalesTransactionForm() {
             product: s.product.toString(),
             unit_price: s.unit_price.toString(),
             quantity: s.quantity.toString(),
+            discount_percent: ((s.discount || 0) * 100 / (s.quantity * s.unit_price)).toFixed(2), // Convert discount amount to percentage
+            line_subtotal: (s.quantity * s.unit_price).toString(),
             total_price: s.total_price.toString(),
             returned: s.returned,
           })),
           method: data.method,
           debtor: data.debtor,
           amount_paid: data.amount_paid,
-          discount: data.discount,
           credited_amount: data.credited_amount?.toString() || "",
         });
-        setDiscountValue(data.discount?.toString() || "");
         setOpenProduct(new Array(data.sales.length).fill(false));
         setLoading(false);
       } catch (err) {
@@ -189,23 +194,22 @@ export default function EditAllSalesTransactionForm() {
     });
   }, [originalSalesData]);
 
-  // Calculate subtotal
+  // Calculate subtotal and total discount
   useEffect(() => {
-    const sum = formData.sales.reduce(
-      (acc, sale) => acc + (parseFloat(sale.total_price) || 0),
-      0
-    );
-    setSubtotal(sum);
+    let newSubtotal = 0;
+    let newTotalDiscount = 0;
+    formData.sales.forEach((s) => {
+      const qty = parseFloat(s.quantity) || 0;
+      const price = parseFloat(s.unit_price) || 0;
+      const lineSub = qty * price;
+      newSubtotal += lineSub;
+      const percent = Math.min(Math.max(parseFloat(s.discount_percent) || 0, 0), 100);
+      newTotalDiscount += lineSub * percent / 100;
+    });
+    setSubtotal(newSubtotal);
+    setTotalDiscount(newTotalDiscount);
+    setTotalAmount(newSubtotal - newTotalDiscount);
   }, [formData.sales]);
-
-  // Calculate totalAmount after discount
-  useEffect(() => {
-    const discAmt =
-      discountType === "percent"
-        ? subtotal * ((parseFloat(discountValue) || 0) / 100)
-        : parseFloat(discountValue) || 0;
-    setTotalAmount(subtotal - discAmt);
-  }, [subtotal, discountType, discountValue]);
 
   // Update credited_amount when amount_paid changes
   useEffect(() => {
@@ -243,7 +247,20 @@ export default function EditAllSalesTransactionForm() {
   // Handlers
   const calculateTotalPrice = (price, qty) => price * qty;
 
-  // add this alongside your other handlers
+  // Recalculate a single line based on percentage discount
+  const recalcLine = (line) => {
+    const qty = parseFloat(line.quantity) || 0;
+    const price = parseFloat(line.unit_price) || 0;
+    const lineSubtotal = qty * price;
+    let percent = parseFloat(line.discount_percent) || 0;
+    if (percent < 0) percent = 0;
+    if (percent > 100) percent = 100;
+    const discountAmt = lineSubtotal * percent / 100;
+    line.line_subtotal = lineSubtotal ? lineSubtotal.toFixed(2) : "";
+    line.total_price = lineSubtotal ? (lineSubtotal - discountAmt).toFixed(2) : "";
+  };
+
+// add this alongside your other handlers
 const handleNewProductVendorChange = (ids) => {
   setNewProductData(prev => ({ ...prev, vendor: ids }));
 };
@@ -259,13 +276,7 @@ const handleNewProductVendorChange = (ids) => {
     const { name, value } = e.target;
     const updated = [...formData.sales];
     updated[index] = { ...updated[index], [name]: value };
-    const { unit_price, quantity } = updated[index];
-    if (unit_price && quantity) {
-      updated[index].total_price = calculateTotalPrice(
-        parseFloat(unit_price),
-        parseFloat(quantity)
-      ).toString();
-    }
+    recalcLine(updated[index]);
     setFormData({ ...formData, sales: updated });
   };
 
@@ -282,10 +293,7 @@ const handleNewProductVendorChange = (ids) => {
           ? prod.selling_price.toString()
           : updated[index].unit_price,
       };
-      updated[index].total_price = calculateTotalPrice(
-        parseFloat(updated[index].unit_price),
-        parseFloat(updated[index].quantity) || 0
-      ).toString();
+      recalcLine(updated[index]);
       setFormData({ ...formData, sales: updated });
     }
     const op = [...openProduct];
@@ -308,7 +316,7 @@ const handleNewProductVendorChange = (ids) => {
     setSubLoading(true);
     try {
       await api.post("alltransaction/sales-return/", {
-        sales_ids: returns,
+        returns: returns, // Changed to send array of {id, quantity}
         sales_transaction_id: salesId,
         branch: branchId,
       });
@@ -321,6 +329,44 @@ const handleNewProductVendorChange = (ids) => {
     }
   };
 
+  // Modified return handlers
+  const handleReturnClick = (sale) => {
+    setCurrentReturnSale(sale);
+    setReturnQuantity("");
+    setReturnDialogOpen(true);
+  };
+
+  const handleReturnConfirm = () => {
+    if (!currentReturnSale || !returnQuantity) return;
+
+    const qty = parseFloat(returnQuantity);
+    const maxQty = parseFloat(currentReturnSale.quantity);
+
+    if (qty <= 0 || qty > maxQty) {
+      setError(`Return quantity must be between 1 and ${maxQty}`);
+      return;
+    }
+
+    setReturns((r) => [
+      ...r,
+      {
+        id: currentReturnSale.id,
+        quantity: qty,
+      },
+    ]);
+
+    setFormData((prev) => ({
+      ...prev,
+      sales: prev.sales.map((s) =>
+        s.id === currentReturnSale.id ? { ...s, returned: true } : s
+      ),
+    }));
+
+    setReturnDialogOpen(false);
+    setCurrentReturnSale(null);
+    setReturnQuantity("");
+  };
+
   const handleAddSale = () => {
     setFormData({
       ...formData,
@@ -330,6 +376,8 @@ const handleNewProductVendorChange = (ids) => {
           product: "",
           unit_price: "",
           quantity: "",
+          discount_percent: "",
+          line_subtotal: "",
           total_price: "",
           returned: false,
         },
@@ -349,6 +397,7 @@ const handleNewProductVendorChange = (ids) => {
 
   const handleDelete = async () => {
     try {
+      setSubLoading(true);
       const url = modifyStock === false
         ? `alltransaction/salestransaction/${salesId}/?flag=${modifyStock}`
         : `alltransaction/salestransaction/${salesId}/`;
@@ -357,6 +406,7 @@ const handleNewProductVendorChange = (ids) => {
     } catch (err) {
       console.error(err);
       setError("Failed to delete sales transaction. Please try again.");
+      setSubLoading(false);
     }
   };
 
@@ -413,9 +463,19 @@ const handleNewProductVendorChange = (ids) => {
       setError("Failed to add debtor");
     }
   };
-  console.log("Form Data:", discountValue);
-  console.log("original Sales Data:", originalSalesData?.discount);
-  console.log(formData.discount == originalSalesData?.discount);
+
+  const handleCheck = async (e, phone_number) => {
+    try {
+      const res = await api.get(
+        "alltransaction/customer-total/" + phone_number + "/"
+      );
+      console.log(res.data);
+      setCustomerTotal(res.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError("Failed to fetch data");
+    }
+  };
   const hasFormChanged = () => {
     if (!originalSalesData) return false;
     // compare top-level fields
@@ -428,8 +488,6 @@ const handleNewProductVendorChange = (ids) => {
       formData.method !== originalSalesData.method ||
       formData.debtor !== originalSalesData.debtor ||
       formData.amount_paid !== originalSalesData.amount_paid ||
-      parseFloat(discountValue || 0) !== parseFloat(originalSalesData.discount || 0) ||
-
       formData.sales.length !== originalSalesData.sales.length
     )
       return true;
@@ -437,10 +495,12 @@ const handleNewProductVendorChange = (ids) => {
     for (let i = 0; i < formData.sales.length; i++) {
       const s = formData.sales[i];
       const o = originalSalesData.sales[i];
+      const originalDiscountPercent = ((o.discount || 0) * 100 / (o.quantity * o.unit_price)).toFixed(2);
       if (
         s.product !== o.product.toString() ||
         s.unit_price !== o.unit_price.toString() ||
         s.quantity !== o.quantity.toString() ||
+        s.discount_percent !== originalDiscountPercent ||
         s.total_price !== o.total_price.toString()
       )
         return true;
@@ -452,14 +512,28 @@ const handleNewProductVendorChange = (ids) => {
     e.preventDefault();
     setSubLoading(true);
     try {
-      const discAmt =
-        discountType === "percent"
-          ? subtotal * ((parseFloat(discountValue) || 0) / 100)
-          : parseFloat(discountValue) || 0;
+      // Prepare lines (ensure discount amount computed)
+      const preparedSales = formData.sales.map((line) => {
+        const clone = { ...line };
+        recalcLine(clone);
+        const qty = parseFloat(clone.quantity) || 0;
+        const price = parseFloat(clone.unit_price) || 0;
+        const lineSubtotal = qty * price;
+        const percent = Math.min(Math.max(parseFloat(clone.discount_percent) || 0, 0), 100);
+        const discountAmt = lineSubtotal * percent / 100;
+        const net = lineSubtotal - discountAmt;
+        return {
+          product: clone.product,
+          unit_price: price,
+          quantity: qty,
+          discount: discountAmt, // backend expects amount
+          total_price: net,
+        };
+      });
       const payload = {
         ...formData,
-        subtotal,
-        discount: discAmt,
+        sales: preparedSales,
+        subtotal: subtotal,
         total_amount: totalAmount,
       };
       await api.patch(`alltransaction/salestransaction/${salesId}/`, payload);
@@ -487,18 +561,21 @@ const handleNewProductVendorChange = (ids) => {
             <ArrowLeft className="mr-2 h-4 w-3" /> Back to Sales
           </Button>
         </div>
-        <div className="max-w-2xl mx-auto bg-slate-800 p-4 sm:p-8 rounded-lg shadow-lg">
+        <div className="max-w-4xl mx-auto bg-slate-800 p-4 sm:p-8 rounded-lg shadow-lg">
           <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-white">
             Edit Sales Transaction
           </h2>
           {error && <p className="text-red-400 mb-4">{error}</p>}
           <form onSubmit={handleSubmit} className="space-y-6">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
             {/* Date */}
             <div className="flex flex-col">
               <Label
                 htmlFor="date"
                 className="text-lg font-medium text-white mb-2"
-              >
+                >
                 Date
               </Label>
               <Input
@@ -516,7 +593,7 @@ const handleNewProductVendorChange = (ids) => {
               <Label
                 htmlFor="name"
                 className="text-lg font-medium text-white mb-2"
-              >
+                >
                 Customer's Name
               </Label>
               <Input
@@ -532,25 +609,57 @@ const handleNewProductVendorChange = (ids) => {
             <div className="flex flex-col">
               <Label
                 htmlFor="phone_number"
-                className="text-lg font-medium text-white mb-2"
-              >
-                Customer's Phone number
+                className="text-lg font-medium flex justify-between text-white mb-2"
+                >
+                <span>Customer's Phone number</span>
+                {customerTotal && (
+                  <span className="text-green-400">{customerTotal}</span>
+                )}
               </Label>
-              <Input
-                type="text"
-                id="phone_number"
-                name="phone_number"
-                value={formData.phone_number}
-                onChange={handleChange}
-                className="w-full bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
-              />
+              <div className="flex">
+                <Input
+                  type="text"
+                  id="phone_number"
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleChange}
+                  className="w-full bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                  />
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button type="button" className="ml-2">Check</Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-slate-800 text-white">
+                    <DialogHeader>
+                      <DialogTitle>Are you sure?</DialogTitle>
+                      <DialogDescription className="py-5">
+                        This action will create a new customer if they don't
+                        exist.
+                        <div className="text-right">
+                          <DialogClose>
+                            <Button
+                              className="mt-6 hover:scale-110"
+                              type="button"
+                              onClick={(e) =>
+                                handleCheck(e, formData.phone_number)
+                              }
+                              >
+                              Check
+                            </Button>
+                          </DialogClose>
+                        </div>
+                      </DialogDescription>
+                    </DialogHeader>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
             {/* Bill No */}
             <div className="flex flex-col">
               <Label
                 htmlFor="bill_no"
                 className="text-lg font-medium text-white mb-2"
-              >
+                >
                 Bill No.
               </Label>
               <Input
@@ -561,59 +670,43 @@ const handleNewProductVendorChange = (ids) => {
                 onChange={handleChange}
                 className="w-full bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
                 required
-              />
+                />
+            </div>
             </div>
             {/* Sales items */}
             <h3 className="text-xl font-semibold mb-2 text-white">Sales</h3>
             {formData.sales.map((sale, index) => (
               <div
-                key={index}
-                className="bg-slate-700 p-4 rounded-md shadow mb-4"
+              key={index}
+              className="bg-slate-700 text-white p-4 rounded-md shadow mb-4"
               >
                 <div className="flex justify-between">
-                  <h4 className="text-lg font-semibold text-white">
-                    Sale {index + 1}
-                  </h4>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button className="bg-blue-500" disabled={sale.returned}>
-                        Returned
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-slate-800 text-white">
-                      <DialogHeader>
-                        <DialogTitle>Are you absolutely sure?</DialogTitle>
-                        <DialogDescription>
-                          This action cannot be undone. This will permanently
-                          save your purchase as returned.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogClose asChild>
-                        <Button
-                          onClick={() => appendReturn(sale.id)}
-                          className="w-full bg-red-600 hover:bg-red-700 text-white mt-6"
-                        >
-                          Yes
-                        </Button>
-                      </DialogClose>
-                    </DialogContent>
-                  </Dialog>
+                  <h3 className="text-lg font-semibold mb-4 text-white">Sale {index + 1}</h3>
+                  <Button
+                    type="button"
+                    className="bg-blue-500 hover:bg-blue-600"
+                    disabled={sale.returned}
+                    onClick={() => handleReturnClick(sale)}
+                  >
+                    Return
+                  </Button>
                 </div>
-                {/* Product */}
-                <div className="space-y-4">
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Product */}
                   <div className="flex flex-col">
                     <Label
                       htmlFor={`product-${index}`}
-                      className="text-sm font-medium text-white mb-1"
+                      className="text-sm font-medium text-white mb-2"
                     >
                       Product
                     </Label>
                     <Popover
                       open={openProduct[index]}
-                      onOpenChange={(o) => {
-                        const op = [...openProduct];
-                        op[index] = o;
-                        setOpenProduct(op);
+                      onOpenChange={(open) => {
+                        const newOpenProduct = [...openProduct];
+                        newOpenProduct[index] = open;
+                        setOpenProduct(newOpenProduct);
                       }}
                     >
                       <PopoverTrigger asChild>
@@ -622,18 +715,18 @@ const handleNewProductVendorChange = (ids) => {
                           role="combobox"
                           aria-expanded={openProduct[index]}
                           disabled={sale.returned}
-                          className="w-full bg-slate-600 border-slate-500 text-white hover:bg-slate-500 justify-between"
+                          className="w-full justify-between bg-slate-600 border-slate-500 text-white hover:bg-slate-500"
                         >
                           {sale.product
                             ? products.find(
                                 (p) => p.id.toString() === sale.product
                               )?.name
                             : "Select a product..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-full p-0 bg-slate-700 border-slate-600">
-                        <Command className="bg-slate-700">
+                        <Command className="bg-slate-700 border-slate-600">
                           <CommandInput
                             placeholder="Search product..."
                             className="bg-slate-700 text-white"
@@ -641,23 +734,23 @@ const handleNewProductVendorChange = (ids) => {
                           <CommandList>
                             <CommandEmpty>No product found.</CommandEmpty>
                             <CommandGroup>
-                              {products.map((p) => (
+                              {products.map((product) => (
                                 <CommandItem
-                                  key={p.id}
+                                  key={product.id}
                                   onSelect={() =>
-                                    handleProductChange(index, p.id.toString())
+                                    handleProductChange(index, product.id.toString())
                                   }
                                   className="text-white hover:bg-slate-600"
                                 >
                                   <Check
                                     className={cn(
                                       "mr-2 h-4 w-4",
-                                      sale.product === p.id.toString()
+                                      sale.product === product.id.toString()
                                         ? "opacity-100"
                                         : "opacity-0"
                                     )}
                                   />
-                                  {p.name}
+                                  {product.name}
                                 </CommandItem>
                               ))}
                               <CommandItem
@@ -675,11 +768,11 @@ const handleNewProductVendorChange = (ids) => {
                       </PopoverContent>
                     </Popover>
                   </div>
-                  {/* Unit price */}
+                  {/* Unit Price */}
                   <div className="flex flex-col">
                     <Label
                       htmlFor={`unit_price-${index}`}
-                      className="text-sm font-medium text-white mb-1"
+                      className="text-sm font-medium text-white mb-2"
                     >
                       Unit Price
                     </Label>
@@ -690,7 +783,8 @@ const handleNewProductVendorChange = (ids) => {
                       value={sale.unit_price}
                       onChange={(e) => handleSaleChange(index, e)}
                       disabled={sale.returned}
-                      className="w-full bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                      className="bg-slate-600 border-slate-500 text-white"
+                      placeholder="Price"
                       required
                     />
                   </div>
@@ -698,9 +792,9 @@ const handleNewProductVendorChange = (ids) => {
                   <div className="flex flex-col">
                     <Label
                       htmlFor={`quantity-${index}`}
-                      className="text-sm font-medium text-white mb-1"
+                      className="text-sm font-medium text-white mb-2"
                     >
-                      Quantity
+                      Qty
                     </Label>
                     <Input
                       type="number"
@@ -709,25 +803,51 @@ const handleNewProductVendorChange = (ids) => {
                       value={sale.quantity}
                       onChange={(e) => handleSaleChange(index, e)}
                       disabled={sale.returned}
-                      className="w-full bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                      className="bg-slate-600 border-slate-500 text-white"
+                      placeholder="Qty"
                       required
                     />
                   </div>
-                  {/* Total price */}
-                  <div className="flex flex-col">
-                    <Label
-                      htmlFor={`total_price-${index}`}
-                      className="text-sm font-medium text-white mb-1"
-                    >
-                      Total Price
+                  {/* Subtotal */}
+                  <div className="flex flex-col ">
+                    <Label className="text-sm font-medium text-white mb-2">
+                      Subtotal
                     </Label>
                     <Input
                       type="number"
-                      id={`total_price-${index}`}
-                      name="total_price"
+                      value={sale.line_subtotal}
+                      readOnly
+                      className="bg-slate-600 border-slate-500 text-white"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <Label
+                      htmlFor={`discount-${index}`}
+                      className="text-sm font-medium text-white mb-2"
+                    >
+                      Discount %
+                    </Label>
+                    <Input
+                      type="number"
+                      id={`discount-${index}`}
+                      name="discount_percent"
+                      value={sale.discount_percent}
+                      onChange={(e) => handleSaleChange(index, e)}
+                      disabled={sale.returned}
+                      className="bg-slate-600 border-slate-500 text-white"
+                      placeholder="%"
+                    />
+                  </div>
+                  {/* Net Total */}
+                  <div className="flex flex-col">
+                    <Label className="text-sm font-medium text-white mb-2">
+                      Total (Net)
+                    </Label>
+                    <Input
+                      type="number"
                       value={sale.total_price}
-                      disabled
-                      className="w-full bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                      readOnly
+                      className="bg-slate-600 border-slate-500 text-white"
                     />
                   </div>
                 </div>
@@ -737,7 +857,7 @@ const handleNewProductVendorChange = (ids) => {
                     type="button"
                     variant="destructive"
                     size="sm"
-                    className="mt-4 w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+                    className="mt-4 bg-red-600 hover:bg-red-700 text-white"
                     onClick={() => handleRemoveSale(index)}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -766,31 +886,15 @@ const handleNewProductVendorChange = (ids) => {
                   />
                 </div>
                 <div className="flex flex-col">
-                  <Label
-                    htmlFor="discount"
-                    className="text-sm font-medium mb-2"
-                  >
-                    Discount
+                  <Label className="text-sm font-medium text-white mb-2">
+                    Total Discount (Amt)
                   </Label>
-                  <div className="flex space-x-2">
-                    <select
-                      value={discountType}
-                      onChange={(e) => setDiscountType(e.target.value)}
-                      className="bg-slate-600 border-slate-500 p-2 rounded"
-                    >
-                      <option value="amount">Amount</option>
-                      <option value="percent">Percent</option>
-                    </select>
-                    <Input
-                      type="number"
-                      id="discountValue"
-                      name="discountValue"
-                      value={discountValue}
-                      onChange={(e) => setDiscountValue(e.target.value)}
-                      placeholder="Enter discount"
-                      className="bg-slate-600 border-slate-500"
-                    />
-                  </div>
+                  <Input
+                    type="number"
+                    value={totalDiscount.toFixed(2)}
+                    readOnly
+                    className="bg-slate-600 border-slate-500 text-white"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <Label
@@ -966,6 +1070,13 @@ const handleNewProductVendorChange = (ids) => {
               Update Sales Transaction
             </Button>
           </form>
+
+          {returned && (
+            <p className="text-red-400 mt-4">
+              Returned sales cannot be modified or deleted. Please delete the sales return if you want to make changes.
+            </p>
+          )}
+          
           {/* Return & delete actions */}
           <Button
             type="button"
@@ -973,11 +1084,14 @@ const handleNewProductVendorChange = (ids) => {
             disabled={returns.length === 0 || subLoading || returned}
             className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
           >
-            Return Sales
+            Process Returns
           </Button>
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="w-full bg-red-600 hover:bg-red-700 text-white mt-4">
+              <Button 
+                disabled={subLoading || returned} 
+                className="w-full bg-red-600 hover:bg-red-700 text-white mt-4"
+              >
                 Delete Transaction
               </Button>
             </DialogTrigger>
@@ -987,46 +1101,20 @@ const handleNewProductVendorChange = (ids) => {
                 <DialogDescription className="text-slate-300">
                   This action cannot be undone. Permanently delete this
                   transaction.
-                  <div className="flex items-center my-4 space-x-2">
-                    <Checkbox
-                      id="terms"
-                      checked={isChecked}
-                      onCheckedChange={handleCheckboxClick}
-                      className="border-white"
-                    />
-                    <Label htmlFor="terms" className="text-sm leading-none">
-                      Do not modify stock
-                    </Label>
-                  </div>
-                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Confirm Action</DialogTitle>
-                        <DialogDescription>
-                          Are you sure you do not want to modify the stock?
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter className="flex justify-end space-x-2">
-                        <Button onClick={handleCancel}>Cancel</Button>
-                        <Button
-                          onClick={handleConfirm}
-                          className="bg-red-700 hover:bg-red-900"
-                        >
-                          Confirm
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
                 </DialogDescription>
               </DialogHeader>
-              <DialogClose asChild>
+              <DialogFooter className="flex justify-end space-x-2">
+                <DialogClose asChild>
+                  <Button variant="outline" className="bg-white text-black">Cancel</Button>
+                </DialogClose>
                 <Button
                   onClick={handleDelete}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  disabled={subLoading}
                 >
-                  Delete Transaction
+                  {subLoading ? "Deleting..." : "Delete Transaction"}
                 </Button>
-              </DialogClose>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -1138,6 +1226,49 @@ const handleNewProductVendorChange = (ids) => {
               className="w-full bg-green-600 hover:bg-green-700 text-white"
             >
               Add Debtor
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Return Quantity Dialog */}
+      <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
+        <DialogContent className="bg-slate-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Return Item</DialogTitle>
+            <DialogDescription className="text-slate-300">
+              Enter the quantity you'd like to return for this item. Maximum
+              allowed: {currentReturnSale?.quantity}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <Label htmlFor="returnQuantity" className="text-sm mb-1 block">
+              Quantity to return
+            </Label>
+            <Input
+              id="returnQuantity"
+              type="number"
+              value={returnQuantity}
+              min="1"
+              max={currentReturnSale?.quantity}
+              onChange={(e) => setReturnQuantity(e.target.value)}
+              className="bg-slate-600 border-slate-500 text-white"
+            />
+          </div>
+          {error && <p className="text-red-400 mt-2">{error}</p>}
+          <DialogFooter className="flex justify-end space-x-2 mt-4">
+            <Button
+              onClick={() => setReturnDialogOpen(false)}
+              variant="outline"
+              className="text-white bg-gray-600 hover:bg-gray-700 hover:text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleReturnConfirm}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Confirm Return
             </Button>
           </DialogFooter>
         </DialogContent>
