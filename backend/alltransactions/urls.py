@@ -47,5 +47,7 @@ urlpatterns = [
 
     path('debtor/statement/<int:debtorId>/',views.DebtorStatementView.as_view(), name = 'debtorstatement'),
 
+    path('product-transfer/', views.ProductTransferView.as_view(), name='product_transfer')
+
 
 ]
