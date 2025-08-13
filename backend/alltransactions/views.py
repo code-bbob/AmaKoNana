@@ -1056,6 +1056,7 @@ class ProductTransferView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request):
         # Handle product transfer logic here
         from_branch = request.data.get('from_branch')
@@ -1064,9 +1065,9 @@ class ProductTransferView(APIView):
         date = timezone.now().date()  # Use current date for transfer
         products = request.data.get('products')
 
-        branch = request.user.person.branch
-        if branch != from_branch:
-            return Response("Unauthorized branch for transfer", status=status.HTTP_403_FORBIDDEN)
+        # branch = request.user.person.branch
+        # if branch != from_branch:
+            # return Response("Unauthorized branch for transfer", status=status.HTTP_403_FORBIDDEN)
         enterprise = request.user.person.enterprise
 
         sales = []
