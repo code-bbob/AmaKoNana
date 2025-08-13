@@ -89,7 +89,6 @@ class SalesTransaction(models.Model):
     date = models.DateField()
     bill_no = models.IntegerField()
     branch = models.ForeignKey(Branch,related_name='sales_transaction',on_delete=models.CASCADE, null=True, blank=True)
-    # discount = models.FloatField(null=True,blank=True)
     subtotal = models.FloatField(null=True,blank=True)
     method = models.CharField(max_length=20,choices=(('cash','cash'),('online','online'),('card','card'),('credit','credit')),default='cash')
     debtor = models.ForeignKey('Debtor', on_delete=models.CASCADE, null=True, blank=True, related_name='all_sales_transaction')
@@ -99,7 +98,10 @@ class SalesTransaction(models.Model):
         return f"Sales Transaction {self.pk} of {self.enterprise.name}"
     
     def calculate_total_amount(self):
-        total = sum((sales.unit_price * sales.quantity - sales.discount) for sales in self.sales.all())
+        if self.discount:
+            total = sum((sales.unit_price * sales.quantity - sales.discount) for sales in self.sales.all())
+        else:
+            total = sum((sales.unit_price * sales.quantity) for sales in self.sales.all())
         print("HERE IS THE TOTAL AMOUNT", total)
         self.total_amount = total
 
@@ -109,12 +111,6 @@ class SalesTransaction(models.Model):
     def save(self, *args, **kwargs):
         if self.pk is None:
             super().save(*args, **kwargs)
-        
-        # # Now the instance is saved, we can safely filter related Items
-        # #print("Calculating quantity......................")
-        # self.total_amount = Sales.objects.filter(sales_transaction=self).aggregate(models.Sum('total_price'))['total_price__sum']
-
-        # # Call save again to update the quantity field
         super().save()
 
 
