@@ -17,6 +17,8 @@ from .models import Customer
 from django.db import transaction
 from .models import Debtor, DebtorTransaction
 from .serializers import DebtorSerializer, DebtorTransactionSerializer
+import json
+
 
 
 # Create your views here.
@@ -132,7 +134,7 @@ class PurchaseTransactionView(APIView):
                 product.save()
             for brand in brands_cache.values():
                 brand.save()
-
+            
             # Remove any related vendor transactions
             vts = VendorTransactions.objects.filter(purchase_transaction=purchase_transaction)
             for vt in vts:
@@ -215,33 +217,6 @@ class SalesTransactionView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors)
         
-        # @transaction.atomic
-        # def delete(self,request,pk,format=None):
-        #     sales_transaction = SalesTransaction.objects.get(id=pk)
-        #     role = request.user.person.role
-        #     modify_stock = request.GET.get('flag')
-        #     if role != "Admin":
-        #         return Response("Unauthorized")
-        #     if modify_stock == 'false':
-        #         sales_transaction.delete()
-        #         return Response("Deleted")
-        #     sales = sales_transaction.sales.all()
-        #     for sale in sales:
-        #         if not sales.returned:
-        #             product = sale.product
-        #             product.count += sale.quantity
-        #             product.stock += sale.product.selling_price * sale.quantity
-        #             product.save()
-        #             brand = product.brand
-        #             brand.count += sale.quantity
-        #             brand.stock += sale.product.selling_price * sale.quantity
-        #             brand.save()
-        #     dt = DebtorTransaction.objects.filter(all_sales_transaction=sales_transaction).first()
-        #     if dt:
-        #         dt.delete()
-        #     sales_transaction.delete()
-        #     return Response("Deleted")
-
     @transaction.atomic
     def delete(self, request, pk, format=None):
         sales_transaction = SalesTransaction.objects.get(id=pk)
@@ -1074,3 +1049,63 @@ class DebtorStatementView(APIView):
         debtor = DebtorSerializer(debtor).data
         dts = DebtorTransactionSerializer(debtor_transactions, many=True).data
         return Response({'debtor_data': debtor, 'debtor_transactions': dts})
+    
+
+
+class ProductTransferView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Handle product transfer logic here
+        from_branch = request.data.get('from_branch')
+        to_branch = request.data.get('to_branch')
+        # date = request.data.get('date')
+        date = timezone.now().date()  # Use current date for transfer
+        products = request.data.get('products')
+
+        branch = request.user.person.branch
+        if branch != from_branch:
+            return Response("Unauthorized branch for transfer", status=status.HTTP_403_FORBIDDEN)
+        enterprise = request.user.person.enterprise
+
+        sales = []
+        purchase = []
+        for product in products:
+            product_barcode = product.get('product')
+            if product_barcode:
+                # Perform the transfer logic for each product
+                sales.append({
+                    'product': Product.objects.get(barcode=product_barcode, branch=from_branch).id,
+                    'quantity': product.get('quantity', 0),
+                    'unit_price': product.get('unit_price', 0),
+                })
+
+                purchase.append({
+                    'product': Product.objects.get(barcode=product_barcode, branch=to_branch).id,
+                    'quantity': product.get('quantity', 0),
+                    'unit_price': product.get('unit_price', 0),
+                })
+
+        print("This is sales: ", sales)
+        print("###########################\nThis is purchases: ", purchase)
+
+        sale_transaction = SalesTransactionSerializer.create({
+            'enterprise': enterprise,
+            'branch': from_branch,
+            'date': date,
+            'sales': sales,
+            'bill_no': 'transfer',
+            'method': 'transfer',
+        })
+
+        purchase_transaction = PurchaseTransactionSerializer.create({
+            'enterprise': enterprise,
+            'branch': to_branch,
+            'date': date,
+            'purchase': purchase,
+            'bill_no': 'transfer',
+            'method': 'transfer',
+        })
+
+        return Response(f"Product transferred successfully from {from_branch} to {to_branch}", status=status.HTTP_200_OK)

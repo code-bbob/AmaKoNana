@@ -271,15 +271,15 @@ export default function Sidebar() {
                   const isGroupOpen = openGroups[group.label]
                   return (
                     <div key={group.label} className="group border border-slate-700/50 rounded-xl overflow-hidden bg-slate-800/40 backdrop-blur-sm shadow-md shadow-slate-900/40 transition hover:border-slate-500/60">
-                      <div className="w-full flex items-center justify-between px-4 py-2 bg-slate-800/60 hover:bg-slate-700/80 text-slate-200 text-sm font-medium transition relative">
-                        <div
-                          className="flex items-center gap-2 flex-1 cursor-pointer"
-                          onClick={() => {
-                            if (!currentBranch) return
-                            const navPath = group.mainPath || group.items[0]?.path
-                            if (navPath) handleNavigation(navPath)
-                          }}
-                        >
+                      <div
+                        className={`w-full flex items-center justify-between px-4 py-2 bg-slate-800/60 hover:bg-slate-700/80 text-slate-200 text-sm font-medium transition relative ${currentBranch ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
+                        onClick={() => {
+                          if (!currentBranch) return
+                          const navPath = group.mainPath || group.items[0]?.path
+                          if (navPath) handleNavigation(navPath)
+                        }}
+                      >
+                        <div className="flex items-center gap-2 flex-1">
                           <span className="relative flex items-center justify-center h-6 w-6 rounded-md bg-slate-700/60 group-hover:bg-slate-600/70 transition">
                             <group.icon className="h-4 w-4 text-indigo-300" />
                           </span>

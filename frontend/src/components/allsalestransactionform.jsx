@@ -459,8 +459,8 @@ const handleNewProductVendorChange = (ids) => {
             </h2>
             {error && <p className="text-red-600 mb-4">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                <div className="flex flex-col col-span-3">
                   <Label
                     htmlFor="date"
                     className="text-sm font-medium text-white mb-2"
@@ -479,7 +479,27 @@ const handleNewProductVendorChange = (ids) => {
                     required
                   />
                 </div>
-                <div className="flex flex-col">
+                <div className="flex flex-col col-span-1">
+                  <Label
+                    htmlFor="bill_no"
+                    className="text-sm font-medium text-white mb-2"
+                  >
+                    Bill No.
+                  </Label>
+                  <Input
+                    type="text"
+                    id="bill_no"
+                    name="bill_no"
+                    placeholder="Enter bill number"
+                    value={formData.bill_no}
+                    onChange={(e) =>
+                      setFormData({ ...formData, bill_no: e.target.value })
+                    }
+                    className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col col-span-4">
                   <Label
                     htmlFor="name"
                     className="text-sm font-medium text-white mb-2"
@@ -498,7 +518,7 @@ const handleNewProductVendorChange = (ids) => {
                     className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
-                <div className="flex flex-col">
+                <div className="flex flex-col col-span-4">
                   <Label
                     htmlFor="phone_number"
                     className="text-sm font-medium flex justify-between text-white mb-2"
@@ -521,7 +541,7 @@ const handleNewProductVendorChange = (ids) => {
                           phone_number: e.target.value,
                         })
                       }
-                      className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                      className="bg-slate-700 mr-2 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
                     />
                     <Dialog>
                       <DialogTrigger asChild>
@@ -552,26 +572,7 @@ const handleNewProductVendorChange = (ids) => {
                     </Dialog>
                   </div>
                 </div>
-                <div className="flex flex-col">
-                  <Label
-                    htmlFor="bill_no"
-                    className="text-sm font-medium text-white mb-2"
-                  >
-                    Bill No.
-                  </Label>
-                  <Input
-                    type="text"
-                    id="bill_no"
-                    name="bill_no"
-                    placeholder="Enter bill number"
-                    value={formData.bill_no}
-                    onChange={(e) =>
-                      setFormData({ ...formData, bill_no: e.target.value })
-                    }
-                    className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
-                    required
-                  />
-                </div>
+                
               </div>
 
               {/* Branch Select – added exactly like in your purchase form */}

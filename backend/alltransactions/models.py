@@ -15,13 +15,13 @@ class Vendor(models.Model):
         return self.name
 
 class PurchaseTransaction(models.Model):
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, null=True, blank=True)
     enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE,related_name='all_purchase_transaction')
     branch = models.ForeignKey(Branch,related_name='purchase_transaction',on_delete=models.CASCADE, null=True, blank=True)
     bill_no = models.CharField(max_length=20)
     total_amount = models.FloatField(null=True,blank=True)
     date = models.DateField()
-    method = models.CharField(max_length=20,choices=(('cash','Cash'),('credit','Credit'),('cheque','Cheque')),default='credit')
+    method = models.CharField(max_length=20,choices=(('cash','Cash'),('credit','Credit'),('cheque','Cheque'),('transfer','Transfer')),default='credit')
     cheque_number = models.CharField(max_length=10,null=True,blank=True)
     cashout_date = models.DateField(null=True)
     def __str__(self):
@@ -91,7 +91,7 @@ class SalesTransaction(models.Model):
     bill_no = models.IntegerField()
     branch = models.ForeignKey(Branch,related_name='sales_transaction',on_delete=models.CASCADE, null=True, blank=True)
     subtotal = models.FloatField(null=True,blank=True)
-    method = models.CharField(max_length=20,choices=(('cash','cash'),('online','online'),('card','card'),('credit','credit')),default='cash')
+    method = models.CharField(max_length=20,choices=(('cash','cash'),('online','online'),('card','card'),('credit','credit'),('transfer','transfer')),default='cash')
     debtor = models.ForeignKey('Debtor', on_delete=models.CASCADE, null=True, blank=True, related_name='all_sales_transaction')
     credited_amount = models.FloatField(null=True,blank=True,default=0)
     amount_paid = models.FloatField(null=True,blank=True,default=0)
@@ -147,9 +147,7 @@ class Sales(models.Model):
         
         # Now the instance is saved, we can safely filter related Items
         #print("Calculating quantity......................")
-        print("here is the discount", self.discount)
         self.total_price = self.quantity * self.unit_price - self.discount
-        print("here?",self.total_price)
 
         # Call save again to update the quantity field
         super().save()

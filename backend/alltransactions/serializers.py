@@ -76,50 +76,50 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
         # Calculate total amount and record base transaction
         amount = purchase_transaction.calculate_total_amount()
         vendor = purchase_transaction.vendor
-
-        VendorTransactionSerializer().create({
-            'vendor': vendor,
-            'date': purchase_transaction.date,
-            'amount': -amount,
-            'desc': desc,
-            'method': purchase_transaction.method,
-            'purchase_transaction': purchase_transaction,
-            'enterprise': purchase_transaction.enterprise,
-            'branch': purchase_transaction.branch,
-            'type': 'base',
-            'bill_no': purchase_transaction.bill_no
-        })
-
-        # Handle payment method -> create VendorTransactions if needed
-        method = purchase_transaction.method
-        if method == 'cash':
+        if vendor:
             VendorTransactionSerializer().create({
                 'vendor': vendor,
-                'branch': purchase_transaction.branch,
                 'date': purchase_transaction.date,
-                'amount': purchase_transaction.total_amount,
-                'desc': 'Paid for purchase',
-                'method': 'cash',
+                'amount': -amount,
+                'desc': desc,
+                'method': purchase_transaction.method,
                 'purchase_transaction': purchase_transaction,
                 'enterprise': purchase_transaction.enterprise,
-                'type': 'payment',
-                'bill_no': purchase_transaction.bill_no
-            })
-        elif method == 'cheque':
-            VendorTransactionSerializer().create({
-                'vendor': vendor,
                 'branch': purchase_transaction.branch,
-                'date': purchase_transaction.date,
-                'amount': purchase_transaction.total_amount,
-                'desc': 'Paid for purchase',
-                'method': 'cheque',
-                'cheque_number': purchase_transaction.cheque_number,
-                'cashout_date': purchase_transaction.cashout_date,
-                'purchase_transaction': purchase_transaction,
-                'enterprise': purchase_transaction.enterprise,
-                'type': 'payment',
+                'type': 'base',
                 'bill_no': purchase_transaction.bill_no
             })
+
+            # Handle payment method -> create VendorTransactions if needed
+            method = purchase_transaction.method
+            if method == 'cash':
+                VendorTransactionSerializer().create({
+                    'vendor': vendor,
+                    'branch': purchase_transaction.branch,
+                    'date': purchase_transaction.date,
+                    'amount': purchase_transaction.total_amount,
+                    'desc': 'Paid for purchase',
+                    'method': 'cash',
+                    'purchase_transaction': purchase_transaction,
+                    'enterprise': purchase_transaction.enterprise,
+                    'type': 'payment',
+                    'bill_no': purchase_transaction.bill_no
+                })
+            elif method == 'cheque':
+                VendorTransactionSerializer().create({
+                    'vendor': vendor,
+                    'branch': purchase_transaction.branch,
+                    'date': purchase_transaction.date,
+                    'amount': purchase_transaction.total_amount,
+                    'desc': 'Paid for purchase',
+                    'method': 'cheque',
+                    'cheque_number': purchase_transaction.cheque_number,
+                    'cashout_date': purchase_transaction.cashout_date,
+                    'purchase_transaction': purchase_transaction,
+                    'enterprise': purchase_transaction.enterprise,
+                    'type': 'payment',
+                    'bill_no': purchase_transaction.bill_no
+                })
 
         return purchase_transaction
 
@@ -274,41 +274,43 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
         new_vendor = instance.vendor
         amount_diff = new_total_amount - old_total
 
-        if old_date != instance.date:
-            vts = VendorTransactions.objects.filter(purchase_transaction=instance)
-            for vt in vts:
-                vt.date = instance.date
-                vt.save()
+        if old_vendor and new_vendor:
 
-        # Handle full vendor transaction rebuild if method/vendor/total changed
-        if old_method != instance.method or old_total != new_total_amount or old_vendor != instance.vendor:
-            vts_all = VendorTransactions.objects.filter(purchase_transaction=instance)
-            for vt in vts_all:
-                vt.delete()
-            instance.vendor.refresh_from_db()
-            base = {
-                'vendor': instance.vendor,
-                'date': instance.date,
-                'branch': instance.branch,
-                'enterprise': instance.enterprise,
-                'amount': -new_total_amount,
-                'desc': desc,
-                'method': instance.method,
-                'purchase_transaction': instance,
-                'type': 'base',
-                'bill_no': instance.bill_no,
-            }
-            VendorTransactionSerializer().create(base)
-            if instance.method in ('cash', 'cheque'):
-                pay = base.copy()
-                pay['amount'] = new_total_amount
-                pay['desc'] = 'Paid for purchase'
-                pay['type'] = 'payment'
-                pay['branch'] = instance.branch
-                pay['enterprise'] = instance.enterprise
-                if instance.method == 'cheque':
-                    pay.update({'cheque_number': instance.cheque_number, 'cashout_date': instance.cashout_date})
-                VendorTransactionSerializer().create(pay)
+            if old_date != instance.date:
+                vts = VendorTransactions.objects.filter(purchase_transaction=instance)
+                for vt in vts:
+                    vt.date = instance.date
+                    vt.save()
+
+            # Handle full vendor transaction rebuild if method/vendor/total changed
+            if old_method != instance.method or old_total != new_total_amount or old_vendor != instance.vendor:
+                vts_all = VendorTransactions.objects.filter(purchase_transaction=instance)
+                for vt in vts_all:
+                    vt.delete()
+                instance.vendor.refresh_from_db()
+                base = {
+                    'vendor': instance.vendor,
+                    'date': instance.date,
+                    'branch': instance.branch,
+                    'enterprise': instance.enterprise,
+                    'amount': -new_total_amount,
+                    'desc': desc,
+                    'method': instance.method,
+                    'purchase_transaction': instance,
+                    'type': 'base',
+                    'bill_no': instance.bill_no,
+                }
+                VendorTransactionSerializer().create(base)
+                if instance.method in ('cash', 'cheque'):
+                    pay = base.copy()
+                    pay['amount'] = new_total_amount
+                    pay['desc'] = 'Paid for purchase'
+                    pay['type'] = 'payment'
+                    pay['branch'] = instance.branch
+                    pay['enterprise'] = instance.enterprise
+                    if instance.method == 'cheque':
+                        pay.update({'cheque_number': instance.cheque_number, 'cashout_date': instance.cashout_date})
+                    VendorTransactionSerializer().create(pay)
 
         return instance
 
