@@ -1,16 +1,18 @@
 from django.shortcuts import render
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
 from rest_framework.views import APIView
 from .models import Product,Brand
 from enterprise.models import Branch
-from .serializers import ProductSerializer,BrandSerializer
+from .serializers import ProductSerializer,BrandSerializer, ManufactureSerializer
 from rest_framework.decorators import api_view
 from barcode import EAN13
 from barcode.writer import SVGWriter
 import io
 from django.http import FileResponse
 from rest_framework.permissions import IsAuthenticated
+from .models import ManufactureItem, Manufacture
 
 # Create your views here.
 
@@ -186,3 +188,53 @@ class MergeProductBrandView(APIView):
             print("CREATED",p)
             
         return Response("Merged")
+
+class ManufactureView(APIView):
+
+    def get(self, request, pk=None, branch=None):
+        if pk:
+            try:
+                manufacture = Manufacture.objects.get(id=pk)
+                serializer = ManufactureSerializer(manufacture)
+                return Response(serializer.data)
+            except Manufacture.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+
+        # manufactures = Manufacture.objects.filter(enterprise=request.user.person.enterprise, branch=branch)
+        manufactures = Manufacture.objects.all()
+        paginator = PageNumberPagination()
+        paginator.page_size = 5  # Set the page size here
+        paginated_manufactures = paginator.paginate_queryset(manufactures, request)
+
+        serializer = ManufactureSerializer(paginated_manufactures, many=True)
+        return paginator.get_paginated_response(serializer.data)
+    
+
+
+    def post(self, request, format=None):
+        request.data['enterprise'] = request.user.person.enterprise.id
+        serializer = ManufactureSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)
+
+    def patch(self, request, pk, format=None):
+        try:
+            manufacture = Manufacture.objects.get(id=pk)
+        except Manufacture.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ManufactureSerializer(manufacture, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)
+
+    def delete(self, request, pk, format=None):
+        try:
+            manufacture = Manufacture.objects.get(id=pk)
+            manufacture.delete()
+            return Response("Deleted")
+        except Manufacture.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)

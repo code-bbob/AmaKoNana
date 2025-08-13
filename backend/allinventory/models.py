@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 import random
 
 # Create your models here.
@@ -45,3 +46,28 @@ class Product(models.Model):
                     continue
                 if not Product.objects.filter(uid=uid).exists():
                     return uid
+
+
+
+class Manufacture(models.Model):
+    date = models.DateField(default=timezone.now().date(),null=True,blank=True)
+    enterprise = models.ForeignKey('enterprise.Enterprise', on_delete=models.CASCADE, related_name='manufactures')
+    branch = models.ForeignKey('enterprise.Branch', on_delete=models.CASCADE, related_name='manufactures', null=True, blank=True)
+
+class ManufactureItem(models.Model):
+    manufacture = models.ForeignKey(Manufacture, on_delete=models.CASCADE, related_name='manufacture_items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='manufacture_items')
+    quantity = models.IntegerField(null=True, blank=True, default=0)
+
+
+    # def delete(self, *args, **kwargs):
+    #     product = self.product
+    #     product.refresh_from_db()
+    #     product.count -= self.quantity
+    #     product.stock -= self.quantity * product.selling_price
+    #     product.save()
+    #     brand = product.brand
+    #     brand.refresh_from_db()
+    #     brand.count -= self.quantity * product.selling_price
+    #     brand.save()
+    #     super().delete(*args, **kwargs)
