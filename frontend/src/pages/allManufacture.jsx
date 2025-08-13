@@ -86,7 +86,7 @@ export default function AllManufactureTransactions() {
     e.preventDefault()
     setLoading(true)
     try {
-      const response = await api.get(`alltransaction/manufacturetransaction/branch/${branchId}/?search=${localSearchTerm}`)
+      const response = await api.get(`allinventory/manufacture/branch/${branchId}/?search=${localSearchTerm}`)
       setTransactions(response.data.results)
       setMetadata({
         next: response.data.next,
@@ -106,7 +106,7 @@ export default function AllManufactureTransactions() {
     e.preventDefault()
     setLoading(true)
     try {
-      const response = await api.get(`alltransaction/manufacturetransaction/branch/${branchId}/?start_date=${startDate}&end_date=${endDate}`)
+      const response = await api.get(`allinventory/manufacture/branch/${branchId}/?start_date=${startDate}&end_date=${endDate}`)
       setTransactions(response.data.results)
       setMetadata({
         next: response.data.next,
@@ -215,21 +215,21 @@ export default function AllManufactureTransactions() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className='pt-4'>
-                  {(transaction?.manufacture || []).map((item, index) => (
+                  {(transaction?.manufacture_items || []).map((item, index) => (
                     <div key={`${transaction.id}-${index}`} className='mb-4 last:mb-0 p-3 lg:p-4 bg-slate-800 rounded-lg hover:bg-slate-750 transition-colors duration-300'>
                       <div className='flex flex-col lg:flex-row justify-between items-start lg:items-center mb-2'>
                         <span className='text-white font-medium mb-2 lg:mb-0'>{item.product_name}</span>
                       </div>
                       <div className='flex justify-between items-center text-sm text-slate-300'>
                         <span className='text-purple-400 text-sm'>Qty: {item.quantity}</span>
-                        <span className='text-blue-400'>Unit Cost: Rs. {(item.unit_cost || item.unit_price || 0).toLocaleString()}</span>
-                        <span className='font-bold text-green-400 text-l'>Total: Rs. {(item.total_cost || item.total_price || (item.quantity * (item.unit_cost || item.unit_price || 0))).toLocaleString()}</span>
+                        {/* <span className='text-blue-400'>Unit Cost: Rs. {(item.unit_cost || item.unit_price || 0).toLocaleString()}</span> */}
+                        {/* <span className='font-bold text-green-400 text-l'>Total: Rs. {(item.total_cost || item.total_price || (item.quantity * (item.unit_cost || item.unit_price || 0))).toLocaleString()}</span> */}
                       </div>
                     </div>
                   ))}
-                  <div className='mt-4 text-right text-white font-bold'>
+                  {/* <div className='mt-4 text-right text-white font-bold'>
                     Total Amount: Rs. {transaction?.total_amount?.toLocaleString()}
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
             ))

@@ -13,4 +13,6 @@ urlpatterns = [
     path('brand/<int:pk>/', views.BrandView.as_view()),
     path('barcode/<int:pk>/', views.generate_barcode),
     path('manufacture/', views.ManufactureView.as_view()),   
+    path('manufacture/branch/<int:branch>/', views.ManufactureView.as_view()),
+    path('manufacture/<int:pk>/', views.ManufactureView.as_view()),
 ]

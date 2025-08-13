@@ -45,7 +45,7 @@ function AllManufactureTransactionForm() {
     date: new Date().toISOString().split("T")[0],
     branch: branchId,
     reference: "",
-    manufacture: [{ product: "", unit_cost: "", quantity: "" }],
+    manufacture_items: [{ product: "", unit_cost: "", quantity: "" }],
   });
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -62,7 +62,7 @@ function AllManufactureTransactionForm() {
   });
   const [newBrandName, setNewBrandName] = useState("");
   const [openProduct, setOpenProduct] = useState(
-    Array(formData.manufacture.length).fill(false)
+    Array(formData.manufacture_items.length).fill(false)
   );
   const [openBrand, setOpenBrand] = useState(false);
   const [error, setError] = useState(null);
@@ -103,23 +103,23 @@ function AllManufactureTransactionForm() {
 
   const handleManufactureChange = (index, e) => {
     const { name, value } = e.target;
-    const newItems = [...formData.manufacture];
+    const newItems = [...formData.manufacture_items];
     newItems[index] = { ...newItems[index], [name]: value };
-    setFormData({ ...formData, manufacture: newItems });
+    setFormData({ ...formData, manufacture_items: newItems });
   };
 
   const handleProductChange = (index, value) => {
     if (value === "new") {
       setShowNewProductDialog(true);
     } else {
-      const newItems = [...formData.manufacture];
+      const newItems = [...formData.manufacture_items];
       const matching = products.find((p) => p.id.toString() === value);
       newItems[index] = {
         ...newItems[index],
         product: value,
         unit_cost: matching?.cost_price || matching?.unit_cost || "",
       };
-      setFormData((prev) => ({ ...prev, manufacture: newItems }));
+      setFormData((prev) => ({ ...prev, manufacture_items: newItems }));
     }
     const newOpen = [...openProduct];
     newOpen[index] = false;
@@ -129,7 +129,7 @@ function AllManufactureTransactionForm() {
   const handleAddItem = () => {
     setFormData((prev) => ({
       ...prev,
-      manufacture: [...prev.manufacture, { product: "", unit_cost: "", quantity: "" }],
+      manufacture_items: [...prev.manufacture_items, { product: "", unit_cost: "", quantity: "" }],
     }));
     setOpenProduct((prev) => [...prev, false]);
   };
@@ -137,7 +137,7 @@ function AllManufactureTransactionForm() {
   const handleRemoveItem = (index) => {
     setFormData((prev) => ({
       ...prev,
-      manufacture: prev.manufacture.filter((_, i) => i !== index),
+      manufacture_items: prev.manufacture_items.filter((_, i) => i !== index),
     }));
     setOpenProduct((prev) => prev.filter((_, i) => i !== index));
   };
@@ -147,7 +147,7 @@ function AllManufactureTransactionForm() {
     return (parseFloat(unit_cost) * parseFloat(quantity)).toFixed(2);
   };
 
-  const totalAmount = formData.manufacture.reduce((acc, item) => {
+  const totalAmount = formData.manufacture_items.reduce((acc, item) => {
     const line = parseFloat(item.unit_cost || 0) * parseFloat(item.quantity || 0);
     return acc + (isNaN(line) ? 0 : line);
   }, 0);
@@ -157,8 +157,8 @@ function AllManufactureTransactionForm() {
     setSubLoading(true);
     setError(null);
     try {
-      const payload = { ...formData };
-      const response = await api.post("alltransaction/manufacturetransaction/", payload);
+      const payload = { ...formData }; // manufacture_items already matches backend serializer
+      const response = await api.post("allinventory/manufacture/", payload);
       console.log("Manufacture created", response.data);
       navigate(`/manufacture/branch/${branchId}`);
     } catch (e) {
@@ -240,7 +240,7 @@ function AllManufactureTransactionForm() {
               </div>
 
               <h3 className='text-xl font-semibold mb-2 text-white'>Items</h3>
-              {formData.manufacture.map((item, index) => (
+              {formData.manufacture_items.map((item, index) => (
                 <div key={index} className='bg-slate-700 p-4 rounded-md shadow mb-4'>
                   <h4 className='text-lg font-semibold mb-4 text-white'>Item {index + 1}</h4>
                   <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
@@ -292,7 +292,7 @@ function AllManufactureTransactionForm() {
                       <Input disabled value={calculateLineTotal(item.unit_cost, item.quantity)} className='bg-slate-600 border-slate-500 text-white' />
                     </div>
                   </div>
-                  {formData.manufacture.length > 1 && (
+                  {formData.manufacture_items.length > 1 && (
                     <Button type='button' variant='destructive' size='sm' className='mt-4 bg-red-600 hover:bg-red-700 text-white' onClick={() => handleRemoveItem(index)}>
                       <Trash2 className='w-4 h-4 mr-2' />Remove Item
                     </Button>
@@ -300,14 +300,9 @@ function AllManufactureTransactionForm() {
                 </div>
               ))}
 
-              <div className='flex justify-between gap-4'>
                 <Button type='button' onClick={handleAddItem} className='w-full bg-purple-600 hover:bg-purple-700 text-white'>
                   <PlusCircle className='w-4 h-4 mr-2' /> Add Another Item
                 </Button>
-              </div>
-
-              <div className='text-right text-white font-bold text-lg'>Total: Rs. {totalAmount.toLocaleString()}</div>
-
               <Button type='submit' disabled={subLoading} className='w-full bg-green-600 hover:bg-green-700 text-white'>
                 {subLoading ? 'Submitting...' : 'Submit Manufacture Transaction'}
               </Button>
