@@ -149,6 +149,12 @@ export default function Sidebar() {
     setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }))
   }
 
+  // Build full href for a group main path including current branch
+  const buildGroupHref = (mainPath) => {
+    if (!currentBranch || !mainPath) return '#'
+    return `/${mainPath}/branch/${currentBranch.id}`
+  }
+
   const handleNavigation = (path) => {
     setIsOpen(false)
     
@@ -271,24 +277,29 @@ export default function Sidebar() {
                   const isGroupOpen = openGroups[group.label]
                   return (
                     <div key={group.label} className="group border border-slate-700/50 rounded-xl overflow-hidden bg-slate-800/40 backdrop-blur-sm shadow-md shadow-slate-900/40 transition hover:border-slate-500/60">
-                      <div
-                        className={`w-full flex items-center justify-between px-4 py-2 bg-slate-800/60 hover:bg-slate-700/80 text-slate-200 text-sm font-medium transition relative ${currentBranch ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
-                        onClick={() => {
-                          if (!currentBranch) return
-                          const navPath = group.mainPath || group.items[0]?.path
-                          if (navPath) handleNavigation(navPath)
-                        }}
-                      >
-                        <div className="flex items-center gap-2 flex-1">
+                      <div className="w-full flex items-center justify-between pr-2 bg-slate-800/60 hover:bg-slate-700/80 text-slate-200 text-sm font-medium transition relative">
+                        <a
+                          href={buildGroupHref(group.mainPath || group.items[0]?.path)}
+                          onClick={(e) => {
+                            if (!currentBranch) { e.preventDefault(); return }
+                            // Regular click -> client navigation
+                            if (!e.ctrlKey && !e.metaKey && e.button !== 1) {
+                              e.preventDefault()
+                              const navPath = group.mainPath || group.items[0]?.path
+                              if (navPath) handleNavigation(navPath)
+                            }
+                          }}
+                          className={`flex items-center gap-2 flex-1 px-4 py-2 ${currentBranch ? 'cursor-pointer' : 'opacity-60 pointer-events-none'} select-none`}
+                        >
                           <span className="relative flex items-center justify-center h-6 w-6 rounded-md bg-slate-700/60 group-hover:bg-slate-600/70 transition">
                             <group.icon className="h-4 w-4 text-indigo-300" />
                           </span>
                           <span>{group.label}</span>
-                        </div>
+                        </a>
                         <button
                           aria-label={`Toggle ${group.label}`}
                           onClick={(e) => { e.stopPropagation(); toggleGroup(group.label) }}
-                          className="ml-2 p-1 rounded-md hover:bg-slate-600/60 transition"
+                          className="ml-1 p-1 rounded-md hover:bg-slate-600/60 transition"
                         >
                           <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${isGroupOpen ? 'rotate-180' : ''}`} />
                         </button>
