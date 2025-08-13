@@ -61,11 +61,12 @@ export default function Sidebar() {
     closed: { x: '-100%' },
   }
 
-  // Grouped menu structure for collapsible dropdowns
+  // Grouped menu with mainPath (label click navigates) and arrow-only expansion
   const groupedMenu = [
     {
       label: 'Inventory',
       icon: Container,
+      mainPath: 'inventory',
       items: [
         { title: 'Inventory', icon: Container, path: 'inventory' },
         { title: 'Manufacture', icon: Zap, path: 'manufacture' }
@@ -74,7 +75,9 @@ export default function Sidebar() {
     {
       label: 'Purchase',
       icon: ShoppingCart,
+      mainPath: 'purchases/form', // label click goes to add purchase form
       items: [
+        { title: 'Add Purchase', icon: ShoppingCart, path: 'purchases/form' },
         { title: 'Purchases', icon: ShoppingCart, path: 'purchases' },
         { title: 'PurchaseReturn', icon: TrendingDown, path: 'purchase-returns' },
         { title: 'PurchaseReport', icon: TrendingDown, path: 'purchase-report', externalReport: true }
@@ -83,7 +86,9 @@ export default function Sidebar() {
     {
       label: 'Sales',
       icon: TrendingUp,
+      mainPath: 'sales/form',
       items: [
+        { title: 'Add Sales', icon: TrendingUp, path: 'sales/form' },
         { title: 'Sales', icon: TrendingUp, path: 'sales' },
         { title: 'SalesReturn', icon: TrendingDown, path: 'sales-returns' },
         { title: 'SalesReport', icon: TrendingUp, path: 'sales-report', externalReport: true }
@@ -92,6 +97,7 @@ export default function Sidebar() {
     {
       label: 'Staff',
       icon: Shield,
+      mainPath: 'staff',
       items: [
         { title: 'Staffs', icon: TrendingUp, path: 'staff' },
         { title: 'StaffTransaction', icon: TrendingUp, path: 'staff-transactions' }
@@ -100,12 +106,21 @@ export default function Sidebar() {
     {
       label: 'Vendors',
       icon: BookUser,
+      mainPath: 'vendors',
       items: [
         { title: 'Vendors', icon: BookUser, path: 'vendors' },
         { title: 'VendorTransactions', icon: BookUser, path: 'vendor-transactions' }
       ]
     },
-    // Future groups could include Debtors, etc.
+    {
+      label: 'Debtors',
+      icon: BookUser,
+      mainPath: 'debtors',
+      items: [
+        { title: 'Debtors', icon: BookUser, path: 'debtors' },
+        { title: 'DebtorTransactions', icon: BookUser, path: 'debtor-transactions' }
+      ]
+    }
   ]
 
   const [openGroups, setOpenGroups] = useState(() => {
@@ -136,13 +151,10 @@ export default function Sidebar() {
 
   const handleNavigation = (path) => {
     setIsOpen(false)
-    if (path === '/mobile') {
-      // Mobile section doesn't need branch in URL for the landing page
-      navigate(path)
-    } else {
+    
       // Use branch management for other paths
       navigateWithBranch(path)
-    }
+    
   }
 
   const handleChangeBranch = async () => {
@@ -190,7 +202,7 @@ export default function Sidebar() {
                   setIsOpen(false)
                 }}
               >
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-fuchsia-300 to-pink-300 drop-shadow-sm">All Inventory</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-fuchsia-300 to-pink-300 drop-shadow-sm">Aama Ko Nana</span>
               </div>
               {/* Centered Expand / Collapse All control */}
               <div className="flex justify-center mb-3">
@@ -259,19 +271,29 @@ export default function Sidebar() {
                   const isGroupOpen = openGroups[group.label]
                   return (
                     <div key={group.label} className="group border border-slate-700/50 rounded-xl overflow-hidden bg-slate-800/40 backdrop-blur-sm shadow-md shadow-slate-900/40 transition hover:border-slate-500/60">
-                      <button
-                        onClick={() => toggleGroup(group.label)}
-                        className="w-full flex items-center justify-between px-4 py-2 bg-slate-800/60 hover:bg-slate-700/80 text-slate-200 text-sm font-medium transition relative"
-                      >
-                        <span className="flex items-center gap-2">
+                      <div className="w-full flex items-center justify-between px-4 py-2 bg-slate-800/60 hover:bg-slate-700/80 text-slate-200 text-sm font-medium transition relative">
+                        <div
+                          className="flex items-center gap-2 flex-1 cursor-pointer"
+                          onClick={() => {
+                            if (!currentBranch) return
+                            const navPath = group.mainPath || group.items[0]?.path
+                            if (navPath) handleNavigation(navPath)
+                          }}
+                        >
                           <span className="relative flex items-center justify-center h-6 w-6 rounded-md bg-slate-700/60 group-hover:bg-slate-600/70 transition">
                             <group.icon className="h-4 w-4 text-indigo-300" />
                           </span>
                           <span>{group.label}</span>
-                        </span>
-                        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${isGroupOpen ? 'rotate-180' : ''}`} />
-                        <span className={`absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-indigo-400 via-fuchsia-400 to-pink-400 opacity-0 group-hover:opacity-70 transition ${isGroupOpen ? 'opacity-70' : ''}`}></span>
-                      </button>
+                        </div>
+                        <button
+                          aria-label={`Toggle ${group.label}`}
+                          onClick={(e) => { e.stopPropagation(); toggleGroup(group.label) }}
+                          className="ml-2 p-1 rounded-md hover:bg-slate-600/60 transition"
+                        >
+                          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${isGroupOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        <span className={`pointer-events-none absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-indigo-400 via-fuchsia-400 to-pink-400 opacity-0 group-hover:opacity-70 transition ${isGroupOpen ? 'opacity-70' : ''}`}></span>
+                      </div>
                       <AnimatePresence initial={false}>
                         {isGroupOpen && (
                           <motion.ul
@@ -287,9 +309,17 @@ export default function Sidebar() {
                               // Determine active state by comparing current pathname core segment
                               let active = false
                               if (!isExternalReport) {
-                                // location.pathname like /sales/branch/3
                                 const segs = location.pathname.split('/').filter(Boolean)
-                                if (segs[0] === item.path) active = true
+                                const first = segs[0]
+                                const second = segs[1]
+                                // Multi-part path (e.g., purchases/form)
+                                if (item.path.includes('/')) {
+                                  const parts = item.path.split('/')
+                                  if (parts[0] === first && parts[1] === second) active = true
+                                } else {
+                                  // Single segment item should NOT be active on a form sub-route
+                                  if (first === item.path && second !== 'form') active = true
+                                }
                               }
                               if (isExternalReport) {
                                 const fullPath = currentBranch ? `/${item.path}/branch/${currentBranch.id}` : '#'
