@@ -60,7 +60,7 @@ export default function AllManufactureTransactions() {
 
   const fetchInitData = async () => {
     try {
-      const response = await api.get(`alltransaction/manufacturetransaction/branch/${branchId}/`)
+      const response = await api.get(`allinventory/manufacture/branch/${branchId}/`)
       setTransactions(response.data.results)
       setMetadata({
         next: response.data.next,
