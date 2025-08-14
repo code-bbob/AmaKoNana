@@ -23,7 +23,6 @@ import {
   ChevronsUpDown,
   ArrowLeft,
 } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
   Command,
@@ -46,7 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import NewProductDialog from "@/components/newProductDialog"; // Same as in purchase form
+import NewProductDialog from "@/components/newProductDialog";
 
 function EditAllPurchaseTransactionForm() {
   const api = useAxios();
@@ -62,7 +61,7 @@ function EditAllPurchaseTransactionForm() {
     bill_no: "",
     method: "",
     cheque_number: "",
-    cashout_date: "",
+    cashout_date: null
   });
   const [products, setProducts] = useState([]);
   const [returned, setReturned] = useState(false);
@@ -82,8 +81,9 @@ function EditAllPurchaseTransactionForm() {
     cost_price: "",
     selling_price: "",
     branch: branchId,
+    vendor: [],
   });
-  const [newVendorData, setNewVendorData] = useState({ name: "", brand: "" , branch: branchId});
+  const [newVendorData, setNewVendorData] = useState({ name: "", brand: "", branch: branchId });
   const [newBrandName, setNewBrandName] = useState("");
   const [openProduct, setOpenProduct] = useState([]);
   const [openVendor, setOpenVendor] = useState(false);
@@ -131,10 +131,10 @@ function EditAllPurchaseTransactionForm() {
             unit_price: p.unit_price.toString(),
             total_price: p.total_price.toString(),
           })),
-          vendor: purchaseResponse.data.vendor.toString(),
-          bill_no: purchaseResponse.data.bill_no?.toString(),
+          vendor: purchaseResponse.data.vendor ? purchaseResponse.data.vendor.toString() : "",
+          bill_no: purchaseResponse.data.bill_no?.toString() || "",
           method: purchaseResponse.data.method || "",
-          cheque_number: purchaseResponse.data.cheque_number || null,
+          cheque_number: purchaseResponse.data.cheque_number || "",
           cashout_date: purchaseResponse.data.cashout_date || null,
         });
         setOpenProduct(new Array(purchaseResponse.data.purchase.length).fill(false));
@@ -151,25 +151,36 @@ function EditAllPurchaseTransactionForm() {
 
 
   useEffect(() => {
-    const brandToDisplay = vendors?.find(
-      (vendor) => vendor.id.toString() === formData.vendor.toString()
-    )?.brand;
-    console.log(brandToDisplay);
-    const filtered = products?.filter(
-      (product) => product.brand === brandToDisplay
-    );
-    setFilteredProducts(filtered);
-  }, [vendors]);
+    if (formData.vendor) {
+      const selectedVendor = vendors.find(
+        (vendor) => vendor.id.toString() === formData.vendor
+      );
+      if (selectedVendor) {
+        const filtered = products.filter((prod) => {
+          if (Array.isArray(prod.vendor)) {
+            return prod.vendor.includes(selectedVendor.id);
+          }
+          if (Array.isArray(prod.vendors)) {
+            return prod.vendors.some((v) => v.id === selectedVendor.id);
+          }
+          return prod.vendor === selectedVendor.id;
+        });
+        setFilteredProducts(filtered);
+      }
+    } else {
+      // If no vendor selected, show all products
+      setFilteredProducts(products);
+    }
+  }, [formData.vendor, vendors, products]);
   
   
   useEffect(() => {
-    originalPurchaseData?.purchase?.map((p => {
+    originalPurchaseData?.purchase?.forEach((p) => {
       if (p.returned) {
-        console.log(p)
-        setReturned(true)
-      }})
-    )
-  }, [originalPurchaseData])
+        setReturned(true);
+      }
+    });
+  }, [originalPurchaseData]);
 
   console.log(returned)
 
@@ -187,7 +198,12 @@ function EditAllPurchaseTransactionForm() {
     setFormData({ ...formData, method: value });
   };
 
+  const handleNewProductVendorChange = (ids) => {
+    setNewProductData(prev => ({ ...prev, vendor: ids }));
+  };
+
   const handlePurchaseChange = (index, e) => {
+    if (formData.purchase[index].returned) return;
     if (formData.purchase[index].returned) return;
     const { name, value } = e.target;
     const newPurchase = [...formData.purchase];
@@ -204,8 +220,15 @@ function EditAllPurchaseTransactionForm() {
     if (value === "new") {
       setShowNewProductDialog(true);
     } else {
+      const matchingProduct = products.find(
+        (product) => product.id.toString() === value
+      );
       const newPurchase = [...formData.purchase];
-      newPurchase[index] = { ...newPurchase[index], product: value };
+      newPurchase[index] = { 
+        ...newPurchase[index], 
+        product: value, 
+        cost_price: matchingProduct?.cost_price || ""
+      };
       setFormData((prevState) => ({
         ...prevState,
         purchase: newPurchase,
@@ -224,15 +247,6 @@ function EditAllPurchaseTransactionForm() {
         ...prevState,
         vendor: value,
       }));
-      const selectedVendor = vendors.find(
-        (vendor) => vendor.id.toString() === value
-      );
-      if (selectedVendor) {
-        const filtered = products.filter(
-          (product) => product.brand === selectedVendor.brand
-        );
-        setFilteredProducts(filtered);
-      }
     }
     setOpenVendor(false);
   };
@@ -313,7 +327,14 @@ function EditAllPurchaseTransactionForm() {
       const response = await api.post("allinventory/product/", newProductData);
       console.log("New Product Added:", response.data);
       setProducts((prevProducts) => [...prevProducts, response.data]);
-      setNewProductData({ name: "", brand: "", cost_price: "", selling_price: "", branch: branchId });
+      setNewProductData({ 
+        name: "", 
+        brand: "", 
+        cost_price: "", 
+        selling_price: "", 
+        branch: branchId,
+        vendor: []
+      });
       setShowNewProductDialog(false);
     } catch (error) {
       console.error("Error adding product:", error);
@@ -331,7 +352,7 @@ function EditAllPurchaseTransactionForm() {
         ...prevState,
         vendor: response.data.id.toString(),
       }));
-      setNewVendorData({ name: "", brand: "", branch: branchId, due: 0 });
+      setNewVendorData({ name: "", brand: "", branch: branchId });
       setShowNewVendorDialog(false);
     } catch (error) {
       console.error("Error adding vendor:", error);
@@ -428,9 +449,9 @@ function EditAllPurchaseTransactionForm() {
     if (!originalPurchaseData) return false;
     return (
       formData.date !== originalPurchaseData.date ||
-      formData.branch !== originalPurchaseData.branch.toString() ||
-      formData.vendor !== originalPurchaseData.vendor.toString() ||
-      formData.bill_no !== originalPurchaseData.bill_no?.toString() ||
+      formData.branch !== originalPurchaseData.branch?.toString() ||
+      formData.vendor !== (originalPurchaseData.vendor?.toString() || "") ||
+      formData.bill_no !== (originalPurchaseData.bill_no?.toString() || "") ||
       formData.purchase.length !== originalPurchaseData.purchase.length ||
       formData.method !== originalPurchaseData.method ||
       formData.cheque_number !== originalPurchaseData.cheque_number ||
@@ -439,7 +460,6 @@ function EditAllPurchaseTransactionForm() {
         const originalPurchase = originalPurchaseData.purchase[index];
         return (
           purchase.product !== originalPurchase.product.toString() ||
-          purchase.imei_number !== originalPurchase.imei_number ||
           purchase.unit_price !== originalPurchase.unit_price.toString() ||
           purchase.quantity !== originalPurchase.quantity.toString() ||
           purchase.total_price !== originalPurchase.total_price.toString()
@@ -489,6 +509,7 @@ function EditAllPurchaseTransactionForm() {
                     value={formData.date}
                     onChange={handleChange}
                     className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                    disabled={returned}
                     required
                   />
                 </div>
@@ -504,6 +525,7 @@ function EditAllPurchaseTransactionForm() {
                     value={formData.bill_no}
                     onChange={handleChange}
                     className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                    disabled={returned}
                     required
                   />
                 </div>
@@ -537,63 +559,66 @@ function EditAllPurchaseTransactionForm() {
                 </Select>
               </div> */}
 
-              {/* Vendor Select */}
-              <div className="flex flex-col">
-                <Label htmlFor="vendor" className="text-sm font-medium text-white mb-2">
-                  Vendor
-                </Label>
-                <Popover open={openVendor} onOpenChange={setOpenVendor}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openVendor}
-                      className="w-full justify-between bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
-                    >
-                      {formData.vendor
-                        ? vendors.find((vendor) => vendor.id.toString() === formData.vendor)
-                            ?.name
-                        : "Select a vendor..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 bg-slate-800 border-slate-700">
-                    <Command className="bg-slate-700 border-slate-600">
-                      <CommandInput
-                        placeholder="Search vendor..."
-                        className="bg-slate-700 text-white"
-                      />
-                      <CommandList className="max-h-[200px] overflow-auto">
-                        <CommandEmpty>No vendor found.</CommandEmpty>
-                        <CommandGroup>
-                          {vendors.map((vendor) => (
+              {/* Vendor Select - Only show if vendor exists */}
+              {originalPurchaseData?.vendor && (
+                <div className="flex flex-col">
+                  <Label htmlFor="vendor" className="text-sm font-medium text-white mb-2">
+                    Vendor
+                  </Label>
+                  <Popover open={openVendor} onOpenChange={setOpenVendor}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openVendor}
+                        disabled={returned}
+                        className="w-full justify-between bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                      >
+                        {formData.vendor
+                          ? vendors.find((vendor) => vendor.id.toString() === formData.vendor)
+                              ?.name
+                          : "Select a vendor..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0 bg-slate-800 border-slate-700">
+                      <Command className="bg-slate-700 border-slate-600">
+                        <CommandInput
+                          placeholder="Search vendor..."
+                          className="bg-slate-700 text-white"
+                        />
+                        <CommandList className="max-h-[200px] overflow-auto">
+                          <CommandEmpty>No vendor found.</CommandEmpty>
+                          <CommandGroup>
+                            {vendors.map((vendor) => (
+                              <CommandItem
+                                key={vendor.id}
+                                onSelect={() => handleVendorChange(vendor.id.toString())}
+                                className="text-white hover:bg-slate-600"
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.vendor === vendor.id.toString() ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {vendor.name}
+                              </CommandItem>
+                            ))}
                             <CommandItem
-                              key={vendor.id}
-                              onSelect={() => handleVendorChange(vendor.id.toString())}
+                              onSelect={() => handleVendorChange("new")}
                               className="text-white hover:bg-slate-600"
                             >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  formData.vendor === vendor.id.toString() ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {vendor.name}
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              Add a new vendor
                             </CommandItem>
-                          ))}
-                          <CommandItem
-                            onSelect={() => handleVendorChange("new")}
-                            className="text-white hover:bg-slate-600"
-                          >
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add a new vendor
-                          </CommandItem>
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
 
               <h3 className="text-xl font-semibold mb-2 text-white">Purchases</h3>
               {formData.purchase.map((purchase, index) => (
@@ -603,7 +628,7 @@ function EditAllPurchaseTransactionForm() {
                     <Button
                       type="button"
                       className="bg-blue-500 hover:bg-blue-600"
-                      disabled={purchase.returned}
+                      disabled={purchase.returned || returned}
                       onClick={() => handleReturnClick(purchase)}
                     >
                       Return
@@ -627,7 +652,7 @@ function EditAllPurchaseTransactionForm() {
                           <Button
                             variant="outline"
                             role="combobox"
-                            disabled={purchase.returned}
+                            disabled={purchase.returned || returned}
                             aria-expanded={openProduct[index]}
                             className="w-full justify-between bg-slate-600 border-slate-500 text-white hover:bg-slate-500"
                           >
@@ -687,7 +712,7 @@ function EditAllPurchaseTransactionForm() {
                         onChange={(e) => handlePurchaseChange(index, e)}
                         className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
                         placeholder="Enter quantity"
-                        disabled={purchase.returned}
+                        disabled={purchase.returned || returned}
                         required
                       />
                     </div>
@@ -703,7 +728,7 @@ function EditAllPurchaseTransactionForm() {
                         onChange={(e) => handlePurchaseChange(index, e)}
                         className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
                         placeholder="Enter unit price"
-                        disabled={purchase.returned}
+                        disabled={purchase.returned || returned}
                         required
                       />
                     </div>
@@ -722,13 +747,14 @@ function EditAllPurchaseTransactionForm() {
                       />
                     </div>
                   </div>
-                  {index > 0 && !purchase.returned && (
+                  {index > 0 && (
                     <Button
                       type="button"
                       variant="destructive"
                       size="sm"
                       className="mt-4 bg-red-600 hover:bg-red-700 text-white"
                       onClick={() => handleRemovePurchase(index)}
+                      disabled={purchase.returned || returned}
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Remove Purchase
@@ -785,6 +811,24 @@ function EditAllPurchaseTransactionForm() {
                   </div>
                 </div>
               )}
+
+              <Button
+                type="button"
+                onClick={handleAddPurchase}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                disabled={returned}
+              >
+                <PlusCircle className="w-4 h-4 mr-2" />
+                Add Another Purchase
+              </Button>
+
+              <Button
+                type="submit"
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                disabled={!hasFormChanged() || subLoading || returned}
+              >
+                Update Purchase Transaction
+              </Button>
             </form>
 
             {
@@ -801,7 +845,7 @@ function EditAllPurchaseTransactionForm() {
               onClick={(e) => handleReturn(e)}
               disabled={returns.length === 0 || subLoading || returned}
             >
-              Process Returns
+              Return Purchase
             </Button>
 
             <Dialog>
@@ -824,6 +868,44 @@ function EditAllPurchaseTransactionForm() {
                 >
                   Delete Transaction
                 </Button>
+              </DialogContent>
+            </Dialog>
+
+            {/* Return Dialog */}
+            <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
+              <DialogContent className="bg-slate-800 text-white">
+                <DialogHeader>
+                  <DialogTitle>Return Purchase Item</DialogTitle>
+                  <DialogDescription className="text-slate-300">
+                    Enter the quantity to return for this purchase item.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="returnQuantity" className="text-right text-white">
+                      Quantity
+                    </Label>
+                    <Input
+                      id="returnQuantity"
+                      type="number"
+                      value={returnQuantity}
+                      onChange={(e) => setReturnQuantity(e.target.value)}
+                      className="col-span-3 bg-slate-700 border-slate-600 text-white"
+                      placeholder={`Max: ${currentReturnPurchase?.quantity || 0}`}
+                      max={currentReturnPurchase?.quantity || 0}
+                      min="1"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    onClick={handleReturnConfirm}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Confirm Return
+                  </Button>
+                </DialogFooter>
               </DialogContent>
             </Dialog>
 

@@ -41,7 +41,7 @@ function EditAllManufactureForm(){
               ...mi,
               product: mi.product.toString(),
               quantity: mi.quantity.toString(),
-              unit_cost: (products.find(p=>p.id === mi.product)?.cost_price || '')
+              unit_price: mi.unit_price.toString()
             }))
         });
         setOpenProduct(new Array(manuRes.data.manufacture_items?.length || 0).fill(false));
@@ -66,13 +66,13 @@ function EditAllManufactureForm(){
     if (value === 'new') return; // creation omitted here
     const items = [...formData.manufacture_items];
     const match = products.find(p=>p.id.toString() === value);
-    items[index] = { ...items[index], product: value, unit_cost: match?.cost_price || '' };
+    items[index] = { ...items[index], product: value, unit_price: match?.cost_price || '' };
     setFormData({ ...formData, manufacture_items: items });
     const open = [...openProduct]; open[index]=false; setOpenProduct(open);
   };
 
   const handleAddItem = () => {
-    setFormData(prev => ({...prev, manufacture_items: [...prev.manufacture_items, { product:'', quantity:'', unit_cost:'' }]}));
+    setFormData(prev => ({...prev, manufacture_items: [...prev.manufacture_items, { product:'', quantity:'', unit_price:'' }]}));
     setOpenProduct(prev => [...prev, false]);
   };
 
@@ -85,7 +85,7 @@ function EditAllManufactureForm(){
     if(!u || !q) return 0; return (parseFloat(u)*parseFloat(q)).toFixed(2);
   };
 
-  const totalAmount = formData.manufacture_items.reduce((acc,i)=> acc + (parseFloat(i.unit_cost||0)*parseFloat(i.quantity||0)||0),0);
+  const totalAmount = formData.manufacture_items.reduce((acc,i)=> acc + (parseFloat(i.unit_price||0)*parseFloat(i.quantity||0)||0),0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -97,7 +97,7 @@ function EditAllManufactureForm(){
           product: it.product,
           quantity: it.quantity || 0
         }))
-      }; // remove unit_cost not required by backend
+      }; // remove unit_price not required by backend
       await api.patch(`allinventory/manufacture/${manufactureId}/`, payload);
       navigate(`/manufacture/branch/${branchId}`);
     } catch(e){
@@ -169,11 +169,11 @@ function EditAllManufactureForm(){
                     </div>
                     <div className='flex flex-col'>
                       <Label className='text-sm font-medium text-white mb-2'>Unit Cost</Label>
-                      <Input type='number' name='unit_cost' value={item.unit_cost} onChange={(e)=>handleManufactureChange(index,e)} className='bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500' required />
+                      <Input type='number' name='unit_price' value={item.unit_price} onChange={(e)=>handleManufactureChange(index,e)} className='bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500' required />
                     </div>
                     <div className='flex flex-col'>
                       <Label className='text-sm font-medium text-white mb-2'>Line Total</Label>
-                      <Input disabled value={calculateLineTotal(item.unit_cost, item.quantity)} className='bg-slate-600 border-slate-500 text-white' />
+                      <Input disabled value={calculateLineTotal(item.unit_price, item.quantity)} className='bg-slate-600 border-slate-500 text-white' />
                     </div>
                   </div>
                   {formData.manufacture_items.length>1 && (
@@ -186,7 +186,6 @@ function EditAllManufactureForm(){
               <Button type='button' onClick={handleAddItem} className='w-full bg-purple-600 hover:bg-purple-700 text-white'>
                 <PlusCircle className='w-4 h-4 mr-2'/> Add Another Item
               </Button>
-              <div className='text-right text-white font-bold text-lg'>Total: Rs. {totalAmount.toLocaleString()}</div>
               <Button type='submit' disabled={subLoading} className='w-full bg-green-600 hover:bg-green-700 text-white'>
                 {subLoading ? 'Updating...' : 'Update Manufacture'}
               </Button>

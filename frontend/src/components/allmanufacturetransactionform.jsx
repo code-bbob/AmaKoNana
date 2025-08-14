@@ -3,7 +3,7 @@
 // Manufacture Transaction Form
 // Assumptions (adjust to actual backend once available):
 // Endpoint: POST alltransaction/manufacturetransaction/
-// Fields: date, branch, reference(optional), manufacture: [{ product, quantity, unit_cost }]
+// Fields: date, branch, reference(optional), manufacture: [{ product, quantity, unit_price }]
 // Payment fields omitted (manufacture usually internal). Add if needed.
 // Products fetched from existing inventory endpoint.
 
@@ -45,7 +45,7 @@ function AllManufactureTransactionForm() {
     date: new Date().toISOString().split("T")[0],
     branch: branchId,
     reference: "",
-    manufacture_items: [{ product: "", unit_cost: "", quantity: "" }],
+    manufacture_items: [{ product: "", unit_price: "", quantity: "" }],
   });
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -117,7 +117,7 @@ function AllManufactureTransactionForm() {
       newItems[index] = {
         ...newItems[index],
         product: value,
-        unit_cost: matching?.cost_price || matching?.unit_cost || "",
+        unit_price: matching?.cost_price || matching?.unit_price || "",
       };
       setFormData((prev) => ({ ...prev, manufacture_items: newItems }));
     }
@@ -129,7 +129,7 @@ function AllManufactureTransactionForm() {
   const handleAddItem = () => {
     setFormData((prev) => ({
       ...prev,
-      manufacture_items: [...prev.manufacture_items, { product: "", unit_cost: "", quantity: "" }],
+      manufacture_items: [...prev.manufacture_items, { product: "", unit_price: "", quantity: "" }],
     }));
     setOpenProduct((prev) => [...prev, false]);
   };
@@ -142,13 +142,13 @@ function AllManufactureTransactionForm() {
     setOpenProduct((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const calculateLineTotal = (unit_cost, quantity) => {
-    if (!unit_cost || !quantity) return 0;
-    return (parseFloat(unit_cost) * parseFloat(quantity)).toFixed(2);
+  const calculateLineTotal = (unit_price, quantity) => {
+    if (!unit_price || !quantity) return 0;
+    return (parseFloat(unit_price) * parseFloat(quantity)).toFixed(2);
   };
 
   const totalAmount = formData.manufacture_items.reduce((acc, item) => {
-    const line = parseFloat(item.unit_cost || 0) * parseFloat(item.quantity || 0);
+    const line = parseFloat(item.unit_price || 0) * parseFloat(item.quantity || 0);
     return acc + (isNaN(line) ? 0 : line);
   }, 0);
 
@@ -162,9 +162,10 @@ function AllManufactureTransactionForm() {
         ...formData,
         manufacture_items: formData.manufacture_items.map(it => ({
           product: it.product,
-          quantity: it.quantity || 0
+          quantity: it.quantity || 0,
+          unit_price: it.unit_price || 0
         }))
-      }; // strip frontend-only unit_cost
+      }; // strip frontend-only unit_price
       const response = await api.post("allinventory/manufacture/", payload);
       console.log("Manufacture created", response.data);
       navigate(`/manufacture/branch/${branchId}`);
@@ -291,12 +292,12 @@ function AllManufactureTransactionForm() {
                       <Input type='number' id={`quantity-${index}`} name='quantity' value={item.quantity} onChange={(e) => handleManufactureChange(index, e)} className='bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500' required />
                     </div>
                     <div className='flex flex-col'>
-                      <Label htmlFor={`unit_cost-${index}`} className='text-sm font-medium text-white mb-2'>Unit Cost</Label>
-                      <Input type='number' id={`unit_cost-${index}`} name='unit_cost' value={item.unit_cost} onChange={(e) => handleManufactureChange(index, e)} className='bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500' required />
+                      <Label htmlFor={`unit_price-${index}`} className='text-sm font-medium text-white mb-2'>Unit Cost</Label>
+                      <Input type='number' id={`unit_price-${index}`} name='unit_price' value={item.unit_price} onChange={(e) => handleManufactureChange(index, e)} className='bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500' required />
                     </div>
                     <div className='flex flex-col'>
                       <Label className='text-sm font-medium text-white mb-2'>Line Total</Label>
-                      <Input disabled value={calculateLineTotal(item.unit_cost, item.quantity)} className='bg-slate-600 border-slate-500 text-white' />
+                      <Input disabled value={calculateLineTotal(item.unit_price, item.quantity)} className='bg-slate-600 border-slate-500 text-white' />
                     </div>
                   </div>
                   {formData.manufacture_items.length > 1 && (
