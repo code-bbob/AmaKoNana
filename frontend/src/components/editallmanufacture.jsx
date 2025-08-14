@@ -66,7 +66,7 @@ function EditAllManufactureForm(){
     if (value === 'new') return; // creation omitted here
     const items = [...formData.manufacture_items];
     const match = products.find(p=>p.id.toString() === value);
-    items[index] = { ...items[index], product: value, unit_price: match?.cost_price || '' };
+    items[index] = { ...items[index], product: value, unit_price: match?.unit_price || '' };
     setFormData({ ...formData, manufacture_items: items });
     const open = [...openProduct]; open[index]=false; setOpenProduct(open);
   };
@@ -95,7 +95,8 @@ function EditAllManufactureForm(){
         ...formData,
         manufacture_items: formData.manufacture_items.map(it => ({
           product: it.product,
-          quantity: it.quantity || 0
+          quantity: it.quantity || 0,
+          unit_price: it.unit_price
         }))
       }; // remove unit_price not required by backend
       await api.patch(`allinventory/manufacture/${manufactureId}/`, payload);
