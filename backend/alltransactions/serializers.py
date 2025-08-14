@@ -328,7 +328,7 @@ class SalesSerializer(serializers.ModelSerializer):
     product_name = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Sales
-        fields = ['id', 'product', 'quantity', 'unit_price', 'total_price','product_name','returned','returned_quantity']
+        fields = ['id', 'product', 'quantity', 'unit_price', 'total_price','product_name','returned','returned_quantity','discount']
         read_only_fields = ['total_price', 'returned']
 
     def get_product_name(self, obj):
