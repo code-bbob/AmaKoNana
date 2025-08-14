@@ -32,7 +32,7 @@ class ManufactureItemSerializer(ModelSerializer):
     product_name = SerializerMethodField()
     class Meta:
         model = ManufactureItem
-        fields = ['id', 'product', 'quantity', 'product_name']
+        fields = ['id', 'product', 'quantity', 'product_name','unit_price']
 
     def get_product_name(self, obj):
         return obj.product.name

@@ -59,6 +59,7 @@ class ManufactureItem(models.Model):
     manufacture = models.ForeignKey(Manufacture, on_delete=models.CASCADE, related_name='manufacture_items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='manufacture_items')
     quantity = models.IntegerField(null=True, blank=True, default=0)
+    unit_price = models.FloatField(null=True, blank=True, default=0)
 
 
     # def delete(self, *args, **kwargs):

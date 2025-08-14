@@ -123,7 +123,7 @@ class Sales(models.Model):
     quantity = models.IntegerField()
     unit_price = models.FloatField()
     total_price = models.FloatField(null=True,blank=True)
-    discount = models.FloatField(null=True,blank=True,default=0)
+    discount = models.FloatField(default=0)
     sales_transaction = models.ForeignKey(SalesTransaction, on_delete=models.CASCADE,related_name='sales')
     returned = models.BooleanField(default=False)
     sales_return = models.ForeignKey(
