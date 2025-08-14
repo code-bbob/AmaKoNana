@@ -99,7 +99,7 @@ class SalesTransaction(models.Model):
         return f"Sales Transaction {self.pk} of {self.enterprise.name}"
     
     def calculate_total_amount(self):
-        total = sum((sales.unit_price * sales.quantity) for sales in self.sales.all())
+        total = sum((sales.unit_price * sales.quantity - sales.discount) for sales in self.sales.all())
         print("HERE IS THE TOTAL AMOUNT", total)
         self.total_amount = total
 
