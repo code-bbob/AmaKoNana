@@ -1,10 +1,15 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Calendar, ChevronLeft, ChevronRight, Search, Plus, ArrowLeft } from 'lucide-react'
 import Sidebar from '@/components/allsidebar';
 import useAxios from '@/utils/useAxios';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, Edit2 } from 'lucide-react';
+import { format } from 'date-fns'
 
 function OrdersPage(){
   const { branchId } = useParams();
@@ -13,77 +18,243 @@ function OrdersPage(){
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [pageData, setPageData] = useState({ next: null, previous: null, count: 0 });
-  const [statusFilter, setStatusFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState()
+  const [totalPages, setTotalPages] = useState()
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [localSearchTerm, setLocalSearchTerm] = useState('')
+  const [metadata, setMetadata] = useState({
+    next: null,
+    previous: null,
+    count: 0
+  })
 
-  const fetchOrders = async (url=null) => {
+  async function fetchPaginatedData(url) {
+    setLoading(true)
     try {
-      setLoading(true);
-  const endpoint = url || `order/branch/${branchId}/${statusFilter ? `?status=${statusFilter}`: ''}`;
-      const res = await api.get(endpoint);
-      setOrders(res.data.results || res.data || []);
-      setPageData({ next: res.data.next, previous: res.data.previous, count: res.data.count });
-    } catch(err){
-      console.error(err);
-      setError('Failed to load orders');
-    } finally { setLoading(false); }
-  };
+      const response = await api.get(url)
+      setOrders(response.data.results)
+      setMetadata({
+        next: response.data.next,
+        previous: response.data.previous,
+        count: response.data.count
+      })
+      setTotalPages(response.data.total_pages) 
+      setCurrentPage(response.data.page)
+    } catch (err) {
+      setError('Failed to fetch data')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  useEffect(()=>{ fetchOrders(); }, [branchId, statusFilter]);
+  const fetchInitData = async () => {
+    try {
+      const response = await api.get("order/branch/" + branchId + "/") 
+      setOrders(response.data.results)
+      console.log(response.data.results)
+      setMetadata({
+        next: response.data.next,
+        previous: response.data.previous,
+        count: response.data.count
+      })
+      setTotalPages(response.data.total_pages) 
+      setCurrentPage(response.data.page)
+    } catch (err) {
+      setError('Failed to fetch initial data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchInitData()
+  }, [])
+
+  const handleSearch = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      const response = await api.get(`order/branch/${branchId}/?search=${localSearchTerm}`)
+      setOrders(response.data.results)
+      setMetadata({
+        next: response.data.next,
+        previous: response.data.previous,
+        count: response.data.count
+      })
+      setTotalPages(Math.ceil(response.data.count / 10)) 
+      setCurrentPage(1)
+    } catch (err) {
+      setError('Failed to search orders')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDateSearch = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      const response = await api.get(`order/branch/${branchId}/?start_date=${startDate}&end_date=${endDate}`)
+      setOrders(response.data.results)
+      setMetadata({
+        next: response.data.next,
+        previous: response.data.previous,
+        count: response.data.count
+      })
+      setTotalPages(Math.ceil(response.data.count / 10)) 
+      setCurrentPage(1)
+    } catch (err) {
+      setError('Failed to filter orders by date')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+        Loading...
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-red-500">
+        {error}
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
-      <Sidebar />
-      <div className="flex-grow p-4 lg:p-6 lg:ml-64 overflow-auto">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <Button onClick={() => navigate(`/branch/${branchId}`)} variant="outline" className="px-4 py-2 text-black border-white hover:bg-gray-700 hover:text-white">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back
-            </Button>
-            <Button onClick={() => navigate(`/orders/form/branch/${branchId}`)} className="bg-purple-600 hover:bg-purple-700 text-white">
-              <Plus className="w-4 h-4 mr-2" /> New Order
-            </Button>
-          </div>
-          <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-2xl lg:text-3xl font-bold mb-4 text-white">Orders</h2>
-            {error && <p className="text-red-400 mb-4">{error}</p>}
-            <div className="mb-4 flex gap-4 items-center">
-              <select value={statusFilter} onChange={(e)=> setStatusFilter(e.target.value)} className="bg-slate-700 border border-slate-600 text-white rounded px-3 py-2">
-                <option value="">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="prepared">Prepared</option>
-                <option value="dispatched">Dispatched</option>
-                <option value="completed">Completed</option>
-                <option value="canceled">Canceled</option>
-              </select>
+      <Sidebar className="hidden lg:block w-64 flex-shrink-0" />
+      <div className="flex-grow p-4 px-8 lg:p-6 lg:ml-64">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6"
+        >
+          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-4 lg:mb-0">Orders</h1>
+          <Button
+            onClick={() => navigate('/')}
+            variant="outline"
+            className="w-full lg:w-auto px-5 text-black border-white hover:bg-gray-700 hover:text-white"
+          >
+            <ArrowLeft className="mr-2 h-4 w-3" />
+            Back to Dashboard
+          </Button>
+        </motion.div>
+
+        <div className="mb-6 space-y-4 lg:space-y-0 lg:flex lg:flex-wrap lg:items-center lg:gap-4">
+          <form onSubmit={handleSearch} className="w-full lg:w-auto">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search orders..."
+                value={localSearchTerm}
+                onChange={(e) => setLocalSearchTerm(e.target.value)}
+                className="pl-10 w-full lg:w-64 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+              />
             </div>
-            {loading ? (<p className="text-slate-300">Loading...</p>) : (
-              <div className="space-y-4">
-                {orders.length === 0 && <p className="text-slate-400">No orders found.</p>}
-                {orders.map(order => (
-                  <div key={order.id} className="bg-slate-700 p-4 rounded-md shadow flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          </form>
+
+          <form onSubmit={handleDateSearch} className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="startDate" className="text-white whitespace-nowrap">Start:</Label>
+              <Input
+                type="date"
+                id="startDate"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="endDate" className="text-white whitespace-nowrap">End:</Label>
+              <Input
+                type="date"
+                id="endDate"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+              />
+            </div>
+            <Button type="submit" className="w-full lg:w-auto bg-purple-600 hover:bg-purple-700 text-white">
+              <Calendar className="w-4 h-4 mr-2" />
+              Search by Date
+            </Button>
+          </form>
+        </div>
+
+        <div className="space-y-6">
+          {orders.length > 0 ? (
+            orders.map((order) => (
+              <Card key={`${order.id}-${order.received_date}`} onClick={() => navigate(`editform/${order.id}`)} className="bg-gradient-to-b from-slate-800 to-slate-900 border-none shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer">
+                <CardHeader className="border-b border-slate-700">
+                  <CardTitle className="text-lg lg:text-xl font-medium text-white flex flex-col lg:flex-row justify-between items-start lg:items-center">
                     <div>
-                      <p className="text-white font-semibold">{order.customer_name} <span className="text-xs text-slate-400">({order.customer_phone})</span></p>
-                      <p className="text-slate-300 text-sm">Status: <span className="capitalize">{order.status}</span> | Due: {order.due_date || 'N/A'}</p>
-                      <p className="text-slate-400 text-xs">Advance: {order.advance_amount ?? '-'} / Total: {order.total_amount ?? '-'}</p>
+                      <p>{order.customer_name}</p>
+                      <p className='text-sm text-gray-400'>Phone: {order.customer_phone}</p>
                     </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="border-slate-500 text-white hover:bg-slate-600" onClick={()=> navigate(`/orders/branch/${branchId}/editform/${order.id}`)}>
-                        <Edit2 className="w-4 h-4 mr-2" /> Edit
-                      </Button>
+                    <span className="mt-2 lg:mt-0 text-sm lg:text-base">{format(new Date(order.received_date), 'dd MMM yyyy')}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  {order?.items?.map((item, index) => (
+                    <div key={`${order.id}-${index}`} className="mb-4 last:mb-0 p-3 lg:p-4 bg-slate-800 rounded-lg hover:bg-slate-750 transition-colors duration-300">
+                      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-2">
+                        <span className="text-white font-medium mb-2 lg:mb-0">{item.item}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm text-slate-300">
+                        <span className="text-purple-400 text-sm">Status: {order.status}</span>
+                        {order.due_date && <span className='text-blue-400'>Due: {format(new Date(order.due_date), 'dd MMM yyyy')}</span>}
+                        <span className='text-yellow-400'>Method: {order.advance_method}</span>
+                      </div>
                     </div>
+                  ))}
+                  <div className="mt-4 flex justify-between text-white">
+                    {order.advance_amount && <span className="font-medium">Advance: RS. {order.advance_amount?.toLocaleString()}</span>}
+                    {order.total_amount && <span className="font-bold text-green-400">Total: RS. {order.total_amount?.toLocaleString()}</span>}
                   </div>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center justify-between mt-6">
-              <Button disabled={!pageData.previous} onClick={()=> fetchOrders(pageData.previous)} variant="outline" className="text-white border-slate-600 hover:bg-slate-700">Previous</Button>
-              <Button disabled={!pageData.next} onClick={()=> fetchOrders(pageData.next)} variant="outline" className="text-white border-slate-600 hover:bg-slate-700">Next</Button>
-            </div>
-          </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="text-center text-white">No orders found.</div>
+          )}
+        </div>
+
+        <div className="flex justify-center mt-6 space-x-4">
+          <Button
+            onClick={() => fetchPaginatedData(metadata.previous)}
+            disabled={!metadata.previous}
+            className="bg-slate-700 hover:bg-slate-600 text-white"
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Previous
+          </Button>
+          <span className="text-white self-center">Page {currentPage} of {totalPages}</span>
+          <Button
+            onClick={() => fetchPaginatedData(metadata.next)}
+            disabled={!metadata.next}
+            className="bg-slate-700 hover:bg-slate-600 text-white"
+          >
+            Next
+            <ChevronRight className="w-4 h-4 ml-2" />
+          </Button>
         </div>
       </div>
+      <Button
+        className="fixed bottom-8 right-8 rounded-full w-14 h-14 lg:w-16 lg:h-16 shadow-lg bg-purple-600 hover:bg-purple-700 text-white"
+        onClick={() => navigate(`/orders/form/branch/${branchId}`)}
+      >
+        <Plus className="w-6 h-6 lg:w-8 lg:h-8" />
+      </Button>
     </div>
-  );
+  )
 }
 export default OrdersPage;
