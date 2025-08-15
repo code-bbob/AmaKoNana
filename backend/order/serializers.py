@@ -4,7 +4,7 @@ from .models import Order, OrderItem
 class OrderItemSerializer(ModelSerializer):
     class Meta:
         model = OrderItem
-        fields = '__all__'
+        fields = ['item', 'image']
 
 class OrderSerializer(ModelSerializer):
     # Use the related_name 'items' from OrderItem.order
