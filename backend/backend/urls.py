@@ -25,6 +25,8 @@ urlpatterns = [
     path('enterprise/',include('enterprise.urls')),
     path('allinventory/',include('allinventory.urls')),
     path('alltransaction/',include('alltransactions.urls')),
+    # Orders app (customer orders / production orders)
+    path('order/', include('order.urls')),
 ]
 
 # Serve media files during development

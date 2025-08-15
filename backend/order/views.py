@@ -6,6 +6,7 @@ from rest_framework.status import HTTP_404_NOT_FOUND
 from .serializers import OrderSerializer, OrderItemSerializer
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from rest_framework import status
 # Create your views here.
 
 
@@ -32,9 +33,10 @@ class OrderView(APIView):
 
 
     def post(self, request, *args, **kwargs):
-        # Logic to create a new order
-        request.data['enterprise'] = request.user.person.enterprise.id
-        serializer = OrderSerializer(data=request.data)
+        # Ensure enterprise is set server-side
+        data = request.data.copy()
+        data['enterprise'] = request.user.person.enterprise.id
+        serializer = OrderSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -42,9 +44,10 @@ class OrderView(APIView):
 
     def patch(self, request, pk, *args, **kwargs):
         order = Order.objects.get(pk=pk, enterprise=request.user.person.enterprise)
-        serializer = OrderSerializer(order, data=request.data, partial=True)
+        data = request.data.copy()
+        serializer = OrderSerializer(order, data=data, partial=True)
         if serializer.is_valid():
-            serializer.save(partial=True)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

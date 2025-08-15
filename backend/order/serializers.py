@@ -7,27 +7,29 @@ class OrderItemSerializer(ModelSerializer):
         fields = '__all__'
 
 class OrderSerializer(ModelSerializer):
-    order_item = OrderItemSerializer(many=True)
+    # Use the related_name 'items' from OrderItem.order
+    items = OrderItemSerializer(many=True)
 
     class Meta:
         model = Order
         fields = '__all__'
 
     def create(self, validated_data):
-        order_items_data = validated_data.pop('order_item')
+        items_data = validated_data.pop('items')
         order = Order.objects.create(**validated_data)
-        for item_data in order_items_data:
+        for item_data in items_data:
             OrderItem.objects.create(order=order, **item_data)
         return order
 
     def update(self, instance, validated_data):
-        order_items_data = validated_data.pop('order_item')
+        items_data = validated_data.pop('items')
         instance = super().update(instance, validated_data)
-        instance.order_item.all().delete()
-        for item_data in order_items_data:
+        # Clear and recreate items
+        instance.items.all().delete()
+        for item_data in items_data:
             OrderItem.objects.create(order=instance, **item_data)
         return instance
-    
+
     def delete(self, instance, *args, **kwargs):
-        instance.order_item.all().delete()
+        instance.items.all().delete()
         return super().delete(instance, *args, **kwargs)

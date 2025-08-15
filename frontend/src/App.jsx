@@ -42,6 +42,9 @@ import EditDebtorTransactionForm from "./pages/editAllDebtors";
 import AllVendorStatementPage from "./pages/allVendorStatementPage";
 import AllDebtorStatementPage from "./pages/allDebtorStatementPage";
 import TransferForm from "./components/transferForm";
+import OrderForm from "./components/orderForm";
+import EditOrderForm from "./components/editOrderForm";
+import OrdersPage from "./pages/ordersPage";
 
 function App() {
   const { isAuthenticated } = useSelector((state) => state.root);
@@ -110,6 +113,11 @@ function App() {
 
           <Route path="invoice/:transactionId" element={<InvoicePage />} />
           <Route path="transfer/form/branch/:branchId" element={<TransferForm />} />
+          
+          {/* Orders */}
+          <Route path="orders/branch/:branchId" element={<OrdersPage />} />
+          <Route path="orders/form/branch/:branchId" element={<OrderForm />} />
+          <Route path="orders/branch/:branchId/editform/:orderId" element={<EditOrderForm />} />
         </Route>
       </Route>
     </Routes>

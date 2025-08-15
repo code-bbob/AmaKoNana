@@ -129,6 +129,16 @@ export default function Sidebar() {
         { title: 'Add Transfer', icon: RefreshCw, path: 'transfer/form' }
       ]
     }
+    ,
+    {
+      label: 'Orders',
+      icon: ShoppingCart,
+      mainPath: 'orders/form',
+      items: [
+        { title: 'Add Order', icon: ShoppingCart, path: 'orders/form' },
+        { title: 'Orders', icon: ShoppingCart, path: 'orders' }
+      ]
+    }
   ]
 
   const [openGroups, setOpenGroups] = useState(() => {
