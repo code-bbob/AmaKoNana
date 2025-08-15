@@ -9,6 +9,11 @@ class Order(models.Model):
     received_date = models.DateField(auto_now_add=True)
     total_amount = models.FloatField(null=True, blank=True)
     advance_amount = models.FloatField(null=True, blank=True)
+    advance_method = models.CharField(max_length=50, choices=[
+        ('cash', 'Cash'),
+        ('credit_card', 'Credit Card'),
+        ('mobile_payment', 'Mobile Payment'),
+    ], default='cash')
 
     status = models.CharField(max_length=50, choices=[
         ('pending', 'Pending'),
@@ -24,4 +29,5 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
-
+    item = models.CharField(max_length=255, null=True, blank=True)
+    image = models.ImageField(upload_to='order_items/', null=True, blank=True)
