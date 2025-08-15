@@ -212,28 +212,27 @@ export default function AllBrandProducts() {
   const handleAddProduct = async (e) => {
     e.preventDefault();
     try {
-      const formData = new FormData();
-      
-      // Append all form fields
-      Object.keys(newProductData).forEach(key => {
-        if (key === 'vendor') {
-          // Handle vendor array
-          newProductData.vendor.forEach(vendorId => {
-            formData.append('vendor', vendorId);
-          });
-        } else if (key === 'print_pattern' && newProductData.print_pattern) {
-          // Handle file upload
-          formData.append('print_pattern', newProductData.print_pattern);
-        } else if (newProductData[key] !== null && newProductData[key] !== '') {
-          formData.append(key, newProductData[key]);
-        }
-      });
-
-      const r = await api.post("allinventory/product/", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // If we have an image file, keep existing multipart behaviour.
+      // Otherwise just send plain JSON (simpler & debuggable) so you don't need FormData.
+      let r;
+      if (newProductData.print_pattern) {
+        const formData = new FormData();
+        Object.keys(newProductData).forEach(key => {
+          if (key === 'vendor') {
+            newProductData.vendor.forEach(vendorId => formData.append('vendor', vendorId));
+          } else if (key === 'print_pattern' && newProductData.print_pattern) {
+            formData.append('print_pattern', newProductData.print_pattern);
+          } else if (newProductData[key] !== null && newProductData[key] !== '') {
+            formData.append(key, newProductData[key]);
+          }
+        });
+        r = await api.post("allinventory/product/", formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      } else {
+        // Build a clean JSON payload (omit empty strings & nulls)
+        const { print_pattern, ...rest } = newProductData; // strip file field
+        const payload = Object.fromEntries(Object.entries(rest).filter(([_, v]) => v !== '' && v !== null));
+        r = await api.post("allinventory/product/", payload); // axios sends JSON by default
+      }
       
       setProducts((prev) => [...prev, r.data]);
       setFilteredProducts((prev) => [...prev, r.data]);

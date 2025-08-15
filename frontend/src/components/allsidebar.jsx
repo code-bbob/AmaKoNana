@@ -212,7 +212,7 @@ export default function Sidebar() {
               <div
                 className="text-2xl font-bold text-center mb-4 text-white cursor-pointer tracking-wide"
                 onClick={() => {
-                  navigate('/')
+                  navigate(`/branch/${currentBranch.id}`)
                   setIsOpen(false)
                 }}
               >

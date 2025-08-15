@@ -197,6 +197,8 @@ export default function AllVendorPage() {
                   <Checkbox
                     checked={selectedVendors.includes(vendor.id)}
                     onCheckedChange={() => handleCheckboxChange(vendor.id)}
+
+                    onClick={(e) => e.stopPropagation()}
                     className="border-gray-400"
                   />
                 </div>

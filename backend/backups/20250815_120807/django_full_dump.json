@@ -1,0 +1,3141 @@
+[
+{
+  "model": "admin.logentry",
+  "pk": 1,
+  "fields": {
+    "action_time": "2025-08-15T06:42:50.168Z",
+    "user": "141c29cd-7d21-4098-9584-97f438fbd8d1",
+    "content_type": 11,
+    "object_id": "23",
+    "object_repr": "Daura Bhoto",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Stock\", \"Count\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 2,
+  "fields": {
+    "action_time": "2025-08-15T07:03:44.558Z",
+    "user": "141c29cd-7d21-4098-9584-97f438fbd8d1",
+    "content_type": 14,
+    "object_id": "16",
+    "object_repr": "Wrapper Set (0-3 months)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Stock\", \"Count\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 3,
+  "fields": {
+    "action_time": "2025-08-15T07:04:04.704Z",
+    "user": "141c29cd-7d21-4098-9584-97f438fbd8d1",
+    "content_type": 11,
+    "object_id": "23",
+    "object_repr": "Daura Bhoto",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Stock\", \"Count\"]}}]"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1,
+  "fields": {
+    "name": "Can add log entry",
+    "content_type": 1,
+    "codename": "add_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2,
+  "fields": {
+    "name": "Can change log entry",
+    "content_type": 1,
+    "codename": "change_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 3,
+  "fields": {
+    "name": "Can delete log entry",
+    "content_type": 1,
+    "codename": "delete_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 4,
+  "fields": {
+    "name": "Can view log entry",
+    "content_type": 1,
+    "codename": "view_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 5,
+  "fields": {
+    "name": "Can add permission",
+    "content_type": 2,
+    "codename": "add_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 6,
+  "fields": {
+    "name": "Can change permission",
+    "content_type": 2,
+    "codename": "change_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 7,
+  "fields": {
+    "name": "Can delete permission",
+    "content_type": 2,
+    "codename": "delete_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 8,
+  "fields": {
+    "name": "Can view permission",
+    "content_type": 2,
+    "codename": "view_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 9,
+  "fields": {
+    "name": "Can add group",
+    "content_type": 3,
+    "codename": "add_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 10,
+  "fields": {
+    "name": "Can change group",
+    "content_type": 3,
+    "codename": "change_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 11,
+  "fields": {
+    "name": "Can delete group",
+    "content_type": 3,
+    "codename": "delete_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 12,
+  "fields": {
+    "name": "Can view group",
+    "content_type": 3,
+    "codename": "view_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 13,
+  "fields": {
+    "name": "Can add content type",
+    "content_type": 4,
+    "codename": "add_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 14,
+  "fields": {
+    "name": "Can change content type",
+    "content_type": 4,
+    "codename": "change_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 15,
+  "fields": {
+    "name": "Can delete content type",
+    "content_type": 4,
+    "codename": "delete_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 16,
+  "fields": {
+    "name": "Can view content type",
+    "content_type": 4,
+    "codename": "view_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 17,
+  "fields": {
+    "name": "Can add session",
+    "content_type": 5,
+    "codename": "add_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 18,
+  "fields": {
+    "name": "Can change session",
+    "content_type": 5,
+    "codename": "change_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 19,
+  "fields": {
+    "name": "Can delete session",
+    "content_type": 5,
+    "codename": "delete_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 20,
+  "fields": {
+    "name": "Can view session",
+    "content_type": 5,
+    "codename": "view_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 21,
+  "fields": {
+    "name": "Can add otp",
+    "content_type": 6,
+    "codename": "add_otp"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 22,
+  "fields": {
+    "name": "Can change otp",
+    "content_type": 6,
+    "codename": "change_otp"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 23,
+  "fields": {
+    "name": "Can delete otp",
+    "content_type": 6,
+    "codename": "delete_otp"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 24,
+  "fields": {
+    "name": "Can view otp",
+    "content_type": 6,
+    "codename": "view_otp"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 25,
+  "fields": {
+    "name": "Can add user",
+    "content_type": 7,
+    "codename": "add_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 26,
+  "fields": {
+    "name": "Can change user",
+    "content_type": 7,
+    "codename": "change_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 27,
+  "fields": {
+    "name": "Can delete user",
+    "content_type": 7,
+    "codename": "delete_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 28,
+  "fields": {
+    "name": "Can view user",
+    "content_type": 7,
+    "codename": "view_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 29,
+  "fields": {
+    "name": "Can add branch",
+    "content_type": 8,
+    "codename": "add_branch"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 30,
+  "fields": {
+    "name": "Can change branch",
+    "content_type": 8,
+    "codename": "change_branch"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 31,
+  "fields": {
+    "name": "Can delete branch",
+    "content_type": 8,
+    "codename": "delete_branch"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 32,
+  "fields": {
+    "name": "Can view branch",
+    "content_type": 8,
+    "codename": "view_branch"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 33,
+  "fields": {
+    "name": "Can add enterprise",
+    "content_type": 9,
+    "codename": "add_enterprise"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 34,
+  "fields": {
+    "name": "Can change enterprise",
+    "content_type": 9,
+    "codename": "change_enterprise"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 35,
+  "fields": {
+    "name": "Can delete enterprise",
+    "content_type": 9,
+    "codename": "delete_enterprise"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 36,
+  "fields": {
+    "name": "Can view enterprise",
+    "content_type": 9,
+    "codename": "view_enterprise"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 37,
+  "fields": {
+    "name": "Can add person",
+    "content_type": 10,
+    "codename": "add_person"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 38,
+  "fields": {
+    "name": "Can change person",
+    "content_type": 10,
+    "codename": "change_person"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 39,
+  "fields": {
+    "name": "Can delete person",
+    "content_type": 10,
+    "codename": "delete_person"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 40,
+  "fields": {
+    "name": "Can view person",
+    "content_type": 10,
+    "codename": "view_person"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 41,
+  "fields": {
+    "name": "Can add brand",
+    "content_type": 11,
+    "codename": "add_brand"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 42,
+  "fields": {
+    "name": "Can change brand",
+    "content_type": 11,
+    "codename": "change_brand"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 43,
+  "fields": {
+    "name": "Can delete brand",
+    "content_type": 11,
+    "codename": "delete_brand"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 44,
+  "fields": {
+    "name": "Can view brand",
+    "content_type": 11,
+    "codename": "view_brand"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 45,
+  "fields": {
+    "name": "Can add manufacture",
+    "content_type": 12,
+    "codename": "add_manufacture"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 46,
+  "fields": {
+    "name": "Can change manufacture",
+    "content_type": 12,
+    "codename": "change_manufacture"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 47,
+  "fields": {
+    "name": "Can delete manufacture",
+    "content_type": 12,
+    "codename": "delete_manufacture"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 48,
+  "fields": {
+    "name": "Can view manufacture",
+    "content_type": 12,
+    "codename": "view_manufacture"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 49,
+  "fields": {
+    "name": "Can add manufacture item",
+    "content_type": 13,
+    "codename": "add_manufactureitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 50,
+  "fields": {
+    "name": "Can change manufacture item",
+    "content_type": 13,
+    "codename": "change_manufactureitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 51,
+  "fields": {
+    "name": "Can delete manufacture item",
+    "content_type": 13,
+    "codename": "delete_manufactureitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 52,
+  "fields": {
+    "name": "Can view manufacture item",
+    "content_type": 13,
+    "codename": "view_manufactureitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 53,
+  "fields": {
+    "name": "Can add product",
+    "content_type": 14,
+    "codename": "add_product"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 54,
+  "fields": {
+    "name": "Can change product",
+    "content_type": 14,
+    "codename": "change_product"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 55,
+  "fields": {
+    "name": "Can delete product",
+    "content_type": 14,
+    "codename": "delete_product"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 56,
+  "fields": {
+    "name": "Can view product",
+    "content_type": 14,
+    "codename": "view_product"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 57,
+  "fields": {
+    "name": "Can add customer",
+    "content_type": 15,
+    "codename": "add_customer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 58,
+  "fields": {
+    "name": "Can change customer",
+    "content_type": 15,
+    "codename": "change_customer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 59,
+  "fields": {
+    "name": "Can delete customer",
+    "content_type": 15,
+    "codename": "delete_customer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 60,
+  "fields": {
+    "name": "Can view customer",
+    "content_type": 15,
+    "codename": "view_customer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 61,
+  "fields": {
+    "name": "Can add debtor",
+    "content_type": 16,
+    "codename": "add_debtor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 62,
+  "fields": {
+    "name": "Can change debtor",
+    "content_type": 16,
+    "codename": "change_debtor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 63,
+  "fields": {
+    "name": "Can delete debtor",
+    "content_type": 16,
+    "codename": "delete_debtor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 64,
+  "fields": {
+    "name": "Can view debtor",
+    "content_type": 16,
+    "codename": "view_debtor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 65,
+  "fields": {
+    "name": "Can add debtor transaction",
+    "content_type": 17,
+    "codename": "add_debtortransaction"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 66,
+  "fields": {
+    "name": "Can change debtor transaction",
+    "content_type": 17,
+    "codename": "change_debtortransaction"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 67,
+  "fields": {
+    "name": "Can delete debtor transaction",
+    "content_type": 17,
+    "codename": "delete_debtortransaction"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 68,
+  "fields": {
+    "name": "Can view debtor transaction",
+    "content_type": 17,
+    "codename": "view_debtortransaction"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 69,
+  "fields": {
+    "name": "Can add purchase",
+    "content_type": 18,
+    "codename": "add_purchase"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 70,
+  "fields": {
+    "name": "Can change purchase",
+    "content_type": 18,
+    "codename": "change_purchase"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 71,
+  "fields": {
+    "name": "Can delete purchase",
+    "content_type": 18,
+    "codename": "delete_purchase"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 72,
+  "fields": {
+    "name": "Can view purchase",
+    "content_type": 18,
+    "codename": "view_purchase"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 73,
+  "fields": {
+    "name": "Can add purchase return",
+    "content_type": 19,
+    "codename": "add_purchasereturn"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 74,
+  "fields": {
+    "name": "Can change purchase return",
+    "content_type": 19,
+    "codename": "change_purchasereturn"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 75,
+  "fields": {
+    "name": "Can delete purchase return",
+    "content_type": 19,
+    "codename": "delete_purchasereturn"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 76,
+  "fields": {
+    "name": "Can view purchase return",
+    "content_type": 19,
+    "codename": "view_purchasereturn"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 77,
+  "fields": {
+    "name": "Can add purchase transaction",
+    "content_type": 20,
+    "codename": "add_purchasetransaction"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 78,
+  "fields": {
+    "name": "Can change purchase transaction",
+    "content_type": 20,
+    "codename": "change_purchasetransaction"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 79,
+  "fields": {
+    "name": "Can delete purchase transaction",
+    "content_type": 20,
+    "codename": "delete_purchasetransaction"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 80,
+  "fields": {
+    "name": "Can view purchase transaction",
+    "content_type": 20,
+    "codename": "view_purchasetransaction"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 81,
+  "fields": {
+    "name": "Can add sales",
+    "content_type": 21,
+    "codename": "add_sales"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 82,
+  "fields": {
+    "name": "Can change sales",
+    "content_type": 21,
+    "codename": "change_sales"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 83,
+  "fields": {
+    "name": "Can delete sales",
+    "content_type": 21,
+    "codename": "delete_sales"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 84,
+  "fields": {
+    "name": "Can view sales",
+    "content_type": 21,
+    "codename": "view_sales"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 85,
+  "fields": {
+    "name": "Can add sales return",
+    "content_type": 22,
+    "codename": "add_salesreturn"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 86,
+  "fields": {
+    "name": "Can change sales return",
+    "content_type": 22,
+    "codename": "change_salesreturn"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 87,
+  "fields": {
+    "name": "Can delete sales return",
+    "content_type": 22,
+    "codename": "delete_salesreturn"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 88,
+  "fields": {
+    "name": "Can view sales return",
+    "content_type": 22,
+    "codename": "view_salesreturn"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 89,
+  "fields": {
+    "name": "Can add sales transaction",
+    "content_type": 23,
+    "codename": "add_salestransaction"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 90,
+  "fields": {
+    "name": "Can change sales transaction",
+    "content_type": 23,
+    "codename": "change_salestransaction"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 91,
+  "fields": {
+    "name": "Can delete sales transaction",
+    "content_type": 23,
+    "codename": "delete_salestransaction"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 92,
+  "fields": {
+    "name": "Can view sales transaction",
+    "content_type": 23,
+    "codename": "view_salestransaction"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 93,
+  "fields": {
+    "name": "Can add staff",
+    "content_type": 24,
+    "codename": "add_staff"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 94,
+  "fields": {
+    "name": "Can change staff",
+    "content_type": 24,
+    "codename": "change_staff"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 95,
+  "fields": {
+    "name": "Can delete staff",
+    "content_type": 24,
+    "codename": "delete_staff"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 96,
+  "fields": {
+    "name": "Can view staff",
+    "content_type": 24,
+    "codename": "view_staff"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 97,
+  "fields": {
+    "name": "Can add staff transactions",
+    "content_type": 25,
+    "codename": "add_stafftransactions"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 98,
+  "fields": {
+    "name": "Can change staff transactions",
+    "content_type": 25,
+    "codename": "change_stafftransactions"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 99,
+  "fields": {
+    "name": "Can delete staff transactions",
+    "content_type": 25,
+    "codename": "delete_stafftransactions"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 100,
+  "fields": {
+    "name": "Can view staff transactions",
+    "content_type": 25,
+    "codename": "view_stafftransactions"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 101,
+  "fields": {
+    "name": "Can add vendor",
+    "content_type": 26,
+    "codename": "add_vendor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 102,
+  "fields": {
+    "name": "Can change vendor",
+    "content_type": 26,
+    "codename": "change_vendor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 103,
+  "fields": {
+    "name": "Can delete vendor",
+    "content_type": 26,
+    "codename": "delete_vendor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 104,
+  "fields": {
+    "name": "Can view vendor",
+    "content_type": 26,
+    "codename": "view_vendor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 105,
+  "fields": {
+    "name": "Can add vendor transactions",
+    "content_type": 27,
+    "codename": "add_vendortransactions"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 106,
+  "fields": {
+    "name": "Can change vendor transactions",
+    "content_type": 27,
+    "codename": "change_vendortransactions"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 107,
+  "fields": {
+    "name": "Can delete vendor transactions",
+    "content_type": 27,
+    "codename": "delete_vendortransactions"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 108,
+  "fields": {
+    "name": "Can view vendor transactions",
+    "content_type": 27,
+    "codename": "view_vendortransactions"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 109,
+  "fields": {
+    "name": "Can add order item",
+    "content_type": 28,
+    "codename": "add_orderitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 110,
+  "fields": {
+    "name": "Can change order item",
+    "content_type": 28,
+    "codename": "change_orderitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 111,
+  "fields": {
+    "name": "Can delete order item",
+    "content_type": 28,
+    "codename": "delete_orderitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 112,
+  "fields": {
+    "name": "Can view order item",
+    "content_type": 28,
+    "codename": "view_orderitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 113,
+  "fields": {
+    "name": "Can add order",
+    "content_type": 29,
+    "codename": "add_order"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 114,
+  "fields": {
+    "name": "Can change order",
+    "content_type": 29,
+    "codename": "change_order"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 115,
+  "fields": {
+    "name": "Can delete order",
+    "content_type": 29,
+    "codename": "delete_order"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 116,
+  "fields": {
+    "name": "Can view order",
+    "content_type": 29,
+    "codename": "view_order"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 1,
+  "fields": {
+    "app_label": "admin",
+    "model": "logentry"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 2,
+  "fields": {
+    "app_label": "auth",
+    "model": "permission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 3,
+  "fields": {
+    "app_label": "auth",
+    "model": "group"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 4,
+  "fields": {
+    "app_label": "contenttypes",
+    "model": "contenttype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 5,
+  "fields": {
+    "app_label": "sessions",
+    "model": "session"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 6,
+  "fields": {
+    "app_label": "userauth",
+    "model": "otp"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 7,
+  "fields": {
+    "app_label": "userauth",
+    "model": "user"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 8,
+  "fields": {
+    "app_label": "enterprise",
+    "model": "branch"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 9,
+  "fields": {
+    "app_label": "enterprise",
+    "model": "enterprise"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 10,
+  "fields": {
+    "app_label": "enterprise",
+    "model": "person"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 11,
+  "fields": {
+    "app_label": "allinventory",
+    "model": "brand"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 12,
+  "fields": {
+    "app_label": "allinventory",
+    "model": "manufacture"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 13,
+  "fields": {
+    "app_label": "allinventory",
+    "model": "manufactureitem"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 14,
+  "fields": {
+    "app_label": "allinventory",
+    "model": "product"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 15,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "customer"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 16,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "debtor"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 17,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "debtortransaction"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 18,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "purchase"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 19,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "purchasereturn"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 20,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "purchasetransaction"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 21,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "sales"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 22,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "salesreturn"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 23,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "salestransaction"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 24,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "staff"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 25,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "stafftransactions"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 26,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "vendor"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 27,
+  "fields": {
+    "app_label": "alltransactions",
+    "model": "vendortransactions"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 28,
+  "fields": {
+    "app_label": "order",
+    "model": "orderitem"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 29,
+  "fields": {
+    "app_label": "order",
+    "model": "order"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "vvznm8a0bhwq3mwwmxr2p6k413wotodj",
+  "fields": {
+    "session_data": ".eJxVzMsOwiAQheF3YS2EYWgZXLr3GZqBAVs1bdLLyvju2qQLXZ__Oy_V8bb23baUuRtEnRV4yC5m0UEcaG8j6diQ1zFUj1STkIA6_bLE-VHG3cqdx9tk8jSu85DMnphjXcx1kvK8HO3fQc9L_9UFQ7WOq20y1YIsllOK0LrKVRxmQMutDS0SURMAKYDEmGwQ8lgjq_cHqvhAbA:1umTUb:Tj9lE5l9n2c1gIfWSJpnik9i0gwnWmYRG_oJoaGHEI8",
+    "expire_date": "2025-08-28T08:39:25.994Z"
+  }
+},
+{
+  "model": "userauth.user",
+  "pk": "141c29cd-7d21-4098-9584-97f438fbd8d1",
+  "fields": {
+    "password": "pbkdf2_sha256$870000$MKDgkAQOVehBQfldAFtnkm$jN9avwaE9566aIlWRMwZGLJFnKYRdW6fDOlm2NCaTSg=",
+    "last_login": "2025-08-14T08:39:25.989Z",
+    "email": "bbobbasnet@gmail.com",
+    "name": "Bibhab Basnet",
+    "is_active": true,
+    "is_superuser": true,
+    "is_staff": true,
+    "user_permissions": [],
+    "groups": []
+  }
+},
+{
+  "model": "userauth.user",
+  "pk": "a1ec479b-9a7e-474b-adca-eed904cd8e80",
+  "fields": {
+    "password": "pbkdf2_sha256$870000$oMdYwqpvpMPFmYb7WTUUEz$T1hvmh8bZFPsQZvjHv2QJ2Wy8RfIchkbLvAuEjJI26c=",
+    "last_login": null,
+    "email": "rajesh@aamakonana.com",
+    "name": "Rajesh",
+    "is_active": true,
+    "is_superuser": false,
+    "is_staff": false,
+    "user_permissions": [],
+    "groups": []
+  }
+},
+{
+  "model": "enterprise.enterprise",
+  "pk": 1,
+  "fields": {
+    "name": "AamaKoNana"
+  }
+},
+{
+  "model": "enterprise.person",
+  "pk": "141c29cd-7d21-4098-9584-97f438fbd8d1",
+  "fields": {
+    "enterprise": 1,
+    "branch": null,
+    "role": "Admin"
+  }
+},
+{
+  "model": "enterprise.person",
+  "pk": "a1ec479b-9a7e-474b-adca-eed904cd8e80",
+  "fields": {
+    "enterprise": 1,
+    "branch": null,
+    "role": "Admin"
+  }
+},
+{
+  "model": "enterprise.branch",
+  "pk": 1,
+  "fields": {
+    "name": "Manufacturing Unit",
+    "enterprise": 1
+  }
+},
+{
+  "model": "enterprise.branch",
+  "pk": 2,
+  "fields": {
+    "name": "Chakrapath",
+    "enterprise": 1
+  }
+},
+{
+  "model": "enterprise.branch",
+  "pk": 3,
+  "fields": {
+    "name": "Kumaripati",
+    "enterprise": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 23,
+  "fields": {
+    "name": "Daura Bhoto",
+    "stock": 6750.0,
+    "count": 5,
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 24,
+  "fields": {
+    "name": "Moms",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 25,
+  "fields": {
+    "name": "Shawls and Dasna sets",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 26,
+  "fields": {
+    "name": "Night wears",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 27,
+  "fields": {
+    "name": "Frocks sets",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 28,
+  "fields": {
+    "name": "Extras",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 29,
+  "fields": {
+    "name": "Daura Bhoto",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 2
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 30,
+  "fields": {
+    "name": "Moms",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 2
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 31,
+  "fields": {
+    "name": "Shawls and Dasna sets",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 2
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 32,
+  "fields": {
+    "name": "Night wears",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 2
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 33,
+  "fields": {
+    "name": "Frocks sets",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 2
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 34,
+  "fields": {
+    "name": "Extras",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 2
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 16,
+  "fields": {
+    "name": "Wrapper Set (0-3 months)",
+    "uid": "977513659454",
+    "cost_price": 1800.0,
+    "selling_price": 1800.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 17,
+  "fields": {
+    "name": "Daura bhoto 0 to 3 months",
+    "uid": "915596066116",
+    "cost_price": 1250.0,
+    "selling_price": 1250.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 18,
+  "fields": {
+    "name": "Daura bhoto 3 to 6 months",
+    "uid": "809034890746",
+    "cost_price": 1350.0,
+    "selling_price": 1350.0,
+    "brand": 23,
+    "stock": 6750,
+    "count": 5,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 19,
+  "fields": {
+    "name": "Daura bhoto 6 to 12 months",
+    "uid": "920151300520",
+    "cost_price": 1450.0,
+    "selling_price": 1450.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 20,
+  "fields": {
+    "name": "Daura bhoto 1 to 2 year",
+    "uid": "511400996546",
+    "cost_price": 1551.0,
+    "selling_price": 1550.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 21,
+  "fields": {
+    "name": "Daura bhoto 2 - 3 yrs",
+    "uid": "208187857774",
+    "cost_price": 1700.0,
+    "selling_price": 1700.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 22,
+  "fields": {
+    "name": "Daura bhoto 2 - 3 yrs designed",
+    "uid": "948301033005",
+    "cost_price": 2000.0,
+    "selling_price": 2000.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 23,
+  "fields": {
+    "name": "Daura bhoto 3 to 5 years",
+    "uid": "428339468068",
+    "cost_price": 2000.0,
+    "selling_price": 2000.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 24,
+  "fields": {
+    "name": "Daura summer  set 0 to 3 months",
+    "uid": "291467235085",
+    "cost_price": 1050.0,
+    "selling_price": 1050.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 25,
+  "fields": {
+    "name": "Daura summer ser 3 to 6 months",
+    "uid": "982535874962",
+    "cost_price": 1400.0,
+    "selling_price": 1400.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 26,
+  "fields": {
+    "name": "Daura side button 3 to 6 months",
+    "uid": "625905842388",
+    "cost_price": 1200.0,
+    "selling_price": 1200.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 27,
+  "fields": {
+    "name": "Daura side button 6 to 12 M",
+    "uid": "511677231857",
+    "cost_price": 1300.0,
+    "selling_price": 1300.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 28,
+  "fields": {
+    "name": "Malmal feeding gowns",
+    "uid": "566091902040",
+    "cost_price": 3700.0,
+    "selling_price": 3700.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 29,
+  "fields": {
+    "name": "Cotton feeding gowns",
+    "uid": "460048591467",
+    "cost_price": 2500.0,
+    "selling_price": 2500.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 30,
+  "fields": {
+    "name": "Malmal normal gown",
+    "uid": "816154790185",
+    "cost_price": 3500.0,
+    "selling_price": 3500.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 31,
+  "fields": {
+    "name": "Cotton normal gown",
+    "uid": "249441242024",
+    "cost_price": 2300.0,
+    "selling_price": 2300.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 32,
+  "fields": {
+    "name": "Malmal feeding pj",
+    "uid": "698568355924",
+    "cost_price": 3700.0,
+    "selling_price": 3700.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 33,
+  "fields": {
+    "name": "Cotton feeding pj",
+    "uid": "798902495211",
+    "cost_price": 2500.0,
+    "selling_price": 2500.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 34,
+  "fields": {
+    "name": "Malmal feeding pj",
+    "uid": "287697854603",
+    "cost_price": 3700.0,
+    "selling_price": 3700.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 35,
+  "fields": {
+    "name": "Malmal normal pj",
+    "uid": "892731358870",
+    "cost_price": 3500.0,
+    "selling_price": 3500.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 36,
+  "fields": {
+    "name": "Cotton feeding cord set",
+    "uid": "275041032984",
+    "cost_price": 2500.0,
+    "selling_price": 2500.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 37,
+  "fields": {
+    "name": "Cotton normal cord set",
+    "uid": "769416025069",
+    "cost_price": 2300.0,
+    "selling_price": 2300.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 38,
+  "fields": {
+    "name": "Cotton feeding kaftan",
+    "uid": "334606598326",
+    "cost_price": 2200.0,
+    "selling_price": 2200.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 39,
+  "fields": {
+    "name": "Cotton normal kaftan",
+    "uid": "930227743604",
+    "cost_price": 2000.0,
+    "selling_price": 2000.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 40,
+  "fields": {
+    "name": "Malmal feeding kaftan",
+    "uid": "850125292172",
+    "cost_price": 3500.0,
+    "selling_price": 3500.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 41,
+  "fields": {
+    "name": "Malmal normal kaftan",
+    "uid": "240129373278",
+    "cost_price": 3300.0,
+    "selling_price": 3300.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 42,
+  "fields": {
+    "name": "Khasto ( shawls ) piping design",
+    "uid": "393177592606",
+    "cost_price": 1700.0,
+    "selling_price": 1700.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 43,
+  "fields": {
+    "name": "Khasto (shawls) lace",
+    "uid": "897461700630",
+    "cost_price": 1500.0,
+    "selling_price": 1500.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 44,
+  "fields": {
+    "name": "Baby blanket (khasto 1mtr)",
+    "uid": "382618353994",
+    "cost_price": 1000.0,
+    "selling_price": 1000.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 45,
+  "fields": {
+    "name": "Baby blanket (khasto) 1.15 mtr",
+    "uid": "337740914060",
+    "cost_price": 1100.0,
+    "selling_price": 1100.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 46,
+  "fields": {
+    "name": "Baby blanket (khasto) 1.30 mtr",
+    "uid": "493377131001",
+    "cost_price": 1200.0,
+    "selling_price": 1200.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 47,
+  "fields": {
+    "name": "Baby blanket (khasto) 1.5 mtr",
+    "uid": "436517368091",
+    "cost_price": 1350.0,
+    "selling_price": 1350.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 49,
+  "fields": {
+    "name": "Dasna sets (bedding)",
+    "uid": "534386731271",
+    "cost_price": 6000.0,
+    "selling_price": 6000.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 50,
+  "fields": {
+    "name": "Dasna single",
+    "uid": "938151158362",
+    "cost_price": 2700.0,
+    "selling_price": 2700.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 51,
+  "fields": {
+    "name": "Dolai single",
+    "uid": "813524402577",
+    "cost_price": 2700.0,
+    "selling_price": 2700.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 52,
+  "fields": {
+    "name": "Sirani (Pillow cotton)",
+    "uid": "469549620439",
+    "cost_price": 800.0,
+    "selling_price": 800.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 53,
+  "fields": {
+    "name": "Tori sirani (Mustard pillow)",
+    "uid": "489168004647",
+    "cost_price": 1100.0,
+    "selling_price": 1100.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 54,
+  "fields": {
+    "name": "Night wear 6 to 12 M",
+    "uid": "698921784052",
+    "cost_price": 1300.0,
+    "selling_price": 1300.0,
+    "brand": 26,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 55,
+  "fields": {
+    "name": "Night wear 1 to 2 year",
+    "uid": "460829213590",
+    "cost_price": 1400.0,
+    "selling_price": 1400.0,
+    "brand": 26,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 56,
+  "fields": {
+    "name": "Night wear 2 to 3 years",
+    "uid": "666310489903",
+    "cost_price": 1550.0,
+    "selling_price": 1550.0,
+    "brand": 26,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 57,
+  "fields": {
+    "name": "Night wear 3 to 5 years",
+    "uid": "731340006283",
+    "cost_price": 1700.0,
+    "selling_price": 1700.0,
+    "brand": 26,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 58,
+  "fields": {
+    "name": "Night wear 5,6 & 7 years",
+    "uid": "547383381513",
+    "cost_price": 1900.0,
+    "selling_price": 1900.0,
+    "brand": 26,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 59,
+  "fields": {
+    "name": "Frocks set 0 to 3 months normal",
+    "uid": "573035878798",
+    "cost_price": 1500.0,
+    "selling_price": 1500.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 60,
+  "fields": {
+    "name": "Frock set 0 to 3 months piping",
+    "uid": "945516499732",
+    "cost_price": 1700.0,
+    "selling_price": 1700.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 61,
+  "fields": {
+    "name": "Frocks set 6 to 12 months normal",
+    "uid": "807013725228",
+    "cost_price": 1900.0,
+    "selling_price": 1900.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 62,
+  "fields": {
+    "name": "Frocks sets 6 to 12 months design",
+    "uid": "766829279815",
+    "cost_price": 2100.0,
+    "selling_price": 2100.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 63,
+  "fields": {
+    "name": "Frocks set 1 to 2 year normal",
+    "uid": "417024412891",
+    "cost_price": 2100.0,
+    "selling_price": 2100.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 64,
+  "fields": {
+    "name": "Frocks set 1 to 2 year design",
+    "uid": "324402287581",
+    "cost_price": 2300.0,
+    "selling_price": 2300.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 65,
+  "fields": {
+    "name": "frock set 2 to 3 years normal",
+    "uid": "358466152656",
+    "cost_price": 2300.0,
+    "selling_price": 2300.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 66,
+  "fields": {
+    "name": "Frocks set 2 to 3 year design",
+    "uid": "469517222039",
+    "cost_price": 2500.0,
+    "selling_price": 2500.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 67,
+  "fields": {
+    "name": "Frock set 3 to 4 years normal",
+    "uid": "846796024816",
+    "cost_price": 2500.0,
+    "selling_price": 2500.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 68,
+  "fields": {
+    "name": "Frock set 3 to 4 years design",
+    "uid": "317500482619",
+    "cost_price": 2700.0,
+    "selling_price": 2700.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 69,
+  "fields": {
+    "name": "frock set 4 to 6 years normal",
+    "uid": "572251071892",
+    "cost_price": 2700.0,
+    "selling_price": 2700.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 70,
+  "fields": {
+    "name": "frock set 4 to 6 years design",
+    "uid": "686093355649",
+    "cost_price": 2900.0,
+    "selling_price": 2900.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 71,
+  "fields": {
+    "name": "Frock set 6 to 8 normal",
+    "uid": "802379541297",
+    "cost_price": 2900.0,
+    "selling_price": 2900.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 72,
+  "fields": {
+    "name": "frock set 6 to 8 design",
+    "uid": "862410942335",
+    "cost_price": 3100.0,
+    "selling_price": 3100.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 73,
+  "fields": {
+    "name": "Frock set 6 to 12 m extra design",
+    "uid": "229187037137",
+    "cost_price": 2300.0,
+    "selling_price": 2300.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 74,
+  "fields": {
+    "name": "Bhoto 0 to 3 month",
+    "uid": "383918292109",
+    "cost_price": 250.0,
+    "selling_price": 250.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 75,
+  "fields": {
+    "name": "Bhoto 3 to 6 months",
+    "uid": "495728324797",
+    "cost_price": 275.0,
+    "selling_price": 275.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 76,
+  "fields": {
+    "name": "Bhoto 6 to 12 months",
+    "uid": "332996958559",
+    "cost_price": 300.0,
+    "selling_price": 300.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 77,
+  "fields": {
+    "name": "Bhoto 1 to 2 years",
+    "uid": "240949784502",
+    "cost_price": 350.0,
+    "selling_price": 350.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 78,
+  "fields": {
+    "name": "Bhoto 2 to 3 years",
+    "uid": "767450730812",
+    "cost_price": 400.0,
+    "selling_price": 400.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 79,
+  "fields": {
+    "name": "Bhoto 3 to 5 years",
+    "uid": "227500174802",
+    "cost_price": 450.0,
+    "selling_price": 450.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 80,
+  "fields": {
+    "name": "Topi xs",
+    "uid": "498434720919",
+    "cost_price": 250.0,
+    "selling_price": 250.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 81,
+  "fields": {
+    "name": "Topi 3 to 6 months",
+    "uid": "708781103134",
+    "cost_price": 275.0,
+    "selling_price": 275.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 82,
+  "fields": {
+    "name": "Topi 6 to 12 months",
+    "uid": "689960670898",
+    "cost_price": 300.0,
+    "selling_price": 300.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 83,
+  "fields": {
+    "name": "Topi 1 to 2 years",
+    "uid": "719823949533",
+    "cost_price": 350.0,
+    "selling_price": 350.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 84,
+  "fields": {
+    "name": "Surwal xs",
+    "uid": "960190127739",
+    "cost_price": 350.0,
+    "selling_price": 350.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 85,
+  "fields": {
+    "name": "Surwal 3 to 6 months",
+    "uid": "922064712647",
+    "cost_price": 450.0,
+    "selling_price": 450.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 86,
+  "fields": {
+    "name": "surwal 6 to 12 months",
+    "uid": "376828773889",
+    "cost_price": 500.0,
+    "selling_price": 500.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 87,
+  "fields": {
+    "name": "Hankey",
+    "uid": "598413559109",
+    "cost_price": 50.0,
+    "selling_price": 50.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 88,
+  "fields": {
+    "name": "Hankey medium",
+    "uid": "750166693553",
+    "cost_price": 70.0,
+    "selling_price": 70.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 89,
+  "fields": {
+    "name": "Mittens",
+    "uid": "954991738104",
+    "cost_price": 75.0,
+    "selling_price": 75.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 90,
+  "fields": {
+    "name": "Head scarfs",
+    "uid": "709154790376",
+    "cost_price": 500.0,
+    "selling_price": 500.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 91,
+  "fields": {
+    "name": "Baby malmal wipes",
+    "uid": "519636925792",
+    "cost_price": 300.0,
+    "selling_price": 300.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 92,
+  "fields": {
+    "name": "Wrapper",
+    "uid": "578738005428",
+    "cost_price": 650.0,
+    "selling_price": 650.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 93,
+  "fields": {
+    "name": "King size dolai",
+    "uid": "884110967401",
+    "cost_price": 9500.0,
+    "selling_price": 9500.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 95,
+  "fields": {
+    "name": "Muslin Blanket (Hoodie)",
+    "uid": "957918655488",
+    "cost_price": 900.0,
+    "selling_price": 1100.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 98,
+  "fields": {
+    "name": "lalalala",
+    "uid": "619175907150",
+    "cost_price": 0.0,
+    "selling_price": 0.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 99,
+  "fields": {
+    "name": "Daura bhoto 2 - 3 yrs",
+    "uid": "208187857774",
+    "cost_price": 1700.0,
+    "selling_price": 1700.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 100,
+  "fields": {
+    "name": "Daura bhoto 2 - 3 yrs designed",
+    "uid": "948301033005",
+    "cost_price": 2000.0,
+    "selling_price": 2000.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 101,
+  "fields": {
+    "name": "Daura bhoto 3 to 5 years",
+    "uid": "428339468068",
+    "cost_price": 2000.0,
+    "selling_price": 2000.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 102,
+  "fields": {
+    "name": "Daura summer  set 0 to 3 months",
+    "uid": "291467235085",
+    "cost_price": 1050.0,
+    "selling_price": 1050.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 103,
+  "fields": {
+    "name": "Daura summer ser 3 to 6 months",
+    "uid": "982535874962",
+    "cost_price": 1400.0,
+    "selling_price": 1400.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 104,
+  "fields": {
+    "name": "Daura side button 3 to 6 months",
+    "uid": "625905842388",
+    "cost_price": 1200.0,
+    "selling_price": 1200.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 105,
+  "fields": {
+    "name": "Daura side button 6 to 12 M",
+    "uid": "511677231857",
+    "cost_price": 1300.0,
+    "selling_price": 1300.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 106,
+  "fields": {
+    "name": "Daura bhoto 0 to 3 months",
+    "uid": "915596066116",
+    "cost_price": 1250.0,
+    "selling_price": 1250.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 107,
+  "fields": {
+    "name": "Daura bhoto 6 to 12 months",
+    "uid": "920151300520",
+    "cost_price": 1450.0,
+    "selling_price": 1450.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 108,
+  "fields": {
+    "name": "Daura bhoto 1 to 2 year",
+    "uid": "511400996546",
+    "cost_price": 1551.0,
+    "selling_price": 1550.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 109,
+  "fields": {
+    "name": "Wrapper Set (0-3 months)",
+    "uid": "977513659454",
+    "cost_price": 1800.0,
+    "selling_price": 1800.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 110,
+  "fields": {
+    "name": "Daura bhoto 3 to 6 months",
+    "uid": "809034890746",
+    "cost_price": 1350.0,
+    "selling_price": 1350.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 111,
+  "fields": {
+    "name": "lalalala",
+    "uid": "619175907150",
+    "cost_price": 0.0,
+    "selling_price": 0.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.manufacture",
+  "pk": 2,
+  "fields": {
+    "date": "2025-08-15",
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.manufactureitem",
+  "pk": 7,
+  "fields": {
+    "manufacture": 2,
+    "product": 18,
+    "quantity": 5,
+    "unit_price": 1350.0
+  }
+},
+{
+  "model": "alltransactions.vendor",
+  "pk": 5,
+  "fields": {
+    "name": "mittal",
+    "phone_number": null,
+    "branch": 1,
+    "due": 0.0,
+    "enterprise": 1
+  }
+},
+{
+  "model": "alltransactions.vendor",
+  "pk": 6,
+  "fields": {
+    "name": "asd",
+    "phone_number": null,
+    "branch": 2,
+    "due": 0.0,
+    "enterprise": 1
+  }
+}
+]

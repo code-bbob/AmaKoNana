@@ -271,25 +271,82 @@ class SalesTransactionView(APIView):
 class VendorView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self,request,branch=None,*args, **kwargs):
+    def get(self, request, branch=None, pk=None, *args, **kwargs):
         id = request.GET.get("id")
         role = request.user.person.role
+        enterprise = request.user.person.enterprise
+        
+        # If pk is provided in URL, get specific vendor
+        if pk:
+            try:
+                vendor = Vendor.objects.get(id=pk, enterprise=enterprise)
+                if branch and vendor.branch != branch:
+                    return Response({"error": "Vendor not found in specified branch"}, 
+                                  status=status.HTTP_404_NOT_FOUND)
+                serializer = VendorSerializer(vendor)
+                return Response(serializer.data)
+            except Vendor.DoesNotExist:
+                return Response({"error": "Vendor not found"}, 
+                              status=status.HTTP_404_NOT_FOUND)
+        
+        # If id is provided in query params, get specific vendor
         if id:
-            vendors = Vendor.objects.get(id=id)
-        vendors = Vendor.objects.filter(enterprise = request.user.person.enterprise)
-        print(vendors)
+            try:
+                vendor = Vendor.objects.get(id=id, enterprise=enterprise)
+                if branch and vendor.branch != branch:
+                    return Response({"error": "Vendor not found in specified branch"}, 
+                                  status=status.HTTP_404_NOT_FOUND)
+                serializer = VendorSerializer(vendor)
+                return Response(serializer.data)
+            except Vendor.DoesNotExist:
+                return Response({"error": "Vendor not found"}, 
+                              status=status.HTTP_404_NOT_FOUND)
+        
+        # Get all vendors for the enterprise
+        vendors = Vendor.objects.filter(enterprise=enterprise)
+        
+        # Filter by branch if provided
         if branch:
-            vendors = Vendor.objects.filter(branch = branch)
-        serializer = VendorSerializer(vendors,many=True)
+            vendors = vendors.filter(branch=branch)
+            
+        serializer = VendorSerializer(vendors, many=True)
         return Response(serializer.data)
     
-    def post(self,request,*args, **kwargs):
+    def post(self, request, *args, **kwargs):
         data = request.data
         data["enterprise"] = request.user.person.enterprise.id
         serializer = VendorSerializer(data=data)
-        if serializer.is_valid(raise_exception = True):
+        if serializer.is_valid(raise_exception=True):
             serializer.save()
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk=None, branch=None, *args, **kwargs):
+        role = request.user.person.role
+        if role != "Admin":
+            return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+        
+        enterprise = request.user.person.enterprise
+        
+        if not pk:
+            return Response({"error": "Vendor ID is required"}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            vendor = Vendor.objects.get(id=pk, enterprise=enterprise)
+            
+            # If branch is specified, verify vendor belongs to that branch
+            if branch and vendor.branch != branch:
+                return Response({"error": "Vendor not found in specified branch"}, 
+                              status=status.HTTP_404_NOT_FOUND)
+            
+            vendor.delete()
+            return Response({"message": "Vendor deleted successfully"}, 
+                          status=status.HTTP_200_OK)
+            
+        except Vendor.DoesNotExist:
+            return Response({"error": "Vendor not found"}, 
+                          status=status.HTTP_404_NOT_FOUND)
     
 class VendorTransactionView(APIView):
     permission_classes = [IsAuthenticated]
@@ -392,55 +449,39 @@ class StatsView(APIView):
         allstock = Product.objects.filter(enterprise = enterprise, branch=branch).count()
         allbrands = Brand.objects.filter(enterprise = enterprise, branch=branch).count()
 
-        monthlypurchases = Purchase.objects.filter(purchase_transaction__enterprise = enterprise,purchase_transaction__date__range=(start_date, end_date))
-        monthlysales = Sales.objects.filter(sales_transaction__enterprise = enterprise,sales_transaction__date__range=(start_date, end_date))
+        monthlypurchases = Purchase.objects.filter(purchase_transaction__enterprise = enterprise,purchase_transaction__branch=branch,purchase_transaction__date__range=(start_date, end_date))
+        monthlysales = Sales.objects.filter(sales_transaction__enterprise = enterprise,sales_transaction__branch=branch,sales_transaction__date__range=(start_date, end_date))
 
-        dailypurchases = Purchase.objects.filter(purchase_transaction__enterprise = enterprise,purchase_transaction__date = today)
-        dailysales = Sales.objects.filter(sales_transaction__enterprise = enterprise,sales_transaction__date = today)
+        dailypurchases = Purchase.objects.filter(purchase_transaction__enterprise = enterprise,purchase_transaction__branch=branch,purchase_transaction__date = today)
+        dailysales = Sales.objects.filter(sales_transaction__enterprise = enterprise,sales_transaction__branch=branch,sales_transaction__date = today)
 
 
 
 
         ptamt = 0
         dailyptamt = 0
+        daily_profit = 0
+        monthly_profit = 0
 
-        pts = PurchaseTransaction.objects.filter(enterprise = enterprise,date__range=(start_date, end_date))
-        if pts:
-            for pt in pts:
-                # #print(pt.total_amount)
-                ptamt = (pt.total_amount+ptamt) if pt.total_amount else ptamt
+        for p in monthlypurchases:
+            ptamt += p.total_price if p.total_price else 0
 
-        pts = PurchaseTransaction.objects.filter(enterprise = enterprise,date = today)
-        if pts:
-            for pt in pts:
-                # #print(pt.total_amount)
-                dailyptamt += pt.total_amount if pt.total_amount else dailyptamt
+        for p in dailypurchases:
+            dailyptamt += p.total_price if p.total_price else 0
 
         stamt = 0
         dailystamt = 0
-       
+        for sale in monthlysales:
+           stamt += sale.total_price if sale.total_price else 0
+           product = sale.product
+           monthly_profit += sale.total_price - product.cost_price * sale.quantity
 
-        sts = SalesTransaction.objects.filter(enterprise = enterprise,date__range=(start_date, end_date))
-        if sts:
-            for st in sts:
-                stamt = (st.total_amount + stamt) if st.total_amount else stamt
-        
-        sts = SalesTransaction.objects.filter(enterprise=enterprise,date = today)
-        if sts:
-            for st in sts:
-                dailystamt = (st.total_amount + dailystamt) if st.total_amount else dailystamt
-
-        daily_profit = 0
         for sale in dailysales:
+            dailystamt += sale.total_price if sale.total_price else 0
             product = sale.product
-            daily_profit += sale.unit_price - product.cost_price
+            daily_profit += sale.total_price - product.cost_price * sale.quantity
 
-        daily_profit = dailystamt-dailyptamt
-        
-        monthly_profit = 0
 
-        monthly_profit = stamt - ptamt
-        
         stat = { 
             "enterprise" : enterprise.name,
             "daily":{
@@ -780,7 +821,15 @@ class CustomerTotalView(APIView):
             return Response(f"RS. {total_amount}")
         else:
             customer = Customer.objects.create(phone_number=pk,enterprise=request.user.person.enterprise)
-            return Response("Customer created")
+            if customer:
+                sales = SalesTransaction.objects.filter(phone_number=customer.phone_number,enterprise=request.user.person.enterprise)
+                total_amount = 0
+                for sale in sales:
+                    total_amount += sale.total_amount
+                #add order here as well
+                return Response(f"RS. {total_amount}")
+            else:
+                return Response("Customer creation failed")
 
 class SalesReturnView(APIView):
 

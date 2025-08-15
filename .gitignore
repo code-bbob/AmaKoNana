@@ -4,6 +4,10 @@ env/
 # Ignore database
 db.sqlite3
 
+#Ignore backups
+
+backups/
+
 # Ignore static files
 staticfiles/
 

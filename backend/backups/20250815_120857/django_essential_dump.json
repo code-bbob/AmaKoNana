@@ -1,0 +1,1818 @@
+[
+{
+  "model": "userauth.user",
+  "pk": "141c29cd-7d21-4098-9584-97f438fbd8d1",
+  "fields": {
+    "password": "pbkdf2_sha256$870000$MKDgkAQOVehBQfldAFtnkm$jN9avwaE9566aIlWRMwZGLJFnKYRdW6fDOlm2NCaTSg=",
+    "last_login": "2025-08-14T08:39:25.989Z",
+    "email": "bbobbasnet@gmail.com",
+    "name": "Bibhab Basnet",
+    "is_active": true,
+    "is_superuser": true,
+    "is_staff": true,
+    "user_permissions": [],
+    "groups": []
+  }
+},
+{
+  "model": "userauth.user",
+  "pk": "a1ec479b-9a7e-474b-adca-eed904cd8e80",
+  "fields": {
+    "password": "pbkdf2_sha256$870000$oMdYwqpvpMPFmYb7WTUUEz$T1hvmh8bZFPsQZvjHv2QJ2Wy8RfIchkbLvAuEjJI26c=",
+    "last_login": null,
+    "email": "rajesh@aamakonana.com",
+    "name": "Rajesh",
+    "is_active": true,
+    "is_superuser": false,
+    "is_staff": false,
+    "user_permissions": [],
+    "groups": []
+  }
+},
+{
+  "model": "enterprise.enterprise",
+  "pk": 1,
+  "fields": {
+    "name": "AamaKoNana"
+  }
+},
+{
+  "model": "enterprise.person",
+  "pk": "141c29cd-7d21-4098-9584-97f438fbd8d1",
+  "fields": {
+    "enterprise": 1,
+    "branch": null,
+    "role": "Admin"
+  }
+},
+{
+  "model": "enterprise.person",
+  "pk": "a1ec479b-9a7e-474b-adca-eed904cd8e80",
+  "fields": {
+    "enterprise": 1,
+    "branch": null,
+    "role": "Admin"
+  }
+},
+{
+  "model": "enterprise.branch",
+  "pk": 1,
+  "fields": {
+    "name": "Manufacturing Unit",
+    "enterprise": 1
+  }
+},
+{
+  "model": "enterprise.branch",
+  "pk": 2,
+  "fields": {
+    "name": "Chakrapath",
+    "enterprise": 1
+  }
+},
+{
+  "model": "enterprise.branch",
+  "pk": 3,
+  "fields": {
+    "name": "Kumaripati",
+    "enterprise": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 23,
+  "fields": {
+    "name": "Daura Bhoto",
+    "stock": 6750.0,
+    "count": 5,
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 24,
+  "fields": {
+    "name": "Moms",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 25,
+  "fields": {
+    "name": "Shawls and Dasna sets",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 26,
+  "fields": {
+    "name": "Night wears",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 27,
+  "fields": {
+    "name": "Frocks sets",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 28,
+  "fields": {
+    "name": "Extras",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 29,
+  "fields": {
+    "name": "Daura Bhoto",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 2
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 30,
+  "fields": {
+    "name": "Moms",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 2
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 31,
+  "fields": {
+    "name": "Shawls and Dasna sets",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 2
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 32,
+  "fields": {
+    "name": "Night wears",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 2
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 33,
+  "fields": {
+    "name": "Frocks sets",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 2
+  }
+},
+{
+  "model": "allinventory.brand",
+  "pk": 34,
+  "fields": {
+    "name": "Extras",
+    "stock": 0.0,
+    "count": 0,
+    "enterprise": 1,
+    "branch": 2
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 16,
+  "fields": {
+    "name": "Wrapper Set (0-3 months)",
+    "uid": "977513659454",
+    "cost_price": 1800.0,
+    "selling_price": 1800.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 17,
+  "fields": {
+    "name": "Daura bhoto 0 to 3 months",
+    "uid": "915596066116",
+    "cost_price": 1250.0,
+    "selling_price": 1250.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 18,
+  "fields": {
+    "name": "Daura bhoto 3 to 6 months",
+    "uid": "809034890746",
+    "cost_price": 1350.0,
+    "selling_price": 1350.0,
+    "brand": 23,
+    "stock": 6750,
+    "count": 5,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 19,
+  "fields": {
+    "name": "Daura bhoto 6 to 12 months",
+    "uid": "920151300520",
+    "cost_price": 1450.0,
+    "selling_price": 1450.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 20,
+  "fields": {
+    "name": "Daura bhoto 1 to 2 year",
+    "uid": "511400996546",
+    "cost_price": 1551.0,
+    "selling_price": 1550.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 21,
+  "fields": {
+    "name": "Daura bhoto 2 - 3 yrs",
+    "uid": "208187857774",
+    "cost_price": 1700.0,
+    "selling_price": 1700.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 22,
+  "fields": {
+    "name": "Daura bhoto 2 - 3 yrs designed",
+    "uid": "948301033005",
+    "cost_price": 2000.0,
+    "selling_price": 2000.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 23,
+  "fields": {
+    "name": "Daura bhoto 3 to 5 years",
+    "uid": "428339468068",
+    "cost_price": 2000.0,
+    "selling_price": 2000.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 24,
+  "fields": {
+    "name": "Daura summer  set 0 to 3 months",
+    "uid": "291467235085",
+    "cost_price": 1050.0,
+    "selling_price": 1050.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 25,
+  "fields": {
+    "name": "Daura summer ser 3 to 6 months",
+    "uid": "982535874962",
+    "cost_price": 1400.0,
+    "selling_price": 1400.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 26,
+  "fields": {
+    "name": "Daura side button 3 to 6 months",
+    "uid": "625905842388",
+    "cost_price": 1200.0,
+    "selling_price": 1200.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 27,
+  "fields": {
+    "name": "Daura side button 6 to 12 M",
+    "uid": "511677231857",
+    "cost_price": 1300.0,
+    "selling_price": 1300.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 28,
+  "fields": {
+    "name": "Malmal feeding gowns",
+    "uid": "566091902040",
+    "cost_price": 3700.0,
+    "selling_price": 3700.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 29,
+  "fields": {
+    "name": "Cotton feeding gowns",
+    "uid": "460048591467",
+    "cost_price": 2500.0,
+    "selling_price": 2500.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 30,
+  "fields": {
+    "name": "Malmal normal gown",
+    "uid": "816154790185",
+    "cost_price": 3500.0,
+    "selling_price": 3500.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 31,
+  "fields": {
+    "name": "Cotton normal gown",
+    "uid": "249441242024",
+    "cost_price": 2300.0,
+    "selling_price": 2300.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 32,
+  "fields": {
+    "name": "Malmal feeding pj",
+    "uid": "698568355924",
+    "cost_price": 3700.0,
+    "selling_price": 3700.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 33,
+  "fields": {
+    "name": "Cotton feeding pj",
+    "uid": "798902495211",
+    "cost_price": 2500.0,
+    "selling_price": 2500.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 34,
+  "fields": {
+    "name": "Malmal feeding pj",
+    "uid": "287697854603",
+    "cost_price": 3700.0,
+    "selling_price": 3700.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 35,
+  "fields": {
+    "name": "Malmal normal pj",
+    "uid": "892731358870",
+    "cost_price": 3500.0,
+    "selling_price": 3500.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 36,
+  "fields": {
+    "name": "Cotton feeding cord set",
+    "uid": "275041032984",
+    "cost_price": 2500.0,
+    "selling_price": 2500.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 37,
+  "fields": {
+    "name": "Cotton normal cord set",
+    "uid": "769416025069",
+    "cost_price": 2300.0,
+    "selling_price": 2300.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 38,
+  "fields": {
+    "name": "Cotton feeding kaftan",
+    "uid": "334606598326",
+    "cost_price": 2200.0,
+    "selling_price": 2200.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 39,
+  "fields": {
+    "name": "Cotton normal kaftan",
+    "uid": "930227743604",
+    "cost_price": 2000.0,
+    "selling_price": 2000.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 40,
+  "fields": {
+    "name": "Malmal feeding kaftan",
+    "uid": "850125292172",
+    "cost_price": 3500.0,
+    "selling_price": 3500.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 41,
+  "fields": {
+    "name": "Malmal normal kaftan",
+    "uid": "240129373278",
+    "cost_price": 3300.0,
+    "selling_price": 3300.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 42,
+  "fields": {
+    "name": "Khasto ( shawls ) piping design",
+    "uid": "393177592606",
+    "cost_price": 1700.0,
+    "selling_price": 1700.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 43,
+  "fields": {
+    "name": "Khasto (shawls) lace",
+    "uid": "897461700630",
+    "cost_price": 1500.0,
+    "selling_price": 1500.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 44,
+  "fields": {
+    "name": "Baby blanket (khasto 1mtr)",
+    "uid": "382618353994",
+    "cost_price": 1000.0,
+    "selling_price": 1000.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 45,
+  "fields": {
+    "name": "Baby blanket (khasto) 1.15 mtr",
+    "uid": "337740914060",
+    "cost_price": 1100.0,
+    "selling_price": 1100.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 46,
+  "fields": {
+    "name": "Baby blanket (khasto) 1.30 mtr",
+    "uid": "493377131001",
+    "cost_price": 1200.0,
+    "selling_price": 1200.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 47,
+  "fields": {
+    "name": "Baby blanket (khasto) 1.5 mtr",
+    "uid": "436517368091",
+    "cost_price": 1350.0,
+    "selling_price": 1350.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 49,
+  "fields": {
+    "name": "Dasna sets (bedding)",
+    "uid": "534386731271",
+    "cost_price": 6000.0,
+    "selling_price": 6000.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 50,
+  "fields": {
+    "name": "Dasna single",
+    "uid": "938151158362",
+    "cost_price": 2700.0,
+    "selling_price": 2700.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 51,
+  "fields": {
+    "name": "Dolai single",
+    "uid": "813524402577",
+    "cost_price": 2700.0,
+    "selling_price": 2700.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 52,
+  "fields": {
+    "name": "Sirani (Pillow cotton)",
+    "uid": "469549620439",
+    "cost_price": 800.0,
+    "selling_price": 800.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 53,
+  "fields": {
+    "name": "Tori sirani (Mustard pillow)",
+    "uid": "489168004647",
+    "cost_price": 1100.0,
+    "selling_price": 1100.0,
+    "brand": 25,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 54,
+  "fields": {
+    "name": "Night wear 6 to 12 M",
+    "uid": "698921784052",
+    "cost_price": 1300.0,
+    "selling_price": 1300.0,
+    "brand": 26,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 55,
+  "fields": {
+    "name": "Night wear 1 to 2 year",
+    "uid": "460829213590",
+    "cost_price": 1400.0,
+    "selling_price": 1400.0,
+    "brand": 26,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 56,
+  "fields": {
+    "name": "Night wear 2 to 3 years",
+    "uid": "666310489903",
+    "cost_price": 1550.0,
+    "selling_price": 1550.0,
+    "brand": 26,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 57,
+  "fields": {
+    "name": "Night wear 3 to 5 years",
+    "uid": "731340006283",
+    "cost_price": 1700.0,
+    "selling_price": 1700.0,
+    "brand": 26,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 58,
+  "fields": {
+    "name": "Night wear 5,6 & 7 years",
+    "uid": "547383381513",
+    "cost_price": 1900.0,
+    "selling_price": 1900.0,
+    "brand": 26,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 59,
+  "fields": {
+    "name": "Frocks set 0 to 3 months normal",
+    "uid": "573035878798",
+    "cost_price": 1500.0,
+    "selling_price": 1500.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 60,
+  "fields": {
+    "name": "Frock set 0 to 3 months piping",
+    "uid": "945516499732",
+    "cost_price": 1700.0,
+    "selling_price": 1700.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 61,
+  "fields": {
+    "name": "Frocks set 6 to 12 months normal",
+    "uid": "807013725228",
+    "cost_price": 1900.0,
+    "selling_price": 1900.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 62,
+  "fields": {
+    "name": "Frocks sets 6 to 12 months design",
+    "uid": "766829279815",
+    "cost_price": 2100.0,
+    "selling_price": 2100.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 63,
+  "fields": {
+    "name": "Frocks set 1 to 2 year normal",
+    "uid": "417024412891",
+    "cost_price": 2100.0,
+    "selling_price": 2100.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 64,
+  "fields": {
+    "name": "Frocks set 1 to 2 year design",
+    "uid": "324402287581",
+    "cost_price": 2300.0,
+    "selling_price": 2300.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 65,
+  "fields": {
+    "name": "frock set 2 to 3 years normal",
+    "uid": "358466152656",
+    "cost_price": 2300.0,
+    "selling_price": 2300.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 66,
+  "fields": {
+    "name": "Frocks set 2 to 3 year design",
+    "uid": "469517222039",
+    "cost_price": 2500.0,
+    "selling_price": 2500.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 67,
+  "fields": {
+    "name": "Frock set 3 to 4 years normal",
+    "uid": "846796024816",
+    "cost_price": 2500.0,
+    "selling_price": 2500.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 68,
+  "fields": {
+    "name": "Frock set 3 to 4 years design",
+    "uid": "317500482619",
+    "cost_price": 2700.0,
+    "selling_price": 2700.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 69,
+  "fields": {
+    "name": "frock set 4 to 6 years normal",
+    "uid": "572251071892",
+    "cost_price": 2700.0,
+    "selling_price": 2700.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 70,
+  "fields": {
+    "name": "frock set 4 to 6 years design",
+    "uid": "686093355649",
+    "cost_price": 2900.0,
+    "selling_price": 2900.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 71,
+  "fields": {
+    "name": "Frock set 6 to 8 normal",
+    "uid": "802379541297",
+    "cost_price": 2900.0,
+    "selling_price": 2900.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 72,
+  "fields": {
+    "name": "frock set 6 to 8 design",
+    "uid": "862410942335",
+    "cost_price": 3100.0,
+    "selling_price": 3100.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 73,
+  "fields": {
+    "name": "Frock set 6 to 12 m extra design",
+    "uid": "229187037137",
+    "cost_price": 2300.0,
+    "selling_price": 2300.0,
+    "brand": 27,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 74,
+  "fields": {
+    "name": "Bhoto 0 to 3 month",
+    "uid": "383918292109",
+    "cost_price": 250.0,
+    "selling_price": 250.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 75,
+  "fields": {
+    "name": "Bhoto 3 to 6 months",
+    "uid": "495728324797",
+    "cost_price": 275.0,
+    "selling_price": 275.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 76,
+  "fields": {
+    "name": "Bhoto 6 to 12 months",
+    "uid": "332996958559",
+    "cost_price": 300.0,
+    "selling_price": 300.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 77,
+  "fields": {
+    "name": "Bhoto 1 to 2 years",
+    "uid": "240949784502",
+    "cost_price": 350.0,
+    "selling_price": 350.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 78,
+  "fields": {
+    "name": "Bhoto 2 to 3 years",
+    "uid": "767450730812",
+    "cost_price": 400.0,
+    "selling_price": 400.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 79,
+  "fields": {
+    "name": "Bhoto 3 to 5 years",
+    "uid": "227500174802",
+    "cost_price": 450.0,
+    "selling_price": 450.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 80,
+  "fields": {
+    "name": "Topi xs",
+    "uid": "498434720919",
+    "cost_price": 250.0,
+    "selling_price": 250.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 81,
+  "fields": {
+    "name": "Topi 3 to 6 months",
+    "uid": "708781103134",
+    "cost_price": 275.0,
+    "selling_price": 275.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 82,
+  "fields": {
+    "name": "Topi 6 to 12 months",
+    "uid": "689960670898",
+    "cost_price": 300.0,
+    "selling_price": 300.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 83,
+  "fields": {
+    "name": "Topi 1 to 2 years",
+    "uid": "719823949533",
+    "cost_price": 350.0,
+    "selling_price": 350.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 84,
+  "fields": {
+    "name": "Surwal xs",
+    "uid": "960190127739",
+    "cost_price": 350.0,
+    "selling_price": 350.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 85,
+  "fields": {
+    "name": "Surwal 3 to 6 months",
+    "uid": "922064712647",
+    "cost_price": 450.0,
+    "selling_price": 450.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 86,
+  "fields": {
+    "name": "surwal 6 to 12 months",
+    "uid": "376828773889",
+    "cost_price": 500.0,
+    "selling_price": 500.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 87,
+  "fields": {
+    "name": "Hankey",
+    "uid": "598413559109",
+    "cost_price": 50.0,
+    "selling_price": 50.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 88,
+  "fields": {
+    "name": "Hankey medium",
+    "uid": "750166693553",
+    "cost_price": 70.0,
+    "selling_price": 70.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 89,
+  "fields": {
+    "name": "Mittens",
+    "uid": "954991738104",
+    "cost_price": 75.0,
+    "selling_price": 75.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 90,
+  "fields": {
+    "name": "Head scarfs",
+    "uid": "709154790376",
+    "cost_price": 500.0,
+    "selling_price": 500.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 91,
+  "fields": {
+    "name": "Baby malmal wipes",
+    "uid": "519636925792",
+    "cost_price": 300.0,
+    "selling_price": 300.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 92,
+  "fields": {
+    "name": "Wrapper",
+    "uid": "578738005428",
+    "cost_price": 650.0,
+    "selling_price": 650.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 93,
+  "fields": {
+    "name": "King size dolai",
+    "uid": "884110967401",
+    "cost_price": 9500.0,
+    "selling_price": 9500.0,
+    "brand": 28,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 95,
+  "fields": {
+    "name": "Muslin Blanket (Hoodie)",
+    "uid": "957918655488",
+    "cost_price": 900.0,
+    "selling_price": 1100.0,
+    "brand": 24,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 98,
+  "fields": {
+    "name": "lalalala",
+    "uid": "619175907150",
+    "cost_price": 0.0,
+    "selling_price": 0.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 99,
+  "fields": {
+    "name": "Daura bhoto 2 - 3 yrs",
+    "uid": "208187857774",
+    "cost_price": 1700.0,
+    "selling_price": 1700.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 100,
+  "fields": {
+    "name": "Daura bhoto 2 - 3 yrs designed",
+    "uid": "948301033005",
+    "cost_price": 2000.0,
+    "selling_price": 2000.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 101,
+  "fields": {
+    "name": "Daura bhoto 3 to 5 years",
+    "uid": "428339468068",
+    "cost_price": 2000.0,
+    "selling_price": 2000.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 102,
+  "fields": {
+    "name": "Daura summer  set 0 to 3 months",
+    "uid": "291467235085",
+    "cost_price": 1050.0,
+    "selling_price": 1050.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 103,
+  "fields": {
+    "name": "Daura summer ser 3 to 6 months",
+    "uid": "982535874962",
+    "cost_price": 1400.0,
+    "selling_price": 1400.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 104,
+  "fields": {
+    "name": "Daura side button 3 to 6 months",
+    "uid": "625905842388",
+    "cost_price": 1200.0,
+    "selling_price": 1200.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 105,
+  "fields": {
+    "name": "Daura side button 6 to 12 M",
+    "uid": "511677231857",
+    "cost_price": 1300.0,
+    "selling_price": 1300.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 106,
+  "fields": {
+    "name": "Daura bhoto 0 to 3 months",
+    "uid": "915596066116",
+    "cost_price": 1250.0,
+    "selling_price": 1250.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 107,
+  "fields": {
+    "name": "Daura bhoto 6 to 12 months",
+    "uid": "920151300520",
+    "cost_price": 1450.0,
+    "selling_price": 1450.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 108,
+  "fields": {
+    "name": "Daura bhoto 1 to 2 year",
+    "uid": "511400996546",
+    "cost_price": 1551.0,
+    "selling_price": 1550.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 109,
+  "fields": {
+    "name": "Wrapper Set (0-3 months)",
+    "uid": "977513659454",
+    "cost_price": 1800.0,
+    "selling_price": 1800.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 110,
+  "fields": {
+    "name": "Daura bhoto 3 to 6 months",
+    "uid": "809034890746",
+    "cost_price": 1350.0,
+    "selling_price": 1350.0,
+    "brand": 29,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 2,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.product",
+  "pk": 111,
+  "fields": {
+    "name": "lalalala",
+    "uid": "619175907150",
+    "cost_price": 0.0,
+    "selling_price": 0.0,
+    "brand": 23,
+    "stock": 0,
+    "count": 0,
+    "print_pattern": "",
+    "enterprise": 1,
+    "branch": 1,
+    "vendor": []
+  }
+},
+{
+  "model": "allinventory.manufacture",
+  "pk": 2,
+  "fields": {
+    "date": "2025-08-15",
+    "enterprise": 1,
+    "branch": 1
+  }
+},
+{
+  "model": "allinventory.manufactureitem",
+  "pk": 7,
+  "fields": {
+    "manufacture": 2,
+    "product": 18,
+    "quantity": 5,
+    "unit_price": 1350.0
+  }
+},
+{
+  "model": "alltransactions.vendor",
+  "pk": 5,
+  "fields": {
+    "name": "mittal",
+    "phone_number": null,
+    "branch": 1,
+    "due": 0.0,
+    "enterprise": 1
+  }
+},
+{
+  "model": "alltransactions.vendor",
+  "pk": 6,
+  "fields": {
+    "name": "asd",
+    "phone_number": null,
+    "branch": 2,
+    "due": 0.0,
+    "enterprise": 1
+  }
+}
+]

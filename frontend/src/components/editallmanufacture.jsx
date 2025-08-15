@@ -4,6 +4,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import useAxios from '@/utils/useAxios';
 import Sidebar from '@/components/allsidebar';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlusCircle, Trash2, ChevronsUpDown, Check, ArrowLeft } from 'lucide-react';
@@ -25,6 +34,7 @@ function EditAllManufactureForm(){
     manufacture_items: []
   });
   const [subLoading, setSubLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(()=>{
     const fetchData = async () => {
@@ -106,11 +116,11 @@ function EditAllManufactureForm(){
     } finally { setSubLoading(false);} }
 
   const handleDelete = async () => {
-    if(!window.confirm('Delete this manufacture batch?')) return;
     try {
       await api.delete(`allinventory/manufacture/${manufactureId}/`);
       navigate(`/manufacture/branch/${branchId}`);
     } catch(e){ console.error(e); setError('Delete failed'); }
+    setDeleteDialogOpen(false);
   };
 
   if(loading) return <div className='flex items-center justify-center h-screen bg-slate-900 text-white'>Loading...</div>;
@@ -190,7 +200,38 @@ function EditAllManufactureForm(){
               <Button type='submit' disabled={subLoading} className='w-full bg-green-600 hover:bg-green-700 text-white'>
                 {subLoading ? 'Updating...' : 'Update Manufacture'}
               </Button>
-              <Button type='button' onClick={handleDelete} className='w-full bg-red-600 hover:bg-red-700 text-white mt-4'>Delete Manufacture</Button>
+              <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button type='button' className='w-full bg-red-600 hover:bg-red-700 text-white mt-4'>
+                    Delete Manufacture
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-slate-800 text-white">
+                  <DialogHeader>
+                    <DialogTitle>Are you absolutely sure?</DialogTitle>
+                    <DialogDescription className="text-slate-300">
+                      This action cannot be undone. This will permanently delete this manufacture batch and all its items.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setDeleteDialogOpen(false)}
+                      className="text-white bg-gray-600 hover:bg-gray-700 hover:text-white"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleDelete}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      Delete Manufacture
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </form>
           </div>
         </div>

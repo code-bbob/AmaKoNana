@@ -1,0 +1,28 @@
+Tracking Backend - Data Backup Summary
+=====================================
+
+Backup Date: Fri Aug 15 12:08:13 UTC 2025
+Backup Directory: /app/backups/20250815_120807
+Hostname: fef2fb7a511b
+User: root
+
+Files Created:
+-rw-r--r-- 1 root root    0 Aug 15 12:08 backup_summary.txt
+-rw-r--r-- 1 root root  33K Aug 15 12:08 django_essential_dump.json
+-rw-r--r-- 1 root root  56K Aug 15 12:08 django_full_dump.json
+-rw-r--r-- 1 root root 127K Aug 15 12:08 postgres_dump.sql
+-rw-r--r-- 1 root root 112K Aug 15 12:08 postgres_dump_plain.sql
+
+Database Information:
+Engine: django.db.backends.postgresql
+Name: amakonanadb
+Host: db
+Port: 5432
+
+Django Apps:
+- userauth
+- enterprise 
+- bills
+- codes
+
+Total Backup Size: 332K

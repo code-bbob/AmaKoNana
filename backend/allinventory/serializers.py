@@ -132,12 +132,6 @@ class ManufactureSerializer(ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        """
-        Updates an existing Manufacture instance.
-        This method replaces all old ManufactureItems with new ones.
-        It first reverses the old counts and then applies the new ones,
-        locking both Product and Brand instances throughout the process.
-        """
         manufacture_items_data = validated_data.pop('manufacture_items', [])
 
         # The super().update() handles the simple fields on the Manufacture model
@@ -155,8 +149,10 @@ class ManufactureSerializer(ModelSerializer):
 
             # Acquire a lock on the Brand row to prevent race conditions
             brand = Brand.objects.select_for_update().get(id=product.brand_id)
-            brand.count -= quantity * product.selling_price
+            brand.count -= quantity
+            brand.stock -= quantity * product.selling_price
             brand.save()
+
 
         # Delete the old items
         instance.manufacture_items.all().delete()
@@ -173,7 +169,8 @@ class ManufactureSerializer(ModelSerializer):
 
             # Acquire a lock on the Brand row to prevent race conditions
             brand = Brand.objects.select_for_update().get(id=product.brand_id)
-            brand.count += quantity * product.selling_price
+            brand.count += quantity
+            brand.stock += quantity * product.selling_price
             brand.save()
 
             # Create the new item
@@ -181,6 +178,7 @@ class ManufactureSerializer(ModelSerializer):
 
         return instance
 
+    @transaction.atomic
     def delete(self, instance, *args, **kwargs):
         """
         Deletes a Manufacture instance and reverses the stock changes.

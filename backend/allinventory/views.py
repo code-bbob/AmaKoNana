@@ -41,10 +41,11 @@ class ProductView(APIView):
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
     
+
     def post(self, request, format=None):
         data = request.data
         data['enterprise'] = request.user.person.enterprise.id
-        serializer = ProductSerializer(data=request.data, context={'request': request})
+        serializer = ProductSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -234,7 +235,8 @@ class ManufactureView(APIView):
     def delete(self, request, pk, format=None):
         try:
             manufacture = Manufacture.objects.get(id=pk)
-            manufacture.delete()
+            serializer = ManufactureSerializer(manufacture)
+            serializer.delete(manufacture)
             return Response("Deleted")
         except Manufacture.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
