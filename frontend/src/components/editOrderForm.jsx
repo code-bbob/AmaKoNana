@@ -102,21 +102,13 @@ function EditOrderForm() {
     setSubmitting(true);
     setError(null);
     try {
-      // Debug logging
-      console.log('Form data before submit:', formData);
-      
-      // Check if any items have new images or need to clear images
       const hasNewImages = formData.items.some(item => item.image);
       const hasClearImages = formData.items.some(item => item.clearImage);
       
-      console.log('hasNewImages:', hasNewImages, 'hasClearImages:', hasClearImages);
-      
       if (hasNewImages || hasClearImages) {
-        console.log('Using FormData approach');
-        // Use FormData if images are being uploaded or cleared
+        // Use FormData for image uploads/clears
         const formDataToSend = new FormData();
         
-        // Append main order fields
         formDataToSend.append('customer_name', formData.customer_name);
         formDataToSend.append('customer_phone', formData.customer_phone);
         formDataToSend.append('status', formData.status);
@@ -125,44 +117,25 @@ function EditOrderForm() {
         formDataToSend.append('advance_method', formData.advance_method);
         formDataToSend.append('due_date', formData.due_date || '');
         
-        // Append items - simplified approach
         formData.items.forEach((item, index) => {
           if (item.id) formDataToSend.append(`items[${index}]id`, item.id);
           formDataToSend.append(`items[${index}]item`, item.item);
           
-          // Handle image updates
           if (item.image) {
-            // New file selected
             formDataToSend.append(`items[${index}]image`, item.image);
           } else if (item.clearImage) {
-            // User wants to clear existing image - send empty string to clear
             formDataToSend.append(`items[${index}]image`, '');
           }
-          // If neither image nor clearImage is true, don't send image field to preserve existing
         });
-
-        console.log('FormData contents:');
-        for (let [key, value] of formDataToSend.entries()) {
-          console.log(key, value);
-        }
 
         await api.patch(`order/${orderId}/`, formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else {
-        console.log('Using JSON approach');
-        // JSON submission - only update non-image fields to preserve existing images
+        // Use JSON for text-only updates
         const itemsForUpdate = formData.items.map(it => {
-          const itemData = {
-            item: it.item
-          };
-          // Include id for existing items
-          if (it.id) {
-            itemData.id = it.id;
-          }
-          // Don't include image field to preserve existing images
+          const itemData = { item: it.item };
+          if (it.id) itemData.id = it.id;
           return itemData;
         });
         
@@ -176,8 +149,6 @@ function EditOrderForm() {
           due_date: formData.due_date || '',
           items: itemsForUpdate
         };
-        
-        console.log('JSON payload:', payload);
         
         await api.patch(`order/${orderId}/`, payload);
       }

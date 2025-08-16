@@ -50,71 +50,11 @@ class OrderView(APIView):
 
     def patch(self, request, pk, *args, **kwargs):
         order = Order.objects.get(pk=pk, enterprise=request.user.person.enterprise)
-        data = request.data.copy()
-        
-        # Debug logging
-        print(f"PATCH request received for order {pk}")
-        print(f"Request content type: {request.content_type}")
-        print(f"Raw request data: {data}")
-        print(f"Request data keys: {list(data.keys())}")
-        
-        # Handle FormData with items[index] format
-        if hasattr(data, 'getlist') and any(key.startswith('items[') for key in data.keys()):
-            print("Processing FormData format")
-            # Parse FormData items format
-            items_dict = {}
-            regular_fields = {}
-            
-            for key, value in data.items():
-                if key.startswith('items[') and ']' in key:
-                    # Parse items[0]id, items[0]item, items[0]image format
-                    parts = key.split(']', 1)
-                    index_part = parts[0].replace('items[', '')
-                    field_name = parts[1] if len(parts) > 1 else ''
-                    
-                    try:
-                        index = int(index_part)
-                        if index not in items_dict:
-                            items_dict[index] = {}
-                        
-                        # Convert id to integer if it's the id field
-                        if field_name == 'id':
-                            try:
-                                value = int(value)
-                            except (ValueError, TypeError):
-                                continue
-                        
-                        items_dict[index][field_name] = value
-                        print(f"FormData item[{index}][{field_name}] = {value}")
-                    except (ValueError, IndexError):
-                        continue
-                else:
-                    regular_fields[key] = value
-            
-            # Convert items_dict to list format
-            if items_dict:
-                items_list = []
-                for i in sorted(items_dict.keys()):
-                    items_list.append(items_dict[i])
-                regular_fields['items'] = items_list
-                print(f"Converted items list: {items_list}")
-            
-            data = regular_fields
-        else:
-            print("Processing JSON format")
-            print(f"Items data: {data.get('items', 'No items key found')}")
-        
-        print(f"Final data being sent to serializer: {data}")
-        
-        serializer = OrderSerializer(order, data=data, partial=True)
+        serializer = OrderSerializer(order, data=request.data, partial=True)
         if serializer.is_valid():
-            print("Serializer is valid, saving...")
-            result = serializer.save()
-            print(f"Save result: {result}")
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            print(f"Serializer errors: {serializer.errors}")
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, *args, **kwargs):
         order = Order.objects.get(pk=pk, enterprise=request.user.person.enterprise)
