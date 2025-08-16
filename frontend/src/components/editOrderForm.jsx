@@ -6,7 +6,7 @@ import useAxios from "@/utils/useAxios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Trash2, ArrowLeft } from "lucide-react";
+import { PlusCircle, Trash2, ArrowLeft, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Edit Order Form
@@ -19,25 +19,34 @@ function EditOrderForm() {
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState(null);
 
+  // Helper to turn relative media path into absolute URL (backend sends relative like /media/..)
+  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '');
+  const resolveMedia = (path) => {
+    if (!path) return null;
+    if (/^https?:/i.test(path)) return path; // already absolute
+    return `${apiBase}${path.startsWith('/') ? '' : '/'}${path}`;
+  };
+
   useEffect(()=>{
     const fetchOrder = async () => {
       try {
-        const res = await api.get(`order/${orderId}/`);
+    const res = await api.get(`order/${orderId}/`);
         const data = res.data;
         setFormData({
           customer_name: data.customer_name || "",
           customer_phone: data.customer_phone || "",
             branch: data.branch,
             total_amount: data.total_amount || "",
-            advance_amount: data.advance_amount || "",
+            amount_received: data.amount_received || "",
             advance_method: data.advance_method || "cash",
             status: data.status || "pending",
             due_date: data.due_date || "",
             items: (data.items || []).map(it => ({ 
               id: it.id, 
               item: it.item || "",
-              image: null,
-              currentImage: it.image || null
+      image: null,
+      currentImage: resolveMedia(it.image) || null,
+      preview: null
             }))
         });
       } catch (err){
@@ -66,18 +75,26 @@ function EditOrderForm() {
       })
     }));
   };
-  const addOrderItem = () => setFormData(prev => ({ ...prev, items: [...prev.items, { item: "", image: null }] }));
+  const addOrderItem = () => setFormData(prev => ({ ...prev, items: [...prev.items, { item: "", image: null, preview: null }] }));
   const removeOrderItem = (index) => setFormData(prev => ({ ...prev, items: prev.items.filter((_,i)=> i!== index) }));
 
   const handleImageChange = (index, e) => {
     const file = e.target.files[0];
     if (file) {
+      const preview = URL.createObjectURL(file);
       setFormData(prev => ({ 
         ...prev, 
-        items: prev.items.map((it, i) => i === index ? { ...it, image: file } : it)
+        items: prev.items.map((it, i) => i === index ? { ...it, image: file, preview } : it)
       }));
     }
   };
+
+  const clearImage = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      items: prev.items.map((it,i)=> i===index ? { ...it, image: null, preview: null } : it)
+    }));
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -97,7 +114,7 @@ function EditOrderForm() {
         formDataToSend.append('customer_address', formData.customer_address);
         formDataToSend.append('status', formData.status);
         formDataToSend.append('total_amount', formData.total_amount);
-        formDataToSend.append('advance_amount', formData.advance_amount);
+        formDataToSend.append('amount_received', formData.amount_received);
         formDataToSend.append('advance_method', formData.advance_method);
         formDataToSend.append('due_date', formData.due_date);
         formDataToSend.append('branch', branchId);
@@ -237,7 +254,7 @@ function EditOrderForm() {
                       <SelectItem value="prepared" className="text-white">Prepared</SelectItem>
                       <SelectItem value="dispatched" className="text-white">Dispatched</SelectItem>
                       <SelectItem value="completed" className="text-white">Completed</SelectItem>
-                      <SelectItem value="canceled" className="text-white">Canceled</SelectItem>
+                      {/* <SelectItem value="canceled" className="text-white">Canceled</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -265,17 +282,17 @@ function EditOrderForm() {
 
                 <div className="flex flex-col">
                   <Label
-                    htmlFor="advance_amount"
+                    htmlFor="amount_received"
                     className="text-sm font-medium text-white mb-2"
                   >
                     Advance Amount
                   </Label>
                   <Input
                     type="number"
-                    id="advance_amount"
-                    name="advance_amount"
+                    id="amount_received"
+                    name="amount_received"
                     onWheel={handleWheel}
-                    value={formData.advance_amount || ''}
+                    value={formData.amount_received || ''}
                     onChange={handleChange}
                     className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
                     placeholder="Enter advance amount"
@@ -313,45 +330,54 @@ function EditOrderForm() {
                   <h4 className="text-lg font-semibold mb-4 text-white">
                     Item {index + 1}
                   </h4>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="flex flex-col">
-                      <Label
-                        htmlFor={`item-${index}`}
-                        className="text-sm font-medium text-white mb-2"
-                      >
-                        Item Description
-                      </Label>
-                      <Input
-                        type="text"
-                        id={`item-${index}`}
-                        name="item"
-                        value={item.item}
-                        onChange={(e) => handleOrderItemChange(index, e)}
-                        className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
-                        placeholder="Describe the item"
-                        required
-                      />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    {/* Left: inputs */}
+                    <div className="space-y-4">
+                      <div className="flex flex-col">
+                        <Label htmlFor={`item-${index}`} className="text-sm font-medium text-white mb-2">Item Description</Label>
+                        <Input
+                          type="text"
+                          id={`item-${index}`}
+                          name="item"
+                          value={item.item}
+                          onChange={(e) => handleOrderItemChange(index, e)}
+                          className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="Describe the item"
+                          required
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <Label htmlFor={`image-${index}`} className="text-sm font-medium text-white mb-2">Upload / Change Image</Label>
+                        <Input
+                          type="file"
+                          id={`image-${index}`}
+                          name="image"
+                          accept="image/*"
+                          onChange={(e) => handleImageChange(index, e)}
+                          className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                        />
+                        <p className="text-[11px] mt-2 text-slate-400">PNG/JPG up to 2MB.</p>
+                      </div>
                     </div>
-                    <div className="flex flex-col">
-                      <Label
-                        htmlFor={`image-${index}`}
-                        className="text-sm font-medium text-white mb-2"
-                      >
-                        Item Image
-                      </Label>
-                      <Input
-                        type="file"
-                        id={`image-${index}`}
-                        name="image"
-                        accept="image/*"
-                        onChange={(e) => handleImageChange(index, e)}
-                        className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
-                      />
-                      {item.currentImage && !item.image && (
-                        <p className="text-sm text-gray-400 mt-1">
-                          Current: {item.currentImage.split('/').pop()}
-                        </p>
-                      )}
+                    {/* Right: preview */}
+                    <div className="flex justify-center md:justify-end">
+                      <div className="relative group">
+                        {item.preview ? (
+                          <>
+                            <img src={item.preview} alt={`Preview ${index+1}`} className="h-40 w-40 md:h-48 md:w-48 object-cover rounded-lg border border-slate-600/70 shadow-md ring-1 ring-slate-600/40 group-hover:ring-purple-500/60 transition-all" />
+                            <button type="button" onClick={()=>clearImage(index)} className="absolute -top-2 -right-2 bg-slate-900/80 hover:bg-red-600 text-white rounded-full p-1" aria-label="Remove image">
+                              <X className="h-3 w-3" />
+                            </button>
+                          </>
+                        ) : item.currentImage ? (
+                          <img src={item.currentImage} alt="Current" className="h-40 w-40 md:h-48 md:w-48 object-cover rounded-lg border border-slate-600/60" />
+                        ) : (
+                          <div className="h-40 w-40 md:h-48 md:w-48 flex flex-col items-center justify-center text-xs text-slate-400 bg-slate-800/60 rounded-lg border border-dashed border-slate-600">
+                            <span>No Image</span>
+                            <span className="mt-1 text-[10px] text-slate-500">(Preview)</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
