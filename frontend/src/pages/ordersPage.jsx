@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Calendar, ChevronLeft, ChevronRight, Search, Plus, ArrowLeft } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Search, Plus, ArrowLeft, Edit } from 'lucide-react'
 import Sidebar from '@/components/allsidebar';
 import useAxios from '@/utils/useAxios';
 import { format } from 'date-fns'
@@ -242,40 +242,60 @@ function OrdersPage(){
         <div className="space-y-6">
           {orders.length > 0 ? (
             orders.map((order) => (
-              <Card key={`${order.id}-${order.received_date}`} onClick={() => navigate(`editform/${order.id}`)} className="bg-gradient-to-b from-slate-800 to-slate-900 border border-slate-700/60 shadow-lg  cursor-pointer">
-                <CardHeader className="border-b border-slate-700/70">
-                  <CardTitle className="text-lg lg:text-xl font-medium text-white  justify-between items-start lg:items-center">
-                      <div className="flex text-sm justify-between">
-                      <p>Due : {order.due_date}</p>
-                      <p>Branch: {order.branch_name}</p>
+              <Card key={`${order.id}-${order.received_date}`} className="bg-gradient-to-b from-slate-800 to-slate-900 border border-slate-700/60 shadow-lg relative group">
+               
+                {/* Clickable Card Content */}
+                <div 
+                  onClick={() => navigate(`/orders/branch/${branchId}/detail/${order.id}`)} 
+                  className="cursor-pointer"
+                >
+                  <CardHeader className="border-b border-slate-700/70">
+                    <CardTitle className="text-lg lg:text-xl font-medium text-white justify-between items-start lg:items-center">
+                        <div className="flex text-sm justify-between">
+                        <p>Due : {order.due_date}</p>
+                        <p>Branch: {order.branch_name}</p>
+                        </div>
+                      <div className='flex justify-between'>
+                        <p className='text-xs text-gray-400'>Customer Name: {order.customer_name}</p>
+                        <p className='text-xs text-gray-400'>Phone: {order.customer_phone}</p>
+                      <p className=" lg:mt-0 text-xs lg:text-sm text-gray-300">{format(new Date(order.received_date), 'dd MMM yyyy')}</p>
                       </div>
-                    <div className='flex justify-between'>
-                      <p className='text-xs text-gray-400'>Customer Name: {order.customer_name}</p>
-                      <p className='text-xs text-gray-400'>Phone: {order.customer_phone}</p>
-                    <p className=" lg:mt-0 text-xs lg:text-sm text-gray-300">{format(new Date(order.received_date), 'dd MMM yyyy')}</p>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent >
-                  {order?.items?.map((item, index) => (
-                    <div key={`${order.id}-${index}`} className="mb-4 last:mb-0 p-3 lg:p-4 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors duration-300">
-                      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-2 gap-2">
-                        <span className="text-white font-medium mb-1 lg:mb-0">{item.item}</span>
-                      {/* </div> */}
-                      {/* <div className="flex flex-wrap gap-3 items-center text-xs lg:text-sm text-slate-300"> */}
-                        <span className="text-purple-400 inline-flex items-center gap-1">Status:
-                          <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 capitalize">{order.status}</span>
-                        </span>
-                        {/* {order.due_date && <span className='text-blue-400'>Due: {format(new Date(order.due_date), 'dd MMM yyyy')}</span>} */}
-                        {/* <span className='text-yellow-400 capitalize'>Method: {order.advance_method?.replace('_',' ')}</span> */}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent >
+                    {order?.items?.map((item, index) => (
+                      <div key={`${order.id}-${index}`} className="mb-4 last:mb-0 p-3 lg:p-4 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors duration-300">
+                        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-2 gap-2">
+                          <span className="text-white font-medium mb-1 lg:mb-0">{item.item}</span>
+                        {/* </div> */}
+                        {/* <div className="flex flex-wrap gap-3 items-center text-xs lg:text-sm text-slate-300"> */}
+                          <span className="text-purple-400 inline-flex items-center gap-1">Status:
+                            <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 capitalize">{order.status}</span>
+                          </span>
+                          {/* {order.due_date && <span className='text-blue-400'>Due: {format(new Date(order.due_date), 'dd MMM yyyy')}</span>} */}
+                          {/* <span className='text-yellow-400 capitalize'>Method: {order.advance_method?.replace('_',' ')}</span> */}
+                        </div>
                       </div>
+                    ))}
+                    <div className="mt-4 flex justify-between text-white text-sm lg:text-base">
+ {/* Edit Button - Always visible and larger */}
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/orders/branch/${branchId}/editform/${order.id}`);
+                  }}
+                  className="right-4 z-10 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
+                  size="sm"
+                >
+                  <Edit className="w-5 h-5 mr-2" />
+                  Edit
+                </Button>
+                
+                      {order.amount_received && <span className="font-medium">Received: RS. {order.amount_received?.toLocaleString()}</span>}
+                      {order.total_amount && <span className="font-bold text-green-400">Total: RS. {order.total_amount?.toLocaleString()}</span>}
                     </div>
-                  ))}
-                  <div className="mt-4 flex justify-between text-white text-sm lg:text-base">
-                    {order.advance_amount && <span className="font-medium">Received: RS. {order.amount_received?.toLocaleString()}</span>}
-                    {order.total_amount && <span className="font-bold text-green-400">Total: RS. {order.total_amount?.toLocaleString()}</span>}
-                  </div>
-                </CardContent>
+                  </CardContent>
+                </div>
               </Card>
             ))
           ) : (
