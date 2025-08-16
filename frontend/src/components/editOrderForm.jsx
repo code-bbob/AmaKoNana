@@ -46,7 +46,8 @@ function EditOrderForm() {
               item: it.item || "",
       image: null,
       currentImage: resolveMedia(it.image) || null,
-      preview: null
+      preview: null,
+      clearImage: false // Track if user wants to clear existing image
             }))
         });
       } catch (err){
@@ -75,7 +76,7 @@ function EditOrderForm() {
       })
     }));
   };
-  const addOrderItem = () => setFormData(prev => ({ ...prev, items: [...prev.items, { item: "", image: null, preview: null }] }));
+  const addOrderItem = () => setFormData(prev => ({ ...prev, items: [...prev.items, { item: "", image: null, preview: null, clearImage: false }] }));
   const removeOrderItem = (index) => setFormData(prev => ({ ...prev, items: prev.items.filter((_,i)=> i!== index) }));
 
   const handleImageChange = (index, e) => {
@@ -84,7 +85,7 @@ function EditOrderForm() {
       const preview = URL.createObjectURL(file);
       setFormData(prev => ({ 
         ...prev, 
-        items: prev.items.map((it, i) => i === index ? { ...it, image: file, preview } : it)
+        items: prev.items.map((it, i) => i === index ? { ...it, image: file, preview, clearImage: false } : it)
       }));
     }
   };
@@ -92,7 +93,7 @@ function EditOrderForm() {
   const clearImage = (index) => {
     setFormData(prev => ({
       ...prev,
-      items: prev.items.map((it,i)=> i===index ? { ...it, image: null, preview: null } : it)
+      items: prev.items.map((it,i)=> i===index ? { ...it, image: null, preview: null, clearImage: true } : it)
     }));
   }
 
@@ -101,11 +102,12 @@ function EditOrderForm() {
     setSubmitting(true);
     setError(null);
     try {
-      // Check if any items have new images
+      // Check if any items have new images or need to clear images
       const hasNewImages = formData.items.some(item => item.image);
+      const hasClearImages = formData.items.some(item => item.clearImage);
       
-      if (hasNewImages) {
-        // Use FormData if images are being uploaded
+  if (hasNewImages || hasClearImages) {
+        // Use FormData if images are being uploaded or cleared
         const formDataToSend = new FormData();
         
         // Append main order fields
@@ -121,13 +123,17 @@ function EditOrderForm() {
         
         // Append items
         formData.items.forEach((item, index) => {
-          if (item.id) {
-            formDataToSend.append(`items[${index}]id`, item.id);
-          }
+          if (item.id) formDataToSend.append(`items[${index}]id`, item.id);
           formDataToSend.append(`items[${index}]item`, item.item);
+          // Handle image updates
           if (item.image) {
+            // New file selected
             formDataToSend.append(`items[${index}]image`, item.image);
+          } else if (item.clearImage) {
+            // User wants to clear existing image - send empty string to clear
+            formDataToSend.append(`items[${index}]image`, '');
           }
+          // If neither image nor clearImage is true, don't send image field to preserve existing
         });
 
         await api.patch(`order/${orderId}/`, formDataToSend, {
@@ -136,8 +142,24 @@ function EditOrderForm() {
           },
         });
       } else {
-        // Regular JSON submission if no new images
-        const payload = { ...formData, branch: branchId };
+        // JSON submission - only update non-image fields to preserve existing images
+        const itemsForUpdate = formData.items.map(it => ({
+          id: it.id,
+          item: it.item
+          // Don't include image field to preserve existing images
+        }));
+        
+        const payload = {
+          customer_name: formData.customer_name,
+          customer_phone: formData.customer_phone,
+          total_amount: formData.total_amount,
+          amount_received: formData.amount_received,
+          advance_method: formData.advance_method,
+          status: formData.status,
+          due_date: formData.due_date,
+          branch: branchId,
+          items: itemsForUpdate
+        };
         await api.patch(`order/${orderId}/`, payload);
       }
       
@@ -369,8 +391,27 @@ function EditOrderForm() {
                               <X className="h-3 w-3" />
                             </button>
                           </>
+                        ) : item.clearImage ? (
+                          <div className="h-40 w-40 md:h-48 md:w-48 flex flex-col items-center justify-center text-xs text-red-400 bg-slate-800/60 rounded-lg border border-dashed border-red-600">
+                            <span>Image will be removed</span>
+                            <button 
+                              type="button" 
+                              onClick={() => setFormData(prev => ({
+                                ...prev,
+                                items: prev.items.map((it,i)=> i===index ? { ...it, clearImage: false } : it)
+                              }))}
+                              className="mt-2 text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+                            >
+                              Undo
+                            </button>
+                          </div>
                         ) : item.currentImage ? (
-                          <img src={item.currentImage} alt="Current" className="h-40 w-40 md:h-48 md:w-48 object-cover rounded-lg border border-slate-600/60" />
+                          <>
+                            <img src={item.currentImage} alt="Current" className="h-40 w-40 md:h-48 md:w-48 object-cover rounded-lg border border-slate-600/60" />
+                            <button type="button" onClick={()=>clearImage(index)} className="absolute -top-2 -right-2 bg-slate-900/80 hover:bg-red-600 text-white rounded-full p-1" aria-label="Remove image">
+                              <X className="h-3 w-3" />
+                            </button>
+                          </>
                         ) : (
                           <div className="h-40 w-40 md:h-48 md:w-48 flex flex-col items-center justify-center text-xs text-slate-400 bg-slate-800/60 rounded-lg border border-dashed border-slate-600">
                             <span>No Image</span>

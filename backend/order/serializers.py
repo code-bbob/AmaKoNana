@@ -27,6 +27,7 @@ class OrderSerializer(ModelSerializer):
         Expected client behavior:
         - Send an "items" array with objects. Existing items include their "id" field.
         - For an existing item, omit the "image" field or send null to keep current image; send a new file to replace.
+        - Send empty string for "image" field to clear/remove existing image.
         - To delete an item, simply omit that item's id from the submitted list.
         - To add a new item, include object without an id.
         If the client does not send an "items" key (e.g. partial update of other fields), item relations are untouched.
@@ -52,13 +53,23 @@ class OrderSerializer(ModelSerializer):
                 # Update text field(s)
                 if 'item' in item_dict:
                     order_item.item = item_dict['item']
-                # Update image only if provided (avoid wiping out on omission)
-                if 'image' in item_dict and item_dict['image'] is not None:
-                    order_item.image = item_dict['image']
+                # Handle image updates
+                if 'image' in item_dict:
+                    if item_dict['image'] == '':
+                        # Empty string means clear existing image
+                        order_item.image = None
+                    elif item_dict['image'] is not None:
+                        # New file provided
+                        order_item.image = item_dict['image']
+                    # If image is None (null), keep existing image (do nothing)
                 order_item.save()
             else:
                 # New item (ignore id if invalid/missing)
-                OrderItem.objects.create(order=instance, item=item_dict.get('item', ''), image=item_dict.get('image'))
+                image_value = item_dict.get('image')
+                # For new items, empty string also means no image
+                if image_value == '':
+                    image_value = None
+                OrderItem.objects.create(order=instance, item=item_dict.get('item', ''), image=image_value)
 
         # Delete items that were not re-submitted
         to_delete = [iid for iid in existing_items.keys() if iid not in received_ids]
