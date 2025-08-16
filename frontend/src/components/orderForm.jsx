@@ -101,11 +101,11 @@ function OrderForm() {
         // Append main order fields
         formDataToSend.append('customer_name', formData.customer_name);
         formDataToSend.append('customer_phone', formData.customer_phone);
-        formDataToSend.append('customer_address', formData.customer_address);
         formDataToSend.append('status', formData.status);
         formDataToSend.append('total_amount', formData.total_amount);
         formDataToSend.append('amount_received', formData.amount_received);
         formDataToSend.append('advance_method', formData.advance_method);
+        formDataToSend.append('due_date', formData.due_date);
         formDataToSend.append('branch', branchId);
         
         // Append items
@@ -265,7 +265,7 @@ function OrderForm() {
                     htmlFor="amount_received"
                     className="text-sm font-medium text-white mb-2"
                   >
-                    Advance Amount
+                    Amount Received
                   </Label>
                   <Input
                     type="number"
@@ -275,7 +275,7 @@ function OrderForm() {
                     value={formData.amount_received}
                     onChange={handleChange}
                     className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Enter advance amount"
+                    placeholder="Enter amount received"
                   />
                 </div>
               </div>

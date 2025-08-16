@@ -11,10 +11,14 @@ class OrderItemSerializer(ModelSerializer):
 
 class OrderSerializer(ModelSerializer):
     items = OrderItemSerializer(many=True)
+    branch_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = '__all__'
+
+    def get_branch_name(self, obj):
+        return obj.branch.name if obj.branch else None
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
@@ -101,4 +105,5 @@ class OrderSerializer(ModelSerializer):
 
     def delete(self, instance, *args, **kwargs):
         instance.items.all().delete()
-        return super().delete(instance, *args, **kwargs)
+        instance.delete()
+        return

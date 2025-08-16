@@ -28,7 +28,7 @@ class OrderView(APIView):
         if status:
             orders = orders.filter(status=status)
 
-        orders = orders.order_by('-due_date')
+        orders = orders.order_by('due_date')
         paginator = PageNumberPagination()
         paginator.page_size = 5  # Set the page size here
         paginated_orders = paginator.paginate_queryset(orders, request)
