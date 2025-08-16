@@ -102,29 +102,34 @@ function EditOrderForm() {
     setSubmitting(true);
     setError(null);
     try {
+      // Debug logging
+      console.log('Form data before submit:', formData);
+      
       // Check if any items have new images or need to clear images
       const hasNewImages = formData.items.some(item => item.image);
       const hasClearImages = formData.items.some(item => item.clearImage);
       
-  if (hasNewImages || hasClearImages) {
+      console.log('hasNewImages:', hasNewImages, 'hasClearImages:', hasClearImages);
+      
+      if (hasNewImages || hasClearImages) {
+        console.log('Using FormData approach');
         // Use FormData if images are being uploaded or cleared
         const formDataToSend = new FormData();
         
         // Append main order fields
         formDataToSend.append('customer_name', formData.customer_name);
         formDataToSend.append('customer_phone', formData.customer_phone);
-        formDataToSend.append('customer_address', formData.customer_address);
         formDataToSend.append('status', formData.status);
-        formDataToSend.append('total_amount', formData.total_amount);
-        formDataToSend.append('amount_received', formData.amount_received);
+        formDataToSend.append('total_amount', formData.total_amount || '');
+        formDataToSend.append('amount_received', formData.amount_received || '');
         formDataToSend.append('advance_method', formData.advance_method);
-        formDataToSend.append('due_date', formData.due_date);
-        formDataToSend.append('branch', branchId);
+        formDataToSend.append('due_date', formData.due_date || '');
         
-        // Append items
+        // Append items - simplified approach
         formData.items.forEach((item, index) => {
           if (item.id) formDataToSend.append(`items[${index}]id`, item.id);
           formDataToSend.append(`items[${index}]item`, item.item);
+          
           // Handle image updates
           if (item.image) {
             // New file selected
@@ -136,36 +141,50 @@ function EditOrderForm() {
           // If neither image nor clearImage is true, don't send image field to preserve existing
         });
 
+        console.log('FormData contents:');
+        for (let [key, value] of formDataToSend.entries()) {
+          console.log(key, value);
+        }
+
         await api.patch(`order/${orderId}/`, formDataToSend, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
       } else {
+        console.log('Using JSON approach');
         // JSON submission - only update non-image fields to preserve existing images
-        const itemsForUpdate = formData.items.map(it => ({
-          id: it.id,
-          item: it.item
+        const itemsForUpdate = formData.items.map(it => {
+          const itemData = {
+            item: it.item
+          };
+          // Include id for existing items
+          if (it.id) {
+            itemData.id = it.id;
+          }
           // Don't include image field to preserve existing images
-        }));
+          return itemData;
+        });
         
         const payload = {
           customer_name: formData.customer_name,
           customer_phone: formData.customer_phone,
-          total_amount: formData.total_amount,
-          amount_received: formData.amount_received,
+          total_amount: formData.total_amount || '',
+          amount_received: formData.amount_received || '',
           advance_method: formData.advance_method,
           status: formData.status,
-          due_date: formData.due_date,
-          branch: branchId,
+          due_date: formData.due_date || '',
           items: itemsForUpdate
         };
+        
+        console.log('JSON payload:', payload);
+        
         await api.patch(`order/${orderId}/`, payload);
       }
       
       navigate(`/orders/branch/${branchId}`);
     } catch(err){
-      console.error(err);
+      console.error('Error details:', err.response?.data);
       setError("Failed to update order");
     } finally { setSubmitting(false); }
   };
