@@ -14,8 +14,12 @@ from rest_framework import status
 class OrderView(APIView):
     
     permission_classes = [IsAuthenticated]
-    def get(self, request, branch=None, *args, **kwargs):
+    def get(self, request, branch=None,pk=None, *args, **kwargs):
 
+        if pk:
+            order = Order.objects.get(id=pk, enterprise = request.user.person.enterprise)
+            serializer=OrderSerializer(order)
+            return Response(serializer.data)
         orders = Order.objects.filter(enterprise=request.user.person.enterprise, branch=branch)
 
         status = request.GET.get('status', None)
