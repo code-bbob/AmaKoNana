@@ -8,7 +8,7 @@ class Order(models.Model):
     customer_phone = models.CharField(max_length=15)
     received_date = models.DateField(auto_now_add=True)
     total_amount = models.FloatField(null=True, blank=True)
-    advance_amount = models.FloatField(null=True, blank=True)
+    amount_received = models.FloatField(null=True, blank=True)
     advance_method = models.CharField(max_length=50, choices=[
         ('cash', 'Cash'),
         ('credit_card', 'Credit Card'),

@@ -21,7 +21,9 @@ class OrderView(APIView):
             serializer=OrderSerializer(order)
             return Response(serializer.data)
         orders = Order.objects.filter(enterprise=request.user.person.enterprise, branch=branch)
-
+        branch = request.user.person.branch
+        if branch:
+            orders = orders.filter(branch=branch)
         status = request.GET.get('status', None)
         if status:
             orders = orders.filter(status=status)
