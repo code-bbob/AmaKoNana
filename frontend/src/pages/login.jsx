@@ -20,6 +20,7 @@ const Login = () => {
     
     e.preventDefault();
     setIsLoading(true);
+    console.log("HERE AND TRYING")
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}userauth/login/`, {
         method: 'POST',
@@ -28,8 +29,9 @@ const Login = () => {
         },
         body: JSON.stringify({ email, password }),
       });
+      console.log("HERE")
       const data = await response.json();
-      
+      console.log(data)
       if (response.ok) {
         localStorage.setItem('accessToken', data.token.access);
         localStorage.setItem('refreshToken', data.token.refresh);

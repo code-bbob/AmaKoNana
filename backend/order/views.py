@@ -28,7 +28,7 @@ class OrderView(APIView):
         if status:
             orders = orders.filter(status=status)
 
-        orders = orders.order_by('-due_date')
+        orders = orders.order_by('due_date')
         paginator = PageNumberPagination()
         paginator.page_size = 5  # Set the page size here
         paginated_orders = paginator.paginate_queryset(orders, request)
@@ -50,8 +50,7 @@ class OrderView(APIView):
 
     def patch(self, request, pk, *args, **kwargs):
         order = Order.objects.get(pk=pk, enterprise=request.user.person.enterprise)
-        data = request.data.copy()
-        serializer = OrderSerializer(order, data=data, partial=True)
+        serializer = OrderSerializer(order, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)

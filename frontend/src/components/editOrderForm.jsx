@@ -8,6 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlusCircle, Trash2, ArrowLeft, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // Edit Order Form
 function EditOrderForm() {
@@ -16,6 +25,8 @@ function EditOrderForm() {
   const api = useAxios();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState(null);
 
@@ -32,6 +43,16 @@ function EditOrderForm() {
       try {
     const res = await api.get(`order/${orderId}/`);
         const data = res.data;
+        
+        // Format due_date for HTML date input (expects YYYY-MM-DD)
+        let formattedDueDate = "";
+        if (data.due_date) {
+          const date = new Date(data.due_date);
+          if (!isNaN(date.getTime())) {
+            formattedDueDate = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+          }
+        }
+        
         setFormData({
           customer_name: data.customer_name || "",
           customer_phone: data.customer_phone || "",
@@ -40,7 +61,7 @@ function EditOrderForm() {
             amount_received: data.amount_received || "",
             advance_method: data.advance_method || "cash",
             status: data.status || "pending",
-            due_date: data.due_date || "",
+            due_date: formattedDueDate,
             items: (data.items || []).map(it => ({ 
               id: it.id, 
               item: it.item || "",
@@ -97,75 +118,80 @@ function EditOrderForm() {
     }));
   }
 
+  const handleDeleteOrder = async () => {
+    setDeleting(true);
+    setError(null);
+    try {
+      await api.delete(`order/${orderId}/`);
+      navigate(`/orders/branch/${branchId}`);
+    } catch (err) {
+      console.error('Error deleting order:', err.response?.data);
+      setError("Failed to delete order");
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     try {
-      // Check if any items have new images or need to clear images
       const hasNewImages = formData.items.some(item => item.image);
       const hasClearImages = formData.items.some(item => item.clearImage);
       
-  if (hasNewImages || hasClearImages) {
-        // Use FormData if images are being uploaded or cleared
+      if (hasNewImages || hasClearImages) {
+        // Use FormData for image uploads/clears
         const formDataToSend = new FormData();
         
-        // Append main order fields
         formDataToSend.append('customer_name', formData.customer_name);
         formDataToSend.append('customer_phone', formData.customer_phone);
-        formDataToSend.append('customer_address', formData.customer_address);
         formDataToSend.append('status', formData.status);
-        formDataToSend.append('total_amount', formData.total_amount);
-        formDataToSend.append('amount_received', formData.amount_received);
+        formDataToSend.append('total_amount', formData.total_amount || '');
+        formDataToSend.append('amount_received', formData.amount_received || '');
         formDataToSend.append('advance_method', formData.advance_method);
-        formDataToSend.append('due_date', formData.due_date);
-        formDataToSend.append('branch', branchId);
+        formDataToSend.append('due_date', formData.due_date || '');
         
-        // Append items
         formData.items.forEach((item, index) => {
           if (item.id) formDataToSend.append(`items[${index}]id`, item.id);
           formDataToSend.append(`items[${index}]item`, item.item);
-          // Handle image updates
+          
           if (item.image) {
-            // New file selected
             formDataToSend.append(`items[${index}]image`, item.image);
           } else if (item.clearImage) {
-            // User wants to clear existing image - send empty string to clear
             formDataToSend.append(`items[${index}]image`, '');
           }
-          // If neither image nor clearImage is true, don't send image field to preserve existing
         });
 
         await api.patch(`order/${orderId}/`, formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else {
-        // JSON submission - only update non-image fields to preserve existing images
-        const itemsForUpdate = formData.items.map(it => ({
-          id: it.id,
-          item: it.item
-          // Don't include image field to preserve existing images
-        }));
+        // Use JSON for text-only updates
+        const itemsForUpdate = formData.items.map(it => {
+          const itemData = { item: it.item };
+          if (it.id) itemData.id = it.id;
+          return itemData;
+        });
         
         const payload = {
           customer_name: formData.customer_name,
           customer_phone: formData.customer_phone,
-          total_amount: formData.total_amount,
-          amount_received: formData.amount_received,
+          total_amount: formData.total_amount || '',
+          amount_received: formData.amount_received || '',
           advance_method: formData.advance_method,
           status: formData.status,
-          due_date: formData.due_date,
-          branch: branchId,
+          due_date: formData.due_date || '',
           items: itemsForUpdate
         };
+        
         await api.patch(`order/${orderId}/`, payload);
       }
       
       navigate(`/orders/branch/${branchId}`);
     } catch(err){
-      console.error(err);
+      console.error('Error details:', err.response?.data);
       setError("Failed to update order");
     } finally { setSubmitting(false); }
   };
@@ -197,9 +223,12 @@ function EditOrderForm() {
           </Button>
 
           <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-2xl lg:text-3xl font-bold mb-6 text-white">
-              Edit Order
-            </h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl lg:text-3xl font-bold text-white">
+                Edit Order
+              </h2>
+              
+                        </div>
             {error && <p className="text-red-400 mb-4">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -445,6 +474,42 @@ function EditOrderForm() {
                 <PlusCircle className="w-4 h-4 mr-2" />
                 Add Another Item
               </Button>
+
+                <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="destructive" className="w-full bg-red-600 hover:bg-red-700">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Order
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-slate-800 border-slate-700">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">Delete Order</DialogTitle>
+                    <DialogDescription className="text-slate-300">
+                      Are you sure you want to delete this order for customer "{formData?.customer_name}"? 
+                      This action cannot be undone and will permanently remove all order items and images.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setDeleteDialogOpen(false)}
+                      disabled={deleting}
+                      className="border-slate-600 text-black hover:bg-slate-700"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleDeleteOrder}
+                      disabled={deleting}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {deleting ? 'Deleting...' : 'Delete Order'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
               <Button
                 type="submit"

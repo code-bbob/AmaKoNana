@@ -44,6 +44,7 @@ import AllDebtorStatementPage from "./pages/allDebtorStatementPage";
 import TransferForm from "./components/transferForm";
 import OrderForm from "./components/orderForm";
 import EditOrderForm from "./components/editOrderForm";
+import OrderDetail from "./components/orderDetail";
 import OrdersPage from "./pages/ordersPage";
 
 function App() {
@@ -118,6 +119,7 @@ function App() {
           <Route path="orders/branch/:branchId" element={<OrdersPage />} />
           <Route path="orders/form/branch/:branchId" element={<OrderForm />} />
           <Route path="orders/branch/:branchId/editform/:orderId" element={<EditOrderForm />} />
+          <Route path="orders/branch/:branchId/detail/:orderId" element={<OrderDetail />} />
         </Route>
       </Route>
     </Routes>

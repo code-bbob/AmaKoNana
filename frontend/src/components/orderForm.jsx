@@ -101,11 +101,11 @@ function OrderForm() {
         // Append main order fields
         formDataToSend.append('customer_name', formData.customer_name);
         formDataToSend.append('customer_phone', formData.customer_phone);
-        formDataToSend.append('customer_address', formData.customer_address);
         formDataToSend.append('status', formData.status);
         formDataToSend.append('total_amount', formData.total_amount);
         formDataToSend.append('amount_received', formData.amount_received);
         formDataToSend.append('advance_method', formData.advance_method);
+        formDataToSend.append('due_date', formData.due_date);
         formDataToSend.append('branch', branchId);
         
         // Append items
