@@ -195,7 +195,8 @@ class ManufactureSerializer(ModelSerializer):
 
                 # Lock the brand and reverse the count
                 brand = Brand.objects.select_for_update().get(id=product.brand_id)
-                brand.count -= quantity * product.selling_price
+                brand.count -= quantity 
+                brand.stock -= quantity * product.selling_price
                 brand.save()
 
                 # Now delete the item

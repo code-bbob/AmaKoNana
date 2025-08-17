@@ -307,7 +307,7 @@ function EditOrderForm() {
                     htmlFor="amount_received"
                     className="text-sm font-medium text-white mb-2"
                   >
-                    Advance Amount
+                    Amount Received
                   </Label>
                   <Input
                     type="number"
@@ -317,7 +317,7 @@ function EditOrderForm() {
                     value={formData.amount_received || ''}
                     onChange={handleChange}
                     className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Enter advance amount"
+                    placeholder="Enter amount received"
                   />
                 </div>
               </div>
