@@ -138,16 +138,38 @@ export default function EditAllSalesTransactionForm() {
           phone_number: data.phone_number,
           bill_no: data.bill_no,
           branch: data.branch?.toString() || "",
-          sales: data.sales.map((s) => ({
-            ...s,
-            product: s.product.toString(),
-            unit_price: s.unit_price.toString(),
-            quantity: s.quantity.toString(),
-            discount_percent: ((s.discount || 0) * 100 / (s.quantity * s.unit_price)).toFixed(2), // Convert discount amount to percentage
-            line_subtotal: (s.quantity * s.unit_price).toString(),
-            total_price: s.total_price.toString(),
-            returned: s.returned,
-          })),
+          sales: data.sales.map((s) => {
+            // Determine discount type based on the original discount amount
+            const lineSubtotal = s.quantity * s.unit_price;
+            const discountAmount = s.discount || 0;
+            let discountType = "percent";
+            let discountValue = "0";
+            
+            if (discountAmount > 0) {
+              // If the discount amount is a nice percentage (like 5%, 10%, etc.), treat as percent
+              const calculatedPercent = (discountAmount * 100 / lineSubtotal);
+              if (Math.abs(calculatedPercent - Math.round(calculatedPercent)) < 0.01) {
+                discountType = "percent";
+                discountValue = calculatedPercent.toFixed(2);
+              } else {
+                // Otherwise treat as amount
+                discountType = "amount";
+                discountValue = discountAmount.toString();
+              }
+            }
+            
+            return {
+              ...s,
+              product: s.product.toString(),
+              unit_price: s.unit_price.toString(),
+              quantity: s.quantity.toString(),
+              discount_type: discountType,
+              discount_value: discountValue,
+              line_subtotal: lineSubtotal.toString(),
+              total_price: s.total_price.toString(),
+              returned: s.returned,
+            };
+          }),
           method: data.method,
           debtor: data.debtor,
           amount_paid: data.amount_paid,
@@ -203,8 +225,14 @@ export default function EditAllSalesTransactionForm() {
       const price = parseFloat(s.unit_price) || 0;
       const lineSub = qty * price;
       newSubtotal += lineSub;
-      const percent = Math.min(Math.max(parseFloat(s.discount_percent) || 0, 0), 100);
-      newTotalDiscount += lineSub * percent / 100;
+      
+      if (s.discount_type === "percent") {
+        const percent = Math.min(Math.max(parseFloat(s.discount_value) || 0, 0), 100);
+        newTotalDiscount += lineSub * percent / 100;
+      } else if (s.discount_type === "amount") {
+        const amount = Math.min(Math.max(parseFloat(s.discount_value) || 0, 0), lineSub);
+        newTotalDiscount += amount;
+      }
     });
     setSubtotal(newSubtotal);
     setTotalDiscount(newTotalDiscount);
@@ -252,10 +280,20 @@ export default function EditAllSalesTransactionForm() {
     const qty = parseFloat(line.quantity) || 0;
     const price = parseFloat(line.unit_price) || 0;
     const lineSubtotal = qty * price;
-    let percent = parseFloat(line.discount_percent) || 0;
-    if (percent < 0) percent = 0;
-    if (percent > 100) percent = 100;
-    const discountAmt = lineSubtotal * percent / 100;
+    let discountAmt = 0;
+    
+    if (line.discount_type === "percent") {
+      let percent = parseFloat(line.discount_value) || 0;
+      if (percent < 0) percent = 0;
+      if (percent > 100) percent = 100;
+      discountAmt = lineSubtotal * percent / 100;
+    } else if (line.discount_type === "amount") {
+      let amount = parseFloat(line.discount_value) || 0;
+      if (amount < 0) amount = 0;
+      if (amount > lineSubtotal) amount = lineSubtotal;
+      discountAmt = amount;
+    }
+    
     line.line_subtotal = lineSubtotal ? lineSubtotal.toFixed(2) : "";
     line.total_price = lineSubtotal ? (lineSubtotal - discountAmt).toFixed(2) : "";
   };
@@ -276,6 +314,14 @@ const handleNewProductVendorChange = (ids) => {
     const { name, value } = e.target;
     const updated = [...formData.sales];
     updated[index] = { ...updated[index], [name]: value };
+    recalcLine(updated[index]);
+    setFormData({ ...formData, sales: updated });
+  };
+
+  const handleDiscountTypeChange = (index, value) => {
+    if (formData.sales[index].returned) return;
+    const updated = [...formData.sales];
+    updated[index] = { ...updated[index], discount_type: value, discount_value: "" };
     recalcLine(updated[index]);
     setFormData({ ...formData, sales: updated });
   };
@@ -376,7 +422,8 @@ const handleNewProductVendorChange = (ids) => {
           product: "",
           unit_price: "",
           quantity: "",
-          discount_percent: "",
+          discount_type: "percent",
+          discount_value: "",
           line_subtotal: "",
           total_price: "",
           returned: false,
@@ -495,12 +542,30 @@ const handleNewProductVendorChange = (ids) => {
     for (let i = 0; i < formData.sales.length; i++) {
       const s = formData.sales[i];
       const o = originalSalesData.sales[i];
-      const originalDiscountPercent = ((o.discount || 0) * 100 / (o.quantity * o.unit_price)).toFixed(2);
+      
+      // Calculate original discount values for comparison
+      const lineSubtotal = o.quantity * o.unit_price;
+      const originalDiscountAmount = o.discount || 0;
+      let originalDiscountType = "percent";
+      let originalDiscountValue = "0";
+      
+      if (originalDiscountAmount > 0) {
+        const calculatedPercent = (originalDiscountAmount * 100 / lineSubtotal);
+        if (Math.abs(calculatedPercent - Math.round(calculatedPercent)) < 0.01) {
+          originalDiscountType = "percent";
+          originalDiscountValue = calculatedPercent.toFixed(2);
+        } else {
+          originalDiscountType = "amount";
+          originalDiscountValue = originalDiscountAmount.toString();
+        }
+      }
+      
       if (
         s.product !== o.product.toString() ||
         s.unit_price !== o.unit_price.toString() ||
         s.quantity !== o.quantity.toString() ||
-        s.discount_percent !== originalDiscountPercent ||
+        s.discount_type !== originalDiscountType ||
+        s.discount_value !== originalDiscountValue ||
         s.total_price !== o.total_price.toString()
       )
         return true;
@@ -519,8 +584,15 @@ const handleNewProductVendorChange = (ids) => {
         const qty = parseFloat(clone.quantity) || 0;
         const price = parseFloat(clone.unit_price) || 0;
         const lineSubtotal = qty * price;
-        const percent = Math.min(Math.max(parseFloat(clone.discount_percent) || 0, 0), 100);
-        const discountAmt = lineSubtotal * percent / 100;
+        
+        let discountAmt = 0;
+        if (clone.discount_type === "percent") {
+          const percent = Math.min(Math.max(parseFloat(clone.discount_value) || 0, 0), 100);
+          discountAmt = lineSubtotal * percent / 100;
+        } else if (clone.discount_type === "amount") {
+          discountAmt = Math.min(Math.max(parseFloat(clone.discount_value) || 0, 0), lineSubtotal);
+        }
+        
         const net = lineSubtotal - discountAmt;
         return {
           product: clone.product,
@@ -825,18 +897,33 @@ const handleNewProductVendorChange = (ids) => {
                       htmlFor={`discount-${index}`}
                       className="text-sm font-medium text-white mb-2"
                     >
-                      Discount %
+                      Discount
                     </Label>
-                    <Input
-                      type="number"
-                      id={`discount-${index}`}
-                      name="discount_percent"
-                      value={sale.discount_percent}
-                      onChange={(e) => handleSaleChange(index, e)}
-                      disabled={sale.returned}
-                      className="bg-slate-600 border-slate-500 text-white"
-                      placeholder="%"
-                    />
+                    <div className="flex gap-2">
+                      <Select 
+                        value={sale.discount_type} 
+                        onValueChange={(value) => handleDiscountTypeChange(index, value)}
+                        disabled={sale.returned}
+                      >
+                        <SelectTrigger className="w-28 bg-slate-600 border-slate-500 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-700">
+                          <SelectItem value="percent" className="text-white">%</SelectItem>
+                          <SelectItem value="amount" className="text-white">Amount</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="number"
+                        id={`discount-${index}`}
+                        name="discount_value"
+                        value={sale.discount_value}
+                        onChange={(e) => handleSaleChange(index, e)}
+                        disabled={sale.returned}
+                        className="bg-slate-600 border-slate-500 text-white flex-1"
+                        placeholder={sale.discount_type === "percent" ? "%" : "Amount"}
+                      />
+                    </div>
                   </div>
                   {/* Net Total */}
                   <div className="flex flex-col">
