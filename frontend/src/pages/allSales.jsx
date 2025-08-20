@@ -46,6 +46,8 @@ export default function AllSalesTransactions() {
   const [deleteType, setDeleteType] = useState('') // 'selected' or 'all'
   const [modifyStock, setModifyStock] = useState(true)
   const [deleting, setDeleting] = useState(false)
+  const [showModifyStockDialog, setShowModifyStockDialog] = useState(false)
+  const [pendingModifyStockValue, setPendingModifyStockValue] = useState(null)
 
   const navigate = useNavigate()
 
@@ -170,6 +172,23 @@ export default function AllSalesTransactions() {
   const handleDeleteAll = () => {
     setDeleteType('all')
     setShowDeleteDialog(true)
+  }
+
+  const handleModifyStockChange = (checked) => {
+    // Store the pending value and show confirmation dialog for any change
+    setPendingModifyStockValue(checked)
+    setShowModifyStockDialog(true)
+  }
+
+  const confirmModifyStockChange = () => {
+    setModifyStock(pendingModifyStockValue)
+    setShowModifyStockDialog(false)
+    setPendingModifyStockValue(null)
+  }
+
+  const cancelModifyStockChange = () => {
+    setShowModifyStockDialog(false)
+    setPendingModifyStockValue(null)
   }
 
   const confirmDelete = async () => {
@@ -315,7 +334,7 @@ export default function AllSalesTransactions() {
                   <Checkbox
                     id="modifyStock"
                     checked={modifyStock}
-                    onCheckedChange={setModifyStock}
+                    onCheckedChange={handleModifyStockChange}
                   />
                   <Label htmlFor="modifyStock" className="text-white text-sm">
                     Modify Stock
@@ -433,18 +452,34 @@ export default function AllSalesTransactions() {
                 ? `Are you sure you want to delete ${selectedTransactions.size} selected transaction(s)?`
                 : `Are you sure you want to delete all ${transactions.length} transactions on this page?`
               }
-              {modifyStock 
-                ? " This will restore stock levels for the deleted transactions."
-                : " Stock levels will not be modified."
-              }
             </DialogDescription>
           </DialogHeader>
+          
+          <div className="py-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="deleteModifyStock"
+                checked={modifyStock}
+                onCheckedChange={handleModifyStockChange}
+              />
+              <Label htmlFor="deleteModifyStock" className="text-white">
+                Modify Stock (restore inventory levels)
+              </Label>
+            </div>
+            <p className="text-sm text-slate-400 mt-2">
+              {modifyStock 
+                ? "Stock levels will be restored for deleted transactions."
+                : "Stock levels will not be modified."
+              }
+            </p>
+          </div>
+
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setShowDeleteDialog(false)}
               disabled={deleting}
-              className="text-white border-slate-600 hover:bg-slate-700"
+              className="text-black border-slate-600 hover:bg-slate-700"
             >
               Cancel
             </Button>
@@ -455,6 +490,55 @@ export default function AllSalesTransactions() {
               className="bg-red-600 hover:bg-red-700"
             >
               {deleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modify Stock Confirmation Dialog */}
+      <Dialog open={showModifyStockDialog} onOpenChange={setShowModifyStockDialog}>
+        <DialogContent className="bg-slate-800 text-white border-slate-700">
+          <DialogHeader>
+            <DialogTitle>
+              {pendingModifyStockValue ? 'Enable Stock Modification?' : 'Disable Stock Modification?'}
+            </DialogTitle>
+            <DialogDescription className="text-slate-300">
+              {pendingModifyStockValue ? (
+                <>
+                  Are you sure you want to enable stock modification?
+                  <br /><br />
+                  <strong>When enabled:</strong> Deleting transactions will restore inventory levels for the sold items.
+                  <br />
+                  This means the stock count and stock value will be increased back.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to disable stock modification?
+                  <br /><br />
+                  <strong>When disabled:</strong> Deleting transactions will NOT restore inventory levels.
+                  <br />
+                  The sold items will remain as sold even after transaction deletion.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={cancelModifyStockChange}
+              className="text-black border-slate-600 hover:bg-slate-700"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={pendingModifyStockValue ? "default" : "destructive"}
+              onClick={confirmModifyStockChange}
+              className={pendingModifyStockValue 
+                ? "bg-green-600 hover:bg-green-700" 
+                : "bg-orange-600 hover:bg-orange-700"
+              }
+            >
+              {pendingModifyStockValue ? 'Enable Stock Modification' : 'Disable Stock Modification'}
             </Button>
           </DialogFooter>
         </DialogContent>
