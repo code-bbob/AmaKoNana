@@ -568,6 +568,10 @@ export default function AllBrandProducts() {
                 </div>
               </div>
             )}
+            <div className="mt-4">
+              <p className="font-semibold mb-2 text-sm sm:text-base">Barcode:</p>
+              <p>{selectedProduct?.uid || "N/A"}</p>
+            </div>
 {/*             
             <div className="mt-4">
               <p className="font-semibold mb-2 text-sm sm:text-base">Barcode:</p>
