@@ -33,10 +33,12 @@ export default function AddAllBrandDialog({ onBrandAdded, branchId }) {
   const [allBranches, setAllBranches] = useState([])
   const [selectedBranchId, setSelectedBranchId] = useState("")
   const [loadingBranch, setLoadingBranch] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleAddBrand = async (e) => {
     e.preventDefault()
     try {
+      setIsLoading(true)
       // Convert selectedBranchId back to number if needed
 
       const response = await api.post("allinventory/brand/", {
@@ -51,6 +53,9 @@ export default function AddAllBrandDialog({ onBrandAdded, branchId }) {
       setIsDialogOpen(false)
     } catch (error) {
       console.error("Error adding category:", error)
+    }
+    finally {
+      setIsLoading(false)
     }
   }
 
@@ -90,6 +95,7 @@ export default function AddAllBrandDialog({ onBrandAdded, branchId }) {
           <Button
             type="button"
             onClick={handleAddBrand}
+            disabled={isLoading}
             className="bg-purple-600 hover:bg-purple-700 text-white"
           >
             Add Category
