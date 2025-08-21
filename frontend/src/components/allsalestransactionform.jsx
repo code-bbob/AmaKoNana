@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -243,6 +242,18 @@ const handleNewProductVendorChange = (ids) => {
       );
       console.log(res.data);
       setCustomerTotal(res.data);
+      
+      // Apply 5% discount to all sales if customer total > 0
+      const customerAmount = parseFloat(res.data) || 0;
+      if (customerAmount > 0) {
+        const updatedSales = formData.sales.map((sale) => {
+          if (sale.product && sale.quantity && sale.unit_price) {
+            return { ...sale, discount_percent: "5" };
+          }
+          return sale;
+        });
+        setFormData(prev => ({ ...prev, sales: updatedSales }));
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       setError("Failed to fetch data");
@@ -543,33 +554,12 @@ const handleNewProductVendorChange = (ids) => {
                       }
                       className="bg-slate-700 mr-2 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
                     />
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button type="button">Check</Button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-slate-800 text-white">
-                        <DialogHeader>
-                          <DialogTitle>Are you sure?</DialogTitle>
-                          <DialogDescription className="py-5">
-                            This action will create a new customer if they don't
-                            exist.
-                            <div className="text-right">
-                              <DialogClose>
-                                <Button
-                                  className="mt-6 hover:scale-110"
-                                  type="button"
-                                  onClick={(e) =>
-                                    handleCheck(e, formData.phone_number)
-                                  }
-                                >
-                                  Check
-                                </Button>
-                              </DialogClose>
-                            </div>
-                          </DialogDescription>
-                        </DialogHeader>
-                      </DialogContent>
-                    </Dialog>
+                    <Button 
+                      type="button"
+                      onClick={(e) => handleCheck(e, formData.phone_number)}
+                    >
+                      Check
+                    </Button>
                   </div>
                 </div>
                 
