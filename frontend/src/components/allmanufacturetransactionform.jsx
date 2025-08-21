@@ -71,6 +71,88 @@ function AllManufactureTransactionForm() {
   const [branch, setBranch] = useState([]);
   const [userBranch, setUserBranch] = useState({});
 
+  // Keydown handling for product scanning
+  const [currentWord, setCurrentWord] = useState("");
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      if (currentWord.trim().length === 0) {
+        handleSubmit();
+        return;
+      }
+      const scannedCode = currentWord.slice(-13, -1);
+      console.log("Word is:", scannedCode);
+      const matchingProduct = products.find(
+        (product) => product.uid === scannedCode
+      );
+      console.log("Matching product:", matchingProduct);
+
+      if (matchingProduct) {
+        const productIdStr = matchingProduct.id.toString();
+
+        // First, check if a manufacture item already exists for this product
+        const existingItemIndex = formData.manufacture_items.findIndex(
+          (item) => item.product === productIdStr
+        );
+
+        if (existingItemIndex !== -1) {
+          // Increase quantity for the existing item
+          const updatedItems = [...formData.manufacture_items];
+          const existingItem = updatedItems[existingItemIndex];
+          const currentQuantity = parseInt(existingItem.quantity, 10) || 0;
+          const newQuantity = currentQuantity + 1;
+          existingItem.quantity = newQuantity.toString();
+          setFormData((prevFormData) => ({
+            ...prevFormData,
+            manufacture_items: updatedItems,
+          }));
+        } else {
+          // Check if there's an empty item to fill
+          const emptyItemIndex = formData.manufacture_items.findIndex(
+            (item) => item.product === ""
+          );
+
+          if (emptyItemIndex !== -1) {
+            // Fill the empty item
+            const updatedItems = [...formData.manufacture_items];
+            updatedItems[emptyItemIndex] = {
+              product: productIdStr,
+              unit_price: matchingProduct.cost_price || matchingProduct.unit_price || "",
+              quantity: "1",
+            };
+            setFormData((prevFormData) => ({
+              ...prevFormData,
+              manufacture_items: updatedItems,
+            }));
+          } else {
+            // Neither an existing item nor an empty item found, so add a new item entry
+            const newItem = {
+              product: productIdStr,
+              unit_price: matchingProduct.cost_price || matchingProduct.unit_price || "",
+              quantity: "1",
+            };
+            setFormData((prevFormData) => ({
+              ...prevFormData,
+              manufacture_items: [...prevFormData.manufacture_items, newItem],
+            }));
+            setOpenProduct((prev) => [...prev, false]);
+          }
+        }
+      } else {
+        console.log("Product not found");
+      }
+      setCurrentWord("");
+    } else {
+      setCurrentWord((prev) => prev + e.key);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [currentWord, products, formData.manufacture_items]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {

@@ -640,10 +640,10 @@ const handleNewProductVendorChange = (ids) => {
           {error && <p className="text-red-400 mb-4">{error}</p>}
           <form onSubmit={handleSubmit} className="space-y-6">
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
             {/* Date */}
-            <div className="flex flex-col">
+            <div className="flex flex-col col-span-3">
               <Label
                 htmlFor="date"
                 className="text-lg font-medium text-white mb-2"
@@ -660,25 +660,26 @@ const handleNewProductVendorChange = (ids) => {
                 required
               />
             </div>
-            {/* Name */}
-            <div className="flex flex-col">
+            {/* Bill No */}
+            <div className="flex flex-col col-span-3">
               <Label
-                htmlFor="name"
+                htmlFor="bill_no"
                 className="text-lg font-medium text-white mb-2"
                 >
-                Customer's Name
+                Bill No.
               </Label>
               <Input
                 type="text"
-                id="name"
-                name="name"
-                value={formData.name}
+                id="bill_no"
+                name="bill_no"
+                value={formData.bill_no}
                 onChange={handleChange}
                 className="w-full bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
-              />
+                required
+                />
             </div>
             {/* Phone */}
-            <div className="flex flex-col">
+            <div className="flex flex-col col-span-6">
               <Label
                 htmlFor="phone_number"
                 className="text-lg font-medium flex justify-between text-white mb-2"
@@ -697,7 +698,7 @@ const handleNewProductVendorChange = (ids) => {
                   onChange={handleChange}
                   className="w-full bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
                   />
-                <Dialog>
+                {/* <Dialog>
                   <DialogTrigger asChild>
                     <Button type="button" className="ml-2">Check</Button>
                   </DialogTrigger>
@@ -723,26 +724,8 @@ const handleNewProductVendorChange = (ids) => {
                       </DialogDescription>
                     </DialogHeader>
                   </DialogContent>
-                </Dialog>
+                </Dialog> */}
               </div>
-            </div>
-            {/* Bill No */}
-            <div className="flex flex-col">
-              <Label
-                htmlFor="bill_no"
-                className="text-lg font-medium text-white mb-2"
-                >
-                Bill No.
-              </Label>
-              <Input
-                type="text"
-                id="bill_no"
-                name="bill_no"
-                value={formData.bill_no}
-                onChange={handleChange}
-                className="w-full bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
-                required
-                />
             </div>
             </div>
             {/* Sales items */}

@@ -78,8 +78,6 @@ export default function NewProductDialog({
     label: v.name,
   }));
 
-  console.log("Vendor Options:", vendorOptions);
-
   // Derive the currently selected options from newProductData.vendor_ids
   const vendorValue = vendorOptions?.filter((o) =>
     newProductData.vendor?.includes(o.value)
