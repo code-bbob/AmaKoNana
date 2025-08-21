@@ -53,7 +53,6 @@ function AllSalesTransactionForm() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
-    name: "",
     phone_number: "",
     bill_no: "",
     branch: branchId, // New branch field added to state
@@ -78,6 +77,13 @@ function AllSalesTransactionForm() {
   const [subLoading, setSubLoading] = useState(false);
   const [nextBill, setNextBill] = useState("");
   const [customerTotal, setCustomerTotal] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerEligibleForDiscount, setCustomerEligibleForDiscount] = useState(false);
+  const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
+  const [newCustomerData, setNewCustomerData] = useState({
+    customer_name: "",
+    phone_number: ""
+  });
   const [openBrand, setOpenBrand] = useState(false);
   const [debtors, setDebtors] = useState([]); // New state for debtors
 
@@ -198,8 +204,18 @@ const handleNewProductVendorChange = (ids) => {
         (product) => product.id.toString() === value
       );
       const newSales = [...formData.sales];
-  newSales[index] = { ...newSales[index], product: value, unit_price: matchingProduct ? matchingProduct.selling_price : "" };
-  recalcLine(newSales[index]);
+      const currentSale = newSales[index];
+      
+      // If this sale line was previously empty and customer is eligible for discount, apply it
+      const shouldApplyDiscount = !currentSale.product && customerEligibleForDiscount;
+      
+      newSales[index] = { 
+        ...newSales[index], 
+        product: value, 
+        unit_price: matchingProduct ? matchingProduct.selling_price : "",
+        discount_value: shouldApplyDiscount ? "5" : newSales[index].discount_value
+      };
+      recalcLine(newSales[index]);
       setFormData({ ...formData, sales: newSales });
     }
     const newOpenProduct = [...openProduct];
@@ -225,11 +241,21 @@ const handleNewProductVendorChange = (ids) => {
   };
 
   const handleAddSale = () => {
+    const newSaleItem = { 
+      product: "", 
+      unit_price: "", 
+      quantity: "", 
+      discount_type: "percent", 
+      discount_value: customerEligibleForDiscount ? "5" : "", 
+      line_subtotal: "", 
+      total_price: "" 
+    };
+    
     setFormData({
       ...formData,
       sales: [
         ...formData.sales,
-        { product: "", unit_price: "", quantity: "", discount_type: "percent", discount_value: "", line_subtotal: "", total_price: "" },
+        newSaleItem,
       ],
     });
     setOpenProduct([...openProduct, false]);
@@ -245,17 +271,21 @@ const handleNewProductVendorChange = (ids) => {
   const handleCheck = async (e, phone_number) => {
     try {
       const res = await api.get(
-        "alltransaction/customer-total/" + phone_number + "/"
+        "alltransaction/customer/" + phone_number + "/"
       );
       console.log(res.data);
-      setCustomerTotal(res.data);
+      setCustomerTotal(res.data.total_spent);
+      setCustomerName(res.data.name);
       
       // Apply 5% discount to all sales if customer total > 0
-      const customerAmount = parseFloat(res.data) || 0;
-      if (customerAmount > 0) {
+      const customerAmount = parseFloat(res.data.total_spent) || 0;
+      const isEligibleForDiscount = customerAmount > 0;
+      setCustomerEligibleForDiscount(isEligibleForDiscount);
+      
+      if (isEligibleForDiscount) {
         const updatedSales = formData.sales.map((sale) => {
           if (sale.product && sale.quantity && sale.unit_price) {
-            return { ...sale, discount_percent: "5" };
+            return { ...sale, discount_value: "5" };
           }
           return sale;
         });
@@ -263,7 +293,34 @@ const handleNewProductVendorChange = (ids) => {
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      setError("Failed to fetch data");
+      if (error.response && error.response.status === 404) {
+        // Customer not found, show dialog to create new customer
+        setCustomerEligibleForDiscount(false);
+        setNewCustomerData({
+          customer_name: "",
+          phone_number: phone_number
+        });
+        setShowNewCustomerDialog(true);
+      } else {
+        setError("Failed to fetch data");
+        setCustomerEligibleForDiscount(false);
+      }
+    }
+  };
+
+  const handleCreateCustomer = async () => {
+    try {
+      const res = await api.post("alltransaction/customer/", newCustomerData);
+      console.log("New customer created:", res.data);
+      setCustomerTotal(res.data.total_spent);
+      setCustomerName(res.data.name);
+      // New customer will have total_spent = 0, so no discount eligibility
+      setCustomerEligibleForDiscount(false);
+      setShowNewCustomerDialog(false);
+      setNewCustomerData({ customer_name: "", phone_number: "" });
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      setError("Failed to create customer");
     }
   };
 
@@ -424,7 +481,15 @@ const handleNewProductVendorChange = (ids) => {
           );
           if (emptySaleIndex !== -1) {
             const updatedSales = [...formData.sales];
-            updatedSales[emptySaleIndex] = { product: productIdStr, unit_price: matchingProduct.selling_price, quantity: 1, discount_percent: "", line_subtotal: matchingProduct.selling_price, total_price: matchingProduct.selling_price };
+            updatedSales[emptySaleIndex] = { 
+              product: productIdStr, 
+              unit_price: matchingProduct.selling_price, 
+              quantity: 1, 
+              discount_type: "percent", 
+              discount_value: customerEligibleForDiscount ? "5" : "", 
+              line_subtotal: matchingProduct.selling_price, 
+              total_price: matchingProduct.selling_price 
+            };
             recalcLine(updatedSales[emptySaleIndex]);
             setFormData((prevFormData) => ({
               ...prevFormData,
@@ -432,7 +497,15 @@ const handleNewProductVendorChange = (ids) => {
             }));
           } else {
             // Neither an existing sale nor an empty sale found, so add a new sale entry
-            const newSale = { product: productIdStr, unit_price: matchingProduct.selling_price, quantity: 1, discount_percent: "", line_subtotal: matchingProduct.selling_price, total_price: matchingProduct.selling_price };
+            const newSale = { 
+              product: productIdStr, 
+              unit_price: matchingProduct.selling_price, 
+              quantity: 1, 
+              discount_type: "percent", 
+              discount_value: customerEligibleForDiscount ? "5" : "", 
+              line_subtotal: matchingProduct.selling_price, 
+              total_price: matchingProduct.selling_price 
+            };
             recalcLine(newSale);
             setFormData((prevFormData) => ({
               ...prevFormData,
@@ -520,7 +593,7 @@ const handleNewProductVendorChange = (ids) => {
                     required
                   />
                 </div>
-                <div className="flex flex-col col-span-1">
+                <div className="flex flex-col col-span-3">
                   <Label
                     htmlFor="bill_no"
                     className="text-sm font-medium text-white mb-2"
@@ -540,33 +613,17 @@ const handleNewProductVendorChange = (ids) => {
                     required
                   />
                 </div>
-                <div className="flex flex-col col-span-4">
-                  <Label
-                    htmlFor="name"
-                    className="text-sm font-medium text-white mb-2"
-                  >
-                    Customer's Name
-                  </Label>
-                  <Input
-                    type="text"
-                    id="name"
-                    name="name"
-                    placeholder="Customer's Name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
-                  />
-                </div>
-                <div className="flex flex-col col-span-4">
+                <div className="flex flex-col col-span-6">
                   <Label
                     htmlFor="phone_number"
                     className="text-sm font-medium flex justify-between text-white mb-2"
                   >
                     <span>Customer's Phone Number</span>{" "}
+                    {customerName && (
+                      <span className="text-blue-400">Hi, {customerName}</span>
+                    )}
                     {customerTotal && (
-                      <span className="text-green-400">{customerTotal}</span>
+                      <span className="text-green-400">Rs. {customerTotal}</span>
                     )}
                   </Label>
                   <div className="flex">
@@ -1050,6 +1107,73 @@ const handleNewProductVendorChange = (ids) => {
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     Add Category
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog
+              open={showNewCustomerDialog}
+              onOpenChange={setShowNewCustomerDialog}
+            >
+              <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
+                <DialogHeader>
+                  <DialogTitle>Customer Not Found</DialogTitle>
+                  <DialogDescription>
+                    This customer doesn't exist. Please enter their details to create a new customer.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="customer_name" className="text-right">
+                      Name
+                    </Label>
+                    <Input
+                      id="customer_name"
+                      value={newCustomerData.customer_name}
+                      onChange={(e) =>
+                        setNewCustomerData({
+                          ...newCustomerData,
+                          customer_name: e.target.value,
+                        })
+                      }
+                      className="col-span-3 bg-slate-700 border-slate-600 text-white"
+                      placeholder="Enter customer name"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="customer_phone" className="text-right">
+                      Phone
+                    </Label>
+                    <Input
+                      id="customer_phone"
+                      value={newCustomerData.phone_number}
+                      onChange={(e) =>
+                        setNewCustomerData({
+                          ...newCustomerData,
+                          phone_number: e.target.value,
+                        })
+                      }
+                      className="col-span-3 bg-slate-700 border-slate-600 text-white"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowNewCustomerDialog(false)}
+                    className="bg-slate-600 hover:bg-slate-500 text-white"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleCreateCustomer}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    Create Customer
                   </Button>
                 </DialogFooter>
               </DialogContent>
