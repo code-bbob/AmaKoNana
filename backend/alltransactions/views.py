@@ -808,7 +808,7 @@ class StaffView(APIView):
         serializer = StaffSerializer(staffs,many=True)
         return Response(serializer.data)
     
-class CustomerTotalView(APIView):
+class CustomerView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self,request,pk):
