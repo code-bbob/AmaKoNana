@@ -133,9 +133,9 @@ const Invoice = ({ transactionId }) => {
     <InvoiceContainer>
       <InvoiceHeader>
         <CompanyInfo>
-          <h1>Digitech Enterprises</h1>
+          <h1>Aama Ko Nana</h1>
           <p>Basundhara -03, Kathmandu</p>
-          <p>Phone: (+977) 9851193055</p>
+          <p>Phone: (+977) 9851227175, 9841682921</p>
           {/* <p>Email: info@digitechenterprises.com</p> */}
         </CompanyInfo>
         <InvoiceInfo>

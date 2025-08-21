@@ -188,7 +188,7 @@ function OrdersPage(){
                   type="button"
                   key={tab.key}
                   onClick={() => handleStatusChange(tab.key)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/60 backdrop-blur-sm border ${active ? 'bg-purple-600 text-white shadow-lg border-purple-500' : 'bg-slate-700/40 hover:bg-slate-600 text-slate-300 border-slate-600/40'}`}
+                  className={`px-1 md:px-4 py-1 md:py-2 rounded-full text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/60 backdrop-blur-sm border ${active ? 'bg-purple-600 text-white shadow-lg border-purple-500' : 'bg-slate-700/40 hover:bg-slate-600 text-slate-300 border-slate-600/40'}`}
                 >
                   {tab.label}
                 </button>
@@ -251,13 +251,13 @@ function OrdersPage(){
                 >
                   <CardHeader className="border-b border-slate-700/70">
                     <CardTitle className="text-lg lg:text-xl font-medium text-white justify-between items-start lg:items-center">
-                        <div className="flex text-sm justify-between">
+                        <div className="flex text-xs  md:text-sm justify-between">
                         <p>Due : {order.due_date}</p>
                         <p>Branch: {order.branch_name}</p>
                         </div>
                       <div className='flex justify-between'>
                         <p className='text-xs text-gray-400'>Customer Name: {order.customer_name}</p>
-                        <p className='text-xs text-gray-400'>Phone: {order.customer_phone}</p>
+                        <p className='text-xs hidden md:block text-gray-400'>Phone: {order.customer_phone}</p>
                       <p className=" lg:mt-0 text-xs lg:text-sm text-gray-300">{format(new Date(order.received_date), 'dd MMM yyyy')}</p>
                       </div>
                     </CardTitle>
@@ -269,7 +269,7 @@ function OrdersPage(){
                           <span className="text-white font-medium mb-1 lg:mb-0">{item.item}</span>
                         {/* </div> */}
                         {/* <div className="flex flex-wrap gap-3 items-center text-xs lg:text-sm text-slate-300"> */}
-                          <span className="text-purple-400 inline-flex items-center gap-1">Status:
+                          <span className="text-purple-400 text-sm inline-flex items-center gap-1">Status:
                             <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 capitalize">{order.status}</span>
                           </span>
                           {/* {order.due_date && <span className='text-blue-400'>Due: {format(new Date(order.due_date), 'dd MMM yyyy')}</span>} */}
@@ -284,7 +284,7 @@ function OrdersPage(){
                     e.stopPropagation();
                     navigate(`/orders/branch/${branchId}/editform/${order.id}`);
                   }}
-                  className="right-4 z-10 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
+                  className="right-4 z-10 hidden bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
                   size="sm"
                 >
                   <Edit className="w-5 h-5 mr-2" />

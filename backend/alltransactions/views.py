@@ -818,18 +818,22 @@ class CustomerTotalView(APIView):
             total_amount = 0
             for sale in sales:
                 total_amount += sale.total_amount
-            return Response(f"RS. {total_amount}")
+            return Response({"name": customer.name, "phone_number": customer.phone_number, "total_spent": total_amount})
         else:
-            customer = Customer.objects.create(phone_number=pk,enterprise=request.user.person.enterprise)
-            if customer:
-                sales = SalesTransaction.objects.filter(phone_number=customer.phone_number,enterprise=request.user.person.enterprise)
-                total_amount = 0
-                for sale in sales:
-                    total_amount += sale.total_amount
-                #add order here as well
-                return Response(f"RS. {total_amount}")
-            else:
-                return Response("Customer creation failed")
+            return Response("Customer not found", status=status.HTTP_404_NOT_FOUND)
+
+    def post(self,request):
+        data = request.data
+        enterprise = request.user.person.enterprise
+        customer_name = data["customer_name"]
+        phone_number = data["phone_number"]
+        customer = Customer.objects.create(name=customer_name, phone_number=phone_number, enterprise=enterprise)
+        if customer:
+            total_spent = 0
+            sales = SalesTransaction.objects.filter(phone_number=customer.phone_number, enterprise=enterprise)
+            for sale in sales:
+                total_spent += sale.total_amount
+            return Response({"name": customer.name, "phone_number": customer.phone_number, "total_spent": total_spent})
 
 class SalesReturnView(APIView):
 

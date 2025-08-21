@@ -47,16 +47,19 @@ export default function NewProductDialog({
   openBrand,
   setOpenBrand,
   vendors,
-  imagePreview
+  imagePreview,
+  isLoading = false,
+  isBrandLoading = false
 }) {
   const { currentBranch } = useBranchManagement();
 
   // Tailwind‑themed classNames for react‑select
   const vendorSelectClasses = {
-    control: ({ isFocused }) =>
+    control: ({ isFocused, isDisabled }) =>
       cn(
         "bg-slate-700 border border-slate-600 rounded px-2 py-1",
-        isFocused && "ring-2 ring-purple-500"
+        isFocused && "ring-2 ring-purple-500",
+        isDisabled && "opacity-50 cursor-not-allowed"
       ),
     input: () => "[&_input:focus]:ring-0",
     placeholder: () => "text-sm text-slate-500",
@@ -83,7 +86,11 @@ export default function NewProductDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      if (!isLoading && !isBrandLoading) {
+        setOpen(newOpen);
+      }
+    }}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto bg-slate-800 text-white">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>
@@ -102,7 +109,8 @@ export default function NewProductDialog({
               name="name"
               value={newProductData.name}
               onChange={handleNewProductChange}
-              className="col-span-1 sm:col-span-3 bg-slate-700 border-slate-600 text-white"
+              disabled={isLoading || isBrandLoading}
+              className="col-span-1 sm:col-span-3 bg-slate-700 border-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Enter product name"
             />
           </div>
@@ -117,7 +125,8 @@ export default function NewProductDialog({
               name="cost_price"
               value={newProductData.cost_price}
               onChange={handleNewProductChange}
-              className="col-span-1 sm:col-span-3 bg-slate-700 border-slate-600 text-white"
+              disabled={isLoading || isBrandLoading}
+              className="col-span-1 sm:col-span-3 bg-slate-700 border-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Enter cost price"
             />
           </div>
@@ -132,7 +141,8 @@ export default function NewProductDialog({
               name="selling_price"
               value={newProductData.selling_price}
               onChange={handleNewProductChange}
-              className="col-span-1 sm:col-span-3 bg-slate-700 border-slate-600 text-white"
+              disabled={isLoading || isBrandLoading}
+              className="col-span-1 sm:col-span-3 bg-slate-700 border-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Enter selling price"
             />
           </div>
@@ -143,18 +153,28 @@ export default function NewProductDialog({
               Category
             </Label>
             <div className="col-span-1 sm:col-span-3">
-              <Popover open={openBrand} onOpenChange={setOpenBrand}>
+              <Popover open={openBrand && !isLoading && !isBrandLoading} onOpenChange={setOpenBrand}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
                     aria-expanded={openBrand}
-                    className="w-full justify-between bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                    disabled={isLoading || isBrandLoading}
+                    className="w-full justify-between bg-slate-700 border-slate-600 text-white hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {newProductData.brand
-                      ? brands.find((b) => b.id.toString() === newProductData.brand)?.name
-                      : "Select a category..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    {isBrandLoading ? (
+                      <>
+                        <span className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                        Creating category...
+                      </>
+                    ) : (
+                      <>
+                        {newProductData.brand
+                          ? brands.find((b) => b.id.toString() === newProductData.brand)?.name
+                          : "Select a category..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0 bg-slate-700 border-slate-600">
@@ -169,8 +189,8 @@ export default function NewProductDialog({
                         {brands.map((brand) => (
                           <CommandItem
                             key={brand.id}
-                            onSelect={() => handleNewProductBrandChange(brand.id.toString())}
-                            className="text-white hover:bg-slate-600"
+                            onSelect={() => !isLoading && !isBrandLoading && handleNewProductBrandChange(brand.id.toString())}
+                            className={`text-white hover:bg-slate-600 ${(isLoading || isBrandLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <Check
                               className={cn(
@@ -184,11 +204,11 @@ export default function NewProductDialog({
                           </CommandItem>
                         ))}
                         <CommandItem
-                          onSelect={() => handleNewProductBrandChange("new")}
-                          className="text-white hover:bg-slate-600"
+                          onSelect={() => !isLoading && !isBrandLoading && handleNewProductBrandChange("new")}
+                          className={`text-white hover:bg-slate-600 ${(isLoading || isBrandLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           <PlusCircle className="mr-2 h-4 w-4" />
-                          Add a new category
+                          {isBrandLoading ? "Creating category..." : "Add a new category"}
                         </CommandItem>
                       </CommandGroup>
                     </CommandList>
@@ -223,6 +243,7 @@ export default function NewProductDialog({
                 id="newProductVendors"
                 isMulti
                 unstyled
+                isDisabled={isLoading || isBrandLoading}
                 options={vendorOptions}
                 value={vendorValue}
                 onChange={(selected) =>
@@ -232,7 +253,7 @@ export default function NewProductDialog({
                 }
                 classNames={vendorSelectClasses}
                 className="text-white"
-                placeholder="Select one or more vendors..."
+                placeholder={isLoading || isBrandLoading ? "Loading..." : "Select one or more vendors..."}
               />
             </div>
           </div>
@@ -247,8 +268,9 @@ export default function NewProductDialog({
                 id="newProductImage"
                 type="file"
                 accept="image/*"
+                disabled={isLoading || isBrandLoading}
                 onChange={handleNewProductImageChange}
-                className="bg-slate-700 border-slate-600 text-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
+                className="bg-slate-700 border-slate-600 text-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 disabled:opacity-50 disabled:cursor-not-allowed"
               />
               {imagePreview && (
                 <div className="mt-2 flex justify-center">
@@ -267,9 +289,17 @@ export default function NewProductDialog({
           <Button
             type="button"
             onClick={handleAddProduct}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            disabled={isLoading || isBrandLoading}
+            className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Add Product
+            {isLoading ? (
+              <>
+                <span className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                Adding Product...
+              </>
+            ) : (
+              "Add Product"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

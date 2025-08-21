@@ -55,7 +55,7 @@ export default function AllBrandProducts() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState(null);
-
+  const [isLoading, setIsLoading] = useState(false);
   // Vendor & new‑product dialog state
   const [vendors, setVendors] = useState([]);
   const [showNewProductDialog, setShowNewProductDialog] = useState(false);
@@ -212,6 +212,7 @@ export default function AllBrandProducts() {
   const handleAddProduct = async (e) => {
     e.preventDefault();
     try {
+      setIsLoading(true);
       // If we have an image file, keep existing multipart behaviour.
       // Otherwise just send plain JSON (simpler & debuggable) so you don't need FormData.
       let r;
@@ -249,6 +250,9 @@ export default function AllBrandProducts() {
       setShowNewProductDialog(false);
     } catch (err) {
       console.error(err);
+    }
+    finally{
+      setIsLoading(false);
     }
   };
 
@@ -568,6 +572,10 @@ export default function AllBrandProducts() {
                 </div>
               </div>
             )}
+            <div className="mt-4">
+              <p className="font-semibold mb-2 text-sm sm:text-base">Barcode:</p>
+              <p>{selectedProduct?.uid || "N/A"}</p>
+            </div>
 {/*             
             <div className="mt-4">
               <p className="font-semibold mb-2 text-sm sm:text-base">Barcode:</p>
@@ -749,6 +757,7 @@ export default function AllBrandProducts() {
             <DialogFooter>
               <Button
                 type="button"
+                disabled={isLoading}
                 onClick={handleAddProduct}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >

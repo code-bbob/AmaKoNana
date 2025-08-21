@@ -57,7 +57,7 @@ function AllSalesTransactionForm() {
     phone_number: "",
     bill_no: "",
     branch: branchId, // New branch field added to state
-  sales: [{ product: "", unit_price: "", quantity: "", discount_percent: "", line_subtotal: "", total_price: "" }],
+  sales: [{ product: "", unit_price: "", quantity: "", discount_type: "percent", discount_value: "", line_subtotal: "", total_price: "" }],
     method: "cash",
     debtor: "", // New field for debtor's name
     amount_paid: null,
@@ -171,7 +171,14 @@ function AllSalesTransactionForm() {
     const newSales = [...formData.sales];
     newSales[index] = { ...newSales[index], [name]: value };
 
-  recalcLine(newSales[index]);
+    recalcLine(newSales[index]);
+    setFormData({ ...formData, sales: newSales });
+  };
+
+  const handleDiscountTypeChange = (index, value) => {
+    const newSales = [...formData.sales];
+    newSales[index] = { ...newSales[index], discount_type: value, discount_value: "" };
+    recalcLine(newSales[index]);
     setFormData({ ...formData, sales: newSales });
   };
 
@@ -222,7 +229,7 @@ const handleNewProductVendorChange = (ids) => {
       ...formData,
       sales: [
         ...formData.sales,
-  { product: "", unit_price: "", quantity: "", discount_percent: "", line_subtotal: "", total_price: "" },
+        { product: "", unit_price: "", quantity: "", discount_type: "percent", discount_value: "", line_subtotal: "", total_price: "" },
       ],
     });
     setOpenProduct([...openProduct, false]);
@@ -271,8 +278,15 @@ const handleNewProductVendorChange = (ids) => {
         const qty = parseFloat(clone.quantity) || 0;
         const price = parseFloat(clone.unit_price) || 0;
         const lineSubtotal = qty * price;
-        const percent = Math.min(Math.max(parseFloat(clone.discount_percent) || 0, 0), 100);
-        const discountAmt = lineSubtotal * percent / 100;
+        
+        let discountAmt = 0;
+        if (clone.discount_type === "percent") {
+          const percent = Math.min(Math.max(parseFloat(clone.discount_value) || 0, 0), 100);
+          discountAmt = lineSubtotal * percent / 100;
+        } else if (clone.discount_type === "amount") {
+          discountAmt = Math.min(Math.max(parseFloat(clone.discount_value) || 0, 0), lineSubtotal);
+        }
+        
         const net = lineSubtotal - discountAmt;
         return {
           product: clone.product,
@@ -339,15 +353,25 @@ const handleNewProductVendorChange = (ids) => {
     return quantity * unit_price;
   };
 
-  // Recalculate a single line based on percentage discount
+  // Recalculate a single line based on discount type and value
   const recalcLine = (line) => {
     const qty = parseFloat(line.quantity) || 0;
     const price = parseFloat(line.unit_price) || 0;
     const lineSubtotal = qty * price;
-    let percent = parseFloat(line.discount_percent) || 0;
-    if (percent < 0) percent = 0;
-    if (percent > 100) percent = 100;
-    const discountAmt = lineSubtotal * percent / 100;
+    let discountAmt = 0;
+    
+    if (line.discount_type === "percent") {
+      let percent = parseFloat(line.discount_value) || 0;
+      if (percent < 0) percent = 0;
+      if (percent > 100) percent = 100;
+      discountAmt = lineSubtotal * percent / 100;
+    } else if (line.discount_type === "amount") {
+      let amount = parseFloat(line.discount_value) || 0;
+      if (amount < 0) amount = 0;
+      if (amount > lineSubtotal) amount = lineSubtotal;
+      discountAmt = amount;
+    }
+    
     line.line_subtotal = lineSubtotal ? lineSubtotal.toFixed(2) : "";
     line.total_price = lineSubtotal ? (lineSubtotal - discountAmt).toFixed(2) : "";
   };
@@ -441,8 +465,14 @@ const handleNewProductVendorChange = (ids) => {
       const price = parseFloat(s.unit_price) || 0;
       const lineSub = qty * price;
       newSubtotal += lineSub;
-      const percent = Math.min(Math.max(parseFloat(s.discount_percent) || 0, 0), 100);
-      newTotalDiscount += lineSub * percent / 100;
+      
+      if (s.discount_type === "percent") {
+        const percent = Math.min(Math.max(parseFloat(s.discount_value) || 0, 0), 100);
+        newTotalDiscount += lineSub * percent / 100;
+      } else if (s.discount_type === "amount") {
+        const amount = Math.min(Math.max(parseFloat(s.discount_value) || 0, 0), lineSub);
+        newTotalDiscount += amount;
+      }
     });
     setSubtotal(newSubtotal);
     setTotalDiscount(newTotalDiscount);
@@ -650,8 +680,27 @@ const handleNewProductVendorChange = (ids) => {
                       <Input type="number" value={sale.line_subtotal} readOnly className="bg-slate-600 border-slate-500 text-white" />
                     </div>
                     <div className="flex flex-col">
-                      <Label htmlFor={`discount-${index}`} className="text-sm font-medium text-white mb-2">Discount %</Label>
-                      <Input type="number" id={`discount-${index}`} name="discount_percent" value={sale.discount_percent} onChange={(e) => handleChange(index, e)} className="bg-slate-600 border-slate-500 text-white" placeholder="%" />
+                      <Label htmlFor={`discount-${index}`} className="text-sm font-medium text-white mb-2">Discount</Label>
+                      <div className="flex gap-2">
+                        <Select value={sale.discount_type} onValueChange={(value) => handleDiscountTypeChange(index, value)}>
+                          <SelectTrigger className="w-28 bg-slate-600 border-slate-500 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-800 border-slate-700">
+                            <SelectItem value="percent" className="text-white">%</SelectItem>
+                            <SelectItem value="amount" className="text-white">Amount</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input 
+                          type="number" 
+                          id={`discount-${index}`} 
+                          name="discount_value" 
+                          value={sale.discount_value} 
+                          onChange={(e) => handleChange(index, e)} 
+                          className="bg-slate-600 border-slate-500 text-white flex-1" 
+                          placeholder={sale.discount_type === "percent" ? "%" : "Amount"} 
+                        />
+                      </div>
                     </div>
                     {/* Net Total */}
                     <div className="flex flex-col">
