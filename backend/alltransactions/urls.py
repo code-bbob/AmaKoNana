@@ -38,8 +38,8 @@ urlpatterns = [
 
     path('staff/',views.StaffView.as_view(), name='staff'),
     path('staff/branch/<int:branchId>/',views.StaffView.as_view(), name='staff'),
-    path('customer-total/<str:pk>/',views.CustomerTotalView.as_view(), name='customertotal'),
-
+    path('customer/<int:pk>/',views.CustomerView.as_view(), name='customertotal'),
+    path('customer/',views.CustomerView.as_view(), name='customertotal'),
     path('debtors/', views.DebtorsView.as_view(), name='debtors'),
     path('debtors/branch/<int:branchId>/', views.DebtorsView.as_view(), name='debtors_branch'),
     path('debtors/<int:pk>/', views.DebtorsView.as_view(), name='debtor_detail'),
