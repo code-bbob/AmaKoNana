@@ -155,7 +155,9 @@ const AllPurchaseReport = () => {
             </TableHeader>
             <TableBody>
               {data.purchases.map((item, idx) => (
-                <TableRow key={idx}>
+                <TableRow key={idx}
+                onClick={() => navigate(`/purchases/branch/${branchId}/editform/${item.transaction_id}`)}
+                >
                   <TableCell className="font-medium text-white print:text-black">{item.date}</TableCell>
                   <TableCell className="font-medium text-white print:text-black">{item.product}</TableCell>
                   <TableCell className="text-white print:text-black">{item.brand}</TableCell>

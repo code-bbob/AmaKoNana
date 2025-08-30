@@ -29,6 +29,7 @@ class PurchaseTransactionView(APIView):
         user = request.user
         enterprise = user.person.enterprise
         request.data['enterprise'] = enterprise.id
+        request.data['person'] = user.person.id
         serializer = PurchaseTransactionSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -150,6 +151,7 @@ class SalesTransactionView(APIView):
         user = request.user
         enterprise = user.person.enterprise
         request.data['enterprise'] = enterprise.id
+        request.data['person'] = user.person.id
         serializer = SalesTransactionSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -643,6 +645,7 @@ class SalesReportView(APIView):
                 "discount": line_discount,
                 "total_price": line_net,
                 "method": sale.sales_transaction.method,
+                "transaction_id": sale.sales_transaction.id
             })
             if sale.sales_transaction.method == "cash":
                 cash_sales += line_net
@@ -698,6 +701,7 @@ class PurchaseReportView(APIView):
                 'line_subtotal': line_subtotal,
                 'total_price': line_subtotal,
                 'method': purchase.purchase_transaction.method,
+                'transaction_id': purchase.purchase_transaction.id
             })
             if purchase.purchase_transaction.method == 'cash':
                 cash_purchases += line_subtotal

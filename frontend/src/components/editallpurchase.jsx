@@ -184,8 +184,9 @@ function EditAllPurchaseTransactionForm() {
 
   console.log(returned)
 
-  const handleDelete = (e) => {
-    api.delete(`alltransaction/purchasetransaction/${purchaseId}/`);
+  const handleDelete =async (e) => {
+    e.preventDefault();
+    await api.delete(`alltransaction/purchasetransaction/${purchaseId}/`);
     navigate("/purchases/branch/" + branchId);
   };
 

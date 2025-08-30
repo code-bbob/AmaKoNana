@@ -102,7 +102,9 @@ export default function EditAllSalesTransactionForm() {
   // Delete confirmation
   const [isChecked, setIsChecked] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [modifyStock, setModifyStock] = useState(true);
+  const [modifyStock, setModifyStock] = useState(false);
+  const [showModifyStockDialog, setShowModifyStockDialog] = useState(false);
+  const [pendingModifyStockValue, setPendingModifyStockValue] = useState(null);
 
   // Return dialog state
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
@@ -270,6 +272,21 @@ export default function EditAllSalesTransactionForm() {
   const handleCancel = () => {
     // Close confirmation without changing checkbox
     setIsDialogOpen(false);
+  };
+
+  // Modify Stock checkbox (inside Delete dialog) handlers
+  const handleModifyStockChange = (checked) => {
+    setPendingModifyStockValue(!!checked);
+    setShowModifyStockDialog(true);
+  };
+  const confirmModifyStockChange = () => {
+    setModifyStock(!!pendingModifyStockValue);
+    setShowModifyStockDialog(false);
+    setPendingModifyStockValue(null);
+  };
+  const cancelModifyStockChange = () => {
+    setShowModifyStockDialog(false);
+    setPendingModifyStockValue(null);
   };
 
   // Handlers
@@ -445,10 +462,8 @@ const handleNewProductVendorChange = (ids) => {
   const handleDelete = async () => {
     try {
       setSubLoading(true);
-      const url = modifyStock === false
-        ? `alltransaction/salestransaction/${salesId}/?flag=${modifyStock}`
-        : `alltransaction/salestransaction/${salesId}/`;
-      await api.delete(url);
+  const flag = modifyStock ? 'true' : 'false';
+  await api.delete(`alltransaction/salestransaction/${salesId}/?flag=${flag}`);
       navigate("/sales/branch/" + branchId);
     } catch (err) {
       console.error(err);
@@ -1167,12 +1182,29 @@ const handleNewProductVendorChange = (ids) => {
             </DialogTrigger>
             <DialogContent className="bg-slate-800 text-white">
               <DialogHeader>
-                <DialogTitle>Are you absolutely sure?</DialogTitle>
+                <DialogTitle>Confirm Delete</DialogTitle>
                 <DialogDescription className="text-slate-300">
-                  This action cannot be undone. Permanently delete this
-                  transaction.
+                  This action cannot be undone. Permanently delete this transaction.
                 </DialogDescription>
               </DialogHeader>
+              {/* Inline modify stock switch and helper text to match allSales UX */}
+              <div className="py-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="deleteModifyStock"
+                    checked={modifyStock}
+                    onCheckedChange={handleModifyStockChange}
+                  />
+                  <Label htmlFor="deleteModifyStock" className="text-white">
+                    Modify Stock (restore inventory levels)
+                  </Label>
+                </div>
+                <p className="text-sm text-slate-400 mt-2">
+                  {modifyStock
+                    ? "Stock levels will be restored for deleted transactions."
+                    : "Stock levels will not be modified."}
+                </p>
+              </div>
               <DialogFooter className="flex justify-end space-x-2">
                 <DialogClose asChild>
                   <Button variant="outline" className="bg-white text-black">Cancel</Button>
@@ -1183,6 +1215,51 @@ const handleNewProductVendorChange = (ids) => {
                   disabled={subLoading}
                 >
                   {subLoading ? "Deleting..." : "Delete Transaction"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          {/* Modify Stock Confirmation Dialog */}
+          <Dialog open={showModifyStockDialog} onOpenChange={setShowModifyStockDialog}>
+            <DialogContent className="bg-slate-800 text-white border-slate-700">
+              <DialogHeader>
+                <DialogTitle>
+                  {pendingModifyStockValue ? 'Enable Stock Modification?' : 'Disable Stock Modification?'}
+                </DialogTitle>
+                <DialogDescription className="text-slate-300">
+                  {pendingModifyStockValue ? (
+                    <>
+                      Are you sure you want to enable stock modification?
+                      <br /><br />
+                      <strong>When enabled:</strong> Deleting transactions will restore inventory levels for the sold items.
+                      <br />
+                      This means the stock count and stock value will be increased back.
+                    </>
+                  ) : (
+                    <>
+                      Are you sure you want to disable stock modification?
+                      <br /><br />
+                      <strong>When disabled:</strong> Deleting transactions will NOT restore inventory levels.
+                      <br />
+                      The sold items will remain as sold even after transaction deletion.
+                    </>
+                  )}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={cancelModifyStockChange}
+                  className="text-black border-slate-600 hover:bg-slate-700"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant={pendingModifyStockValue ? 'default' : 'destructive'}
+                  onClick={confirmModifyStockChange}
+                  className={pendingModifyStockValue ? 'bg-green-600 hover:bg-green-700' : 'bg-orange-600 hover:bg-orange-700'}
+                >
+                  {pendingModifyStockValue ? 'Enable Stock Modification' : 'Disable Stock Modification'}
                 </Button>
               </DialogFooter>
             </DialogContent>

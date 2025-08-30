@@ -249,7 +249,9 @@ const AllSalesReport = () => {
                 const lineSubtotal = item.line_subtotal ?? (item.unit_price * item.quantity)
                 const discount = item.discount ?? 0
                 return (
-                  <TableRow key={index}>
+                  <TableRow key={index}
+                  onClick={() => navigate(`/sales/branch/${branchId}/editform/${item.transaction_id}`)}
+                  >
                     <TableCell className="font-medium text-white print:text-black">{item.date}</TableCell>
                     <TableCell className="font-medium text-white print:text-black">{item.product}</TableCell>
                     <TableCell className="text-white print:text-black">{item.quantity}</TableCell>

@@ -44,7 +44,7 @@ export default function AllSalesTransactions() {
   const [selectAll, setSelectAll] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteType, setDeleteType] = useState('') // 'selected' or 'all'
-  const [modifyStock, setModifyStock] = useState(true)
+  const [modifyStock, setModifyStock] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showModifyStockDialog, setShowModifyStockDialog] = useState(false)
   const [pendingModifyStockValue, setPendingModifyStockValue] = useState(null)
@@ -403,7 +403,8 @@ export default function AllSalesTransactions() {
                     </div>
                   ))}
                   <div className="mt-4 flex justify-between text-white font-bold">
-                    <Button onClick={(e)=> handleInvoice(e,transaction.id)} className="bg-purple-600 hover:bg-purple-700 text-white">View Invoice</Button>
+                    {/* <Button onClick={(e)=> handleInvoice(e,transaction.id)} className="bg-purple-600 hover:bg-purple-700 text-white">View Invoice</Button> */}
+                    <div>Posted by {transaction?.person_name}</div>
                     <div>Total Amount: RS. {transaction?.total_amount?.toLocaleString()}</div>
                   </div>
                 </CardContent>

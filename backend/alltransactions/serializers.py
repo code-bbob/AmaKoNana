@@ -29,6 +29,8 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
     purchase = PurchaseSerializer(many=True)
     vendor_name = serializers.SerializerMethodField(read_only=True)
     date = serializers.DateField()
+    person_name = serializers.SerializerMethodField(read_only=True)
+
 
     class Meta:
         model = PurchaseTransaction
@@ -322,6 +324,9 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
     def get_vendor_name(self, obj):
         return obj.vendor.name if obj.vendor else None
 
+    def get_person_name(self, obj):
+        return obj.person.name if obj.person else None
+
 
 class SalesSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
@@ -337,6 +342,7 @@ class SalesSerializer(serializers.ModelSerializer):
 class SalesTransactionSerializer(serializers.ModelSerializer):  
     sales = SalesSerializer(many=True)
     date = serializers.DateField()
+    person_name = serializers.SerializerMethodField()
 
     class Meta:
         model = SalesTransaction
@@ -561,6 +567,9 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
         rep = super().to_representation(instance)
         rep['date'] = instance.date.strftime('%Y-%m-%d')
         return rep
+
+    def get_person_name(self, obj):
+        return obj.person.name if obj.person else None
 
 
 class VendorTransactionSerializer(serializers.ModelSerializer):
