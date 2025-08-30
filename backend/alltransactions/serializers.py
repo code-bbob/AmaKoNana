@@ -325,7 +325,7 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
         return obj.vendor.name if obj.vendor else None
 
     def get_person_name(self, obj):
-        return obj.person.name if obj.person else None
+        return obj.person.user.name if obj.person else None
 
 
 class SalesSerializer(serializers.ModelSerializer):
@@ -569,7 +569,7 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
         return rep
 
     def get_person_name(self, obj):
-        return obj.person.name if obj.person else None
+        return obj.person.user.name if obj.person else None
 
 
 class VendorTransactionSerializer(serializers.ModelSerializer):

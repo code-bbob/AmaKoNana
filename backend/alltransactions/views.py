@@ -27,9 +27,9 @@ class PurchaseTransactionView(APIView):
     
     def post(self, request, format=None):
         user = request.user
-        enterprise = user.person.enterprise
-        request.data['enterprise'] = enterprise.id
-        request.data['person'] = user.person.id
+        enterprise = user.person.enterprise.id
+        request.data['enterprise'] = enterprise
+        request.data['person'] = user.person
         serializer = PurchaseTransactionSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -151,7 +151,7 @@ class SalesTransactionView(APIView):
         user = request.user
         enterprise = user.person.enterprise
         request.data['enterprise'] = enterprise.id
-        request.data['person'] = user.person.id
+        request.data['person'] = user.person
         serializer = SalesTransactionSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
