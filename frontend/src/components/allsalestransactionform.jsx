@@ -20,6 +20,7 @@ import {
   Check,
   ChevronsUpDown,
   ArrowLeft,
+  Menu,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -104,6 +105,10 @@ function AllSalesTransactionForm() {
     branch: branchId, // Assuming debtor belongs to the same branch
   });
   const [openDebtor, setOpenDebtor] = useState(false);
+
+  // Settings dialog & master discount state
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [masterDiscount, setMasterDiscount] = useState(""); // percentage string 0-100
 
   useEffect(() => {
     const fetchData = async () => {
@@ -209,12 +214,20 @@ const handleNewProductVendorChange = (ids) => {
       // If this sale line was previously empty and customer is eligible for discount, apply it
       const shouldApplyDiscount = !currentSale.product && customerEligibleForDiscount;
       
-      newSales[index] = { 
+      // Set discount with priority: masterDiscount -> customerEligible 5% -> keep existing
+      const next = { 
         ...newSales[index], 
         product: value, 
         unit_price: matchingProduct ? matchingProduct.selling_price : "",
-        discount_value: shouldApplyDiscount ? "5" : newSales[index].discount_value
       };
+      if (masterDiscount !== "") {
+        next.discount_type = "percent";
+        next.discount_value = masterDiscount;
+      } else if (shouldApplyDiscount) {
+        next.discount_type = "percent";
+        next.discount_value = "5";
+      }
+      newSales[index] = next;
       recalcLine(newSales[index]);
       setFormData({ ...formData, sales: newSales });
     }
@@ -246,7 +259,7 @@ const handleNewProductVendorChange = (ids) => {
       unit_price: "", 
       quantity: "", 
       discount_type: "percent", 
-      discount_value: customerEligibleForDiscount ? "5" : "", 
+  discount_value: masterDiscount !== "" ? masterDiscount : (customerEligibleForDiscount ? "5" : ""), 
       line_subtotal: "", 
       total_price: "" 
     };
@@ -259,6 +272,19 @@ const handleNewProductVendorChange = (ids) => {
       ],
     });
     setOpenProduct([...openProduct, false]);
+  };
+
+  // Apply the current masterDiscount percent to all lines
+  const applyMasterDiscountToAll = () => {
+    const pct = Math.min(Math.max(parseFloat(masterDiscount) || 0, 0), 100);
+    const updated = formData.sales.map((line) => ({
+      ...line,
+      discount_type: "percent",
+      discount_value: pct === 0 ? "" : String(pct),
+    }));
+    // Recalc each line totals
+    updated.forEach(recalcLine);
+    setFormData((prev) => ({ ...prev, sales: updated }));
   };
 
   const handleRemoveSale = (index) => {
@@ -282,7 +308,7 @@ const handleNewProductVendorChange = (ids) => {
       const isEligibleForDiscount = customerAmount > 0;
       setCustomerEligibleForDiscount(isEligibleForDiscount);
       
-      if (isEligibleForDiscount) {
+  if (isEligibleForDiscount && masterDiscount === "") {
         const updatedSales = formData.sales.map((sale) => {
           if (sale.product && sale.quantity && sale.unit_price) {
             return { ...sale, discount_value: "5" };
@@ -486,7 +512,7 @@ const handleNewProductVendorChange = (ids) => {
               unit_price: matchingProduct.selling_price, 
               quantity: 1, 
               discount_type: "percent", 
-              discount_value: customerEligibleForDiscount ? "5" : "", 
+              discount_value: masterDiscount !== "" ? masterDiscount : (customerEligibleForDiscount ? "5" : ""), 
               line_subtotal: matchingProduct.selling_price, 
               total_price: matchingProduct.selling_price 
             };
@@ -502,7 +528,7 @@ const handleNewProductVendorChange = (ids) => {
               unit_price: matchingProduct.selling_price, 
               quantity: 1, 
               discount_type: "percent", 
-              discount_value: customerEligibleForDiscount ? "5" : "", 
+              discount_value: masterDiscount !== "" ? masterDiscount : (customerEligibleForDiscount ? "5" : ""), 
               line_subtotal: matchingProduct.selling_price, 
               total_price: matchingProduct.selling_price 
             };
@@ -559,6 +585,9 @@ const handleNewProductVendorChange = (ids) => {
       <Sidebar className="hidden lg:block w-64 flex-shrink-0" />
       <div className="flex-grow p-4 lg:p-6 lg:ml-64 overflow-auto">
         <div className="max-w-4xl mx-auto">
+          {/* Top bar actions */}
+          <div className="flex items-center justify-end mb-4">
+                     </div>
           <Button
             onClick={() => navigate("/")}
             variant="outline"
@@ -568,9 +597,22 @@ const handleNewProductVendorChange = (ids) => {
             Back to Dashboard
           </Button>
           <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-2xl lg:text-3xl font-bold mb-6 text-white">
-              Add Sales Transaction
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl lg:text-3xl font-bold mb-6 text-white">
+                Add Sales Transaction
+
             </h2>
+ <Button
+              type="button"
+              variant="outline"
+              className="px-3 py-2 text-white border-slate-600 bg-slate-700 hover:bg-slate-600"
+              onClick={() => setShowSettingsDialog(true)}
+              title="Transaction Settings"
+              >
+              <Menu className="h-5 w-5" />
+            </Button>
+              </div>
+
             {error && <p className="text-red-600 mb-4">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
@@ -1067,6 +1109,56 @@ const handleNewProductVendorChange = (ids) => {
                     onClick={addNewDebtor}
                   >
                     Add Debtor
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Settings Dialog */}
+            <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+              <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
+                <DialogHeader>
+                  <DialogTitle>Transaction Settings</DialogTitle>
+                  <DialogDescription className="text-slate-300">
+                    Configure master discount to apply across all sale lines.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="master_discount" className="text-right text-white">
+                      Master Discount (%)
+                    </Label>
+                    <Input
+                      id="master_discount"
+                      type="number"
+                      min={0}
+                      max={100}
+                      step="0.01"
+                      value={masterDiscount}
+                      onChange={(e) => setMasterDiscount(e.target.value)}
+                      className="col-span-3 bg-slate-700 border-slate-600 text-white"
+                      placeholder="e.g., 5"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="bg-slate-600 hover:bg-slate-500 text-white"
+                    onClick={() => setShowSettingsDialog(false)}
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    type="button"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => {
+                      applyMasterDiscountToAll();
+                      setShowSettingsDialog(false);
+                    }}
+                  >
+                    Apply to All
                   </Button>
                 </DialogFooter>
               </DialogContent>

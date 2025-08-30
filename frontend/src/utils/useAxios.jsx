@@ -21,7 +21,7 @@ const useAxios = () => {
             console.log("Refreshing Token ......");
             setIsRefreshing(true);
             try {
-                const response = await axios.post(`${baseURL}/userauth/refresh-token/`, {
+                const response = await axios.post(`${baseURL}userauth/refresh-token/`, {
                     refresh: localStorage.getItem('refreshToken'),
                 });
                 localStorage.setItem('accessToken', response.data.access);
