@@ -87,7 +87,7 @@ const AllDebtorStatementPage = () => {
   };
 
 const handleDownloadCSV = () => {
-  if (!data || !data.debtor_transactions.length) {
+  if (!data || !transactionsWithBalance.length) {
     console.warn("No data available for CSV export");
     return;
   }
@@ -106,17 +106,17 @@ const handleDownloadCSV = () => {
     'Due Balance'
   ].map(escapeField).join(',') + '\n';
 
-  // 2) Data rows
-  data.debtor_transactions.forEach(tx => {
+  // 2) Data rows (use computed due)
+  transactionsWithBalance.forEach(tx => {
     const sign = tx.amount > 0 ? '-' : '';
-    const amt = `${sign}NPR ${Math.abs(tx.amount)}`;  // no commas
+    const amt = `${sign}NPR ${Math.abs(tx.amount).toFixed(2)}`;
     const row = [
       tx.date,
       tx.desc || 'N/A',
       tx.method,
       tx.cheque_number || '-',
       amt,
-      tx.due
+      `NPR ${Number(tx.due).toFixed(2)}`
     ];
     csvContent += row.map(escapeField).join(',') + '\n';
   });
@@ -126,7 +126,7 @@ const handleDownloadCSV = () => {
   csvContent += [
     ['Debtor Name:', data.debtor_data.name],
     ['Phone:',       data.debtor_data.phone_number || 'N/A'],
-    ['Current Due:', `NPR ${data.debtor_data.due}`]
+    ['Current Due:', `NPR ${transactionsWithBalance.length ? Number(transactionsWithBalance[transactionsWithBalance.length-1].due).toFixed(2) : '0.00'}`]
   ]
     .map(pair => pair.map(escapeField).join(','))
     .join('\n') + '\n';
@@ -146,7 +146,7 @@ const handleDownloadCSV = () => {
 };
 
   const handleDownloadPDF = () => {
-    if (!data || !data.debtor_transactions.length) {
+    if (!data || !transactionsWithBalance.length) {
       console.warn("No data available for PDF export");
       return;
     }
@@ -172,13 +172,13 @@ const handleDownloadCSV = () => {
     const headers = [
       ["Date", "Description", "Method", "Cheque No.", "Amount", "Due Balance"],
     ];
-    const tableData = data.debtor_transactions.map((tx) => [
+    const tableData = transactionsWithBalance.map((tx) => [
       tx.date,
       tx.desc || "N/A",
       tx.method,
       tx.cheque_number || "-",
       `${tx.amount > 0 ? "-" : ""}NPR ${Math.abs(tx.amount).toLocaleString()}`,
-      `NPR ${tx.due.toLocaleString()}`,
+      `NPR ${Number(tx.due).toLocaleString()}`,
     ]);
     doc.autoTable({
       head: headers,
@@ -200,10 +200,10 @@ const handleDownloadCSV = () => {
         .filter((t) => t.amount < 0)
         .reduce((sum, t) => sum + t.amount, 0)
     );
-    const totalPaid = data.debtor_transactions
+  const totalPaid = data.debtor_transactions
       .filter((t) => t.amount > 0)
       .reduce((sum, t) => sum + t.amount, 0);
-    const currentDue = data.debtor_data.due;
+  const currentDue = transactionsWithBalance[transactionsWithBalance.length - 1]?.due || 0;
 
     // — Styled Summary Block (right-justified under table) —
     const finalY = doc.lastAutoTable.finalY || 35;
@@ -250,11 +250,13 @@ const handleDownloadCSV = () => {
     doc.save(`Debtor_Statement_${data.debtor_data.name}.pdf`);
   };
 
-  const calculateRunningBalance = (transactions) => {
-    let runningBalance = 0;
+  const calculateRunningBalance = (transactions, startingDue = 0) => {
+    let running = Number(startingDue) || 0;
     return transactions.map((transaction) => {
-      runningBalance = transaction.due;
-      return { ...transaction, runningBalance };
+      const amt = Number(transaction.amount) || 0;
+      // Positive amounts are payments (reduce due); negative are sales (increase due)
+      running -= amt;
+      return { ...transaction, due: running };
     });
   };
 
@@ -276,9 +278,18 @@ const handleDownloadCSV = () => {
     );
   if (!data) return null;
 
+  // Use previous_due (if provided) as the starting point for due calculation
+  const previousDue =
+    data.debtor_data && data.debtor_data.previous_due !== undefined
+      ? Number(data.debtor_data.previous_due)
+      : 0;
   const transactionsWithBalance = calculateRunningBalance(
-    data.debtor_transactions
+    data.debtor_transactions,
+    previousDue
   );
+  const computedCurrentDue = transactionsWithBalance.length
+    ? transactionsWithBalance[transactionsWithBalance.length - 1].due
+    : previousDue;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 lg:px-8 print:bg-white print:p-0">
@@ -343,7 +354,7 @@ const handleDownloadCSV = () => {
                       Current Due
                     </p>
                     <p className="text-lg text-red-400 print:text-red-600">
-                      NPR {data.debtor_data.due.toLocaleString()}
+                      NPR {Number(computedCurrentDue).toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -549,7 +560,7 @@ const handleDownloadCSV = () => {
                     Current Due:
                   </span>
                   <span className="text-xl font-bold text-red-400 print:text-red-600">
-                    NPR {data.debtor_data.due.toLocaleString()}
+                    NPR {Number(computedCurrentDue).toLocaleString()}
                   </span>
                 </div>
               </div>

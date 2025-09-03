@@ -26,7 +26,7 @@ class PurchaseTransaction(models.Model):
     cashout_date = models.DateField(null=True)
     person = models.ForeignKey('enterprise.Person', on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self):
-        return self.vendor.name
+        return self.vendor.name if self.vendor else f"Purchase Transaction {self.pk}"
     
     def calculate_total_amount(self):
         total = sum(purchase.total_price for purchase in self.purchase.all())
@@ -165,7 +165,7 @@ class VendorTransactions(models.Model):
     purchase_transaction = models.ForeignKey(PurchaseTransaction, on_delete=models.CASCADE,related_name="vendor_transaction",null=True,blank=True)
     base = models.BooleanField(default=False)
     type = models.CharField(max_length=20,choices=(('base','base'),('return','return'),('payment','payment')),default='base')
-    due = models.FloatField(null=True,blank=True,default=0)
+    # due = models.FloatField(null=True,blank=True,default=0)
     bill_no = models.CharField(max_length=20, null=True, blank=True)
     def __str__(self):
         return f"Vendor Transaction {self.pk} of {self.vendor.name}"

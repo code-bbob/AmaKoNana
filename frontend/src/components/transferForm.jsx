@@ -243,7 +243,7 @@ function TransferForm() {
               {formData.products.map((line, index) => (
                 <div key={index} className="bg-slate-700 p-4 rounded-md shadow mb-4">
                   <h4 className="text-lg font-semibold mb-4 text-white">Line {index + 1}</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex flex-col">
                       <Label className="text-sm font-medium text-white mb-2">Product</Label>
                       <Popover
