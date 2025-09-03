@@ -227,7 +227,7 @@ class SalesTransactionView(APIView):
         for sale in sales_transaction.sales.all():
             if sale.returned:
                 # Handle returned sales
-                return Response("Cannot delete transaction with returned sales", status=status.HTTP_400_BAD_REQUEST)
+                return Response("Cannot delete transaction with returned sales")
         if role != "Admin":
             return Response("Unauthorized")
         if modify_stock == 'false':
