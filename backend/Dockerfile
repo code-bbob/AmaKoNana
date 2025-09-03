@@ -29,4 +29,10 @@ RUN python manage.py collectstatic --noinput
 
 # Use the entrypoint to run migrations and then start Gunicorn
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+# CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "backend.wsgi:application", 
+     "--bind", "0.0.0.0:8000", 
+     "--workers", "3",
+     "--access-logfile", "-", 
+     "--error-logfile", "-"]
+

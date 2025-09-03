@@ -879,7 +879,7 @@ class SalesReturnSerializer(serializers.ModelSerializer):
         for brand in brands_cache.values():
             brand.save()
 
-        if sales_return.sales_transaction.debtor:
+        if sales_return.sales_transaction.debtor and sales_return.sales_transaction.method == 'credit':
             debtor = sales_return.sales_transaction.debtor
             if debtor.due is None:
                 debtor.due = 0
@@ -894,7 +894,7 @@ class SalesReturnSerializer(serializers.ModelSerializer):
                 'branch': sales_return.branch,
                 'enterprise': sales_return.enterprise,
                 'type': 'return',
-                'bill_no': sales_return.bill_no
+                'bill_no': sales_return.sales_transaction.bill_no
             })
 
         return sales_return

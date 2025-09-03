@@ -236,7 +236,7 @@ export default function PurchaseReturns() {
                 </CardHeader>
                 <CardContent className="pt-4">
                   <div className="mb-4">
-                    <p className="text-blue-500 hover:text-blue-800 cursor-pointer" onClick={()=>{navigate(`/purchases/editform/${returnItem.purchase_transaction.id}/branch/${branchId}`)}}>
+                    <p className="text-blue-500 hover:text-blue-800 cursor-pointer" onClick={()=>{navigate(`/purchases/branch/${branchId}/editform/${returnItem.purchase_transaction.id}`)}}>
                       Original Transaction: {returnItem.purchase_transaction.id}
                     </p>
                     <div className="flex justify-between items-center text-sm mt-1 text-slate-300">

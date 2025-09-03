@@ -60,7 +60,7 @@ function EditAllPurchaseTransactionForm() {
     vendor: "",
     bill_no: "",
     method: "",
-    cheque_number: "",
+    cheque_number: null,
     cashout_date: null
   });
   const [products, setProducts] = useState([]);
@@ -455,7 +455,7 @@ function EditAllPurchaseTransactionForm() {
       formData.bill_no !== (originalPurchaseData.bill_no?.toString() || "") ||
       formData.purchase.length !== originalPurchaseData.purchase.length ||
       formData.method !== originalPurchaseData.method ||
-      formData.cheque_number !== originalPurchaseData.cheque_number ||
+      // formData.cheque_number !== originalPurchaseData.cheque_number ||
       formData.cashout_date !== originalPurchaseData.cashout_date ||
       formData.purchase.some((purchase, index) => {
         const originalPurchase = originalPurchaseData.purchase[index];
@@ -832,13 +832,6 @@ function EditAllPurchaseTransactionForm() {
               </Button>
             </form>
 
-            {
-              returned && (
-                <p className="text-red-400 mt-4">
-                  Returned purchases cannot be modified or deleted. Please delete the purchase return if you want to make changes.
-                </p>
-              )
-            }
 
             <Button
               type="button"
@@ -872,6 +865,13 @@ function EditAllPurchaseTransactionForm() {
               </DialogContent>
             </Dialog>
 
+            {
+              returned && (
+                <p className="text-red-400 mt-4">
+                  Returned purchases cannot be modified or deleted. Please delete the purchase return if you want to make changes.
+                </p>
+              )
+            }
             {/* Return Dialog */}
             <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
               <DialogContent className="bg-slate-800 text-white">

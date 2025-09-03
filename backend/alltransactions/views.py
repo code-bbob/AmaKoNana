@@ -224,6 +224,10 @@ class SalesTransactionView(APIView):
         sales_transaction = SalesTransaction.objects.get(id=pk)
         role = request.user.person.role
         modify_stock = request.GET.get('flag')
+        for sale in sales_transaction.sales.all():
+            if sale.returned:
+                # Handle returned sales
+                return Response("Cannot delete transaction with returned sales", status=status.HTTP_400_BAD_REQUEST)
         if role != "Admin":
             return Response("Unauthorized")
         if modify_stock == 'false':
