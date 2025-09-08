@@ -334,6 +334,10 @@ export default function AllBrandProducts() {
   // printWindow.close();
 };
 
+//arrange the products and filtered orders in ascending order of name
+products.sort((a, b) => a.name.localeCompare(b.name));
+filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+
 
   if (loading) {
     return (
