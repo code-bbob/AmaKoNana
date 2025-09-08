@@ -397,8 +397,11 @@ export default function AllSalesTransactions() {
                         <span className="text-white font-medium mb-2 lg:mb-0">{item.product_name}</span>
                       </div>
                       <div className="flex justify-between items-center text-sm text-slate-300">
-                        <span>Unit Price: RS. {item.unit_price.toLocaleString()}</span>
+                        {/* <span>Unit Price: RS. {item.unit_price.toLocaleString()}</span> */}
                         <span> Quantity : {item.quantity}</span>
+                        {/* <span>Subtotal: RS. {item.unit_price * item.quantity}</span> */}
+                        {/* <span>Discount: RS. {item.discount?.toLocaleString() || 0}</span> */}
+                        <span>Total: RS. {item.total_price}</span>
                       </div>
                     </div>
                   ))}
