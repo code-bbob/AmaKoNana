@@ -201,8 +201,8 @@ class ManufactureView(APIView):
             except Manufacture.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
-        # manufactures = Manufacture.objects.filter(enterprise=request.user.person.enterprise, branch=branch)
-        manufactures = Manufacture.objects.all()
+        manufactures = Manufacture.objects.filter(enterprise=request.user.person.enterprise, branch=branch)
+        # manufactures = Manufacture.objects.all()
         paginator = PageNumberPagination()
         paginator.page_size = 5  # Set the page size here
         paginated_manufactures = paginator.paginate_queryset(manufactures, request)
