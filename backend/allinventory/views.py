@@ -193,6 +193,11 @@ class MergeProductBrandView(APIView):
 class ManufactureView(APIView):
 
     def get(self, request, pk=None, branch=None):
+
+        product = request.GET.get('search')
+
+        manufactures = Manufacture.objects.all()
+        manufactures = manufactures.order_by('-id')
         if pk:
             try:
                 manufacture = Manufacture.objects.get(id=pk)
@@ -202,7 +207,9 @@ class ManufactureView(APIView):
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
         # manufactures = Manufacture.objects.filter(enterprise=request.user.person.enterprise, branch=branch)
-        manufactures = Manufacture.objects.all()
+        if product:
+            manufactures = Manufacture.objects.filter(product__name__icontains=product, enterprise=request.user.person.enterprise)
+
         paginator = PageNumberPagination()
         paginator.page_size = 5  # Set the page size here
         paginated_manufactures = paginator.paginate_queryset(manufactures, request)
