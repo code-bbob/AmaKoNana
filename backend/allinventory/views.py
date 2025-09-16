@@ -208,7 +208,7 @@ class ManufactureView(APIView):
 
         # manufactures = Manufacture.objects.filter(enterprise=request.user.person.enterprise, branch=branch)
         if product:
-            manufactures = Manufacture.objects.filter(product__name__icontains=product,branch = branch, enterprise=request.user.person.enterprise)
+            manufactures = Manufacture.objects.filter(manufacture_items__product__name__icontains=product,branch = branch, enterprise=request.user.person.enterprise)
 
         paginator = PageNumberPagination()
         paginator.page_size = 10  # Set the page size here
