@@ -196,7 +196,7 @@ class ManufactureView(APIView):
 
         product = request.GET.get('search')
 
-        manufactures = Manufacture.objects.all()
+        manufactures = Manufacture.objects.filter(branch=branch, enterprise=request.user.person.enterprise)
         manufactures = manufactures.order_by('-id')
         if pk:
             try:
@@ -208,10 +208,10 @@ class ManufactureView(APIView):
 
         # manufactures = Manufacture.objects.filter(enterprise=request.user.person.enterprise, branch=branch)
         if product:
-            manufactures = Manufacture.objects.filter(product__name__icontains=product, enterprise=request.user.person.enterprise)
+            manufactures = Manufacture.objects.filter(product__name__icontains=product,branch = branch, enterprise=request.user.person.enterprise)
 
         paginator = PageNumberPagination()
-        paginator.page_size = 5  # Set the page size here
+        paginator.page_size = 10  # Set the page size here
         paginated_manufactures = paginator.paginate_queryset(manufactures, request)
 
         serializer = ManufactureSerializer(paginated_manufactures, many=True)
