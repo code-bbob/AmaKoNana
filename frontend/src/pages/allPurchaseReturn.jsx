@@ -226,7 +226,7 @@ export default function PurchaseReturns() {
                 <CardHeader className="border-b border-slate-700">
                   <CardTitle className="text-lg lg:text-xl font-medium text-white flex flex-col lg:flex-row justify-between items-start lg:items-center">
                     <div>
-                      <p>{returnItem.purchase_transaction.vendor.name}</p>
+                      <p>{returnItem.purchase_transaction.vendor?.name}</p>
                       <p className="text-sm text-gray-400">Bill No: {returnItem.purchase_transaction.bill_no}</p>
                     </div>
                     <span className="mt-2 lg:mt-0 text-sm lg:text-base">

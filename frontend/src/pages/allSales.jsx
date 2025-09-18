@@ -44,10 +44,8 @@ export default function AllSalesTransactions() {
   const [selectAll, setSelectAll] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteType, setDeleteType] = useState('') // 'selected' or 'all'
-  const [modifyStock, setModifyStock] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [showModifyStockDialog, setShowModifyStockDialog] = useState(false)
-  const [pendingModifyStockValue, setPendingModifyStockValue] = useState(null)
+  
 
   const navigate = useNavigate()
 
@@ -174,22 +172,7 @@ export default function AllSalesTransactions() {
     setShowDeleteDialog(true)
   }
 
-  const handleModifyStockChange = (checked) => {
-    // Store the pending value and show confirmation dialog for any change
-    setPendingModifyStockValue(checked)
-    setShowModifyStockDialog(true)
-  }
-
-  const confirmModifyStockChange = () => {
-    setModifyStock(pendingModifyStockValue)
-    setShowModifyStockDialog(false)
-    setPendingModifyStockValue(null)
-  }
-
-  const cancelModifyStockChange = () => {
-    setShowModifyStockDialog(false)
-    setPendingModifyStockValue(null)
-  }
+  
 
   const confirmDelete = async () => {
     setDeleting(true)
@@ -197,7 +180,7 @@ export default function AllSalesTransactions() {
       if (deleteType === 'selected') {
         // Delete selected transactions
         const promises = Array.from(selectedTransactions).map(id =>
-          api.delete(`alltransaction/salestransaction/${id}/?flag=${modifyStock ? 'true' : 'false'}`)
+          api.delete(`alltransaction/salestransaction/${id}/?flag=true`)
         )
         await Promise.all(promises)
         
@@ -208,7 +191,7 @@ export default function AllSalesTransactions() {
       } else if (deleteType === 'all') {
         // Delete all transactions on current page
         const promises = transactions.map(t =>
-          api.delete(`alltransaction/salestransaction/${t.id}/?flag=${modifyStock ? 'true' : 'false'}`)
+          api.delete(`alltransaction/salestransaction/${t.id}/?flag=true`)
         )
         await Promise.all(promises)
         
@@ -330,17 +313,6 @@ export default function AllSalesTransactions() {
               </div>
               
               <div className="flex flex-col lg:flex-row items-start lg:items-center space-y-2 lg:space-y-0 lg:space-x-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="modifyStock"
-                    checked={modifyStock}
-                    onCheckedChange={handleModifyStockChange}
-                  />
-                  <Label htmlFor="modifyStock" className="text-white text-sm">
-                    Modify Stock
-                  </Label>
-                </div>
-                
                 <div className="flex space-x-2">
                   <Button
                     onClick={handleDeleteSelected}
@@ -408,7 +380,7 @@ export default function AllSalesTransactions() {
                   <div className="mt-4 flex justify-between text-white font-bold">
                     {/* <Button onClick={(e)=> handleInvoice(e,transaction.id)} className="bg-purple-600 hover:bg-purple-700 text-white">View Invoice</Button> */}
                     <div>Posted by {transaction?.person_name}</div>
-                    <div>Total Amount: RS. {transaction?.total_amount?.toLocaleString()}</div>
+                    <div>Amount Received: RS. {transaction?.amount_paid?.toLocaleString()}</div>
                   </div>
                 </CardContent>
                 </div>
@@ -459,24 +431,7 @@ export default function AllSalesTransactions() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="deleteModifyStock"
-                checked={modifyStock}
-                onCheckedChange={handleModifyStockChange}
-              />
-              <Label htmlFor="deleteModifyStock" className="text-white">
-                Modify Stock (restore inventory levels)
-              </Label>
-            </div>
-            <p className="text-sm text-slate-400 mt-2">
-              {modifyStock 
-                ? "Stock levels will be restored for deleted transactions."
-                : "Stock levels will not be modified."
-              }
-            </p>
-          </div>
+          
 
           <DialogFooter>
             <Button
@@ -499,54 +454,6 @@ export default function AllSalesTransactions() {
         </DialogContent>
       </Dialog>
 
-      {/* Modify Stock Confirmation Dialog */}
-      <Dialog open={showModifyStockDialog} onOpenChange={setShowModifyStockDialog}>
-        <DialogContent className="bg-slate-800 text-white border-slate-700">
-          <DialogHeader>
-            <DialogTitle>
-              {pendingModifyStockValue ? 'Enable Stock Modification?' : 'Disable Stock Modification?'}
-            </DialogTitle>
-            <DialogDescription className="text-slate-300">
-              {pendingModifyStockValue ? (
-                <>
-                  Are you sure you want to enable stock modification?
-                  <br /><br />
-                  <strong>When enabled:</strong> Deleting transactions will restore inventory levels for the sold items.
-                  <br />
-                  This means the stock count and stock value will be increased back.
-                </>
-              ) : (
-                <>
-                  Are you sure you want to disable stock modification?
-                  <br /><br />
-                  <strong>When disabled:</strong> Deleting transactions will NOT restore inventory levels.
-                  <br />
-                  The sold items will remain as sold even after transaction deletion.
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={cancelModifyStockChange}
-              className="text-black border-slate-600 hover:bg-slate-700"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant={pendingModifyStockValue ? "default" : "destructive"}
-              onClick={confirmModifyStockChange}
-              className={pendingModifyStockValue 
-                ? "bg-green-600 hover:bg-green-700" 
-                : "bg-orange-600 hover:bg-orange-700"
-              }
-            >
-              {pendingModifyStockValue ? 'Enable Stock Modification' : 'Disable Stock Modification'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

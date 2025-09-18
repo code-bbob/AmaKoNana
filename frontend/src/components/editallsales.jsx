@@ -42,7 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import NewProductDialog from "@/components/newProductDialog";
-import { Checkbox } from "./ui/checkbox";
+ 
 
 export default function EditAllSalesTransactionForm() {
   const api = useAxios();
@@ -102,9 +102,6 @@ export default function EditAllSalesTransactionForm() {
   // Delete confirmation
   const [isChecked, setIsChecked] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [modifyStock, setModifyStock] = useState(false);
-  const [showModifyStockDialog, setShowModifyStockDialog] = useState(false);
-  const [pendingModifyStockValue, setPendingModifyStockValue] = useState(null);
 
   // Return dialog state
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
@@ -274,20 +271,7 @@ export default function EditAllSalesTransactionForm() {
     setIsDialogOpen(false);
   };
 
-  // Modify Stock checkbox (inside Delete dialog) handlers
-  const handleModifyStockChange = (checked) => {
-    setPendingModifyStockValue(!!checked);
-    setShowModifyStockDialog(true);
-  };
-  const confirmModifyStockChange = () => {
-    setModifyStock(!!pendingModifyStockValue);
-    setShowModifyStockDialog(false);
-    setPendingModifyStockValue(null);
-  };
-  const cancelModifyStockChange = () => {
-    setShowModifyStockDialog(false);
-    setPendingModifyStockValue(null);
-  };
+  // Modify Stock UI removed; always restore stock on delete.
 
   // Handlers
   const calculateTotalPrice = (price, qty) => price * qty;
@@ -462,8 +446,7 @@ const handleNewProductVendorChange = (ids) => {
   const handleDelete = async () => {
     try {
       setSubLoading(true);
-  const flag = modifyStock ? 'true' : 'false';
-  await api.delete(`alltransaction/salestransaction/${salesId}/?flag=${flag}`);
+  await api.delete(`alltransaction/salestransaction/${salesId}/?flag=true`);
       navigate("/sales/branch/" + branchId);
     } catch (err) {
       console.error(err);
@@ -981,11 +964,14 @@ const handleNewProductVendorChange = (ids) => {
                     className="bg-slate-600 border-slate-500 text-white"
                   />
                 </div>
+                
+                  <div className={`grid grid-cols-1 gap-4 md:col-span-2 ${formData.method === "credit" ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+
                 <div className="flex flex-col">
                   <Label
                     htmlFor="total_amount"
                     className="text-sm font-medium mb-2"
-                  >
+                    >
                     Total Amount
                   </Label>
                   <Input
@@ -997,6 +983,32 @@ const handleNewProductVendorChange = (ids) => {
                     className="bg-slate-600 border-slate-500"
                   />
                 </div>
+                  {formData.method!=="credit" && (
+                    <div className="flex flex-col">
+                      <Label
+                        htmlFor="amount_paid"
+                        className="text-sm font-medium text-white mb-2"
+                        >
+                      Amount Paid
+                    </Label>
+                    <Input
+                      type="number"
+                      id="amount_paid"
+                      name="amount_paid"
+                      value={formData.amount_paid}
+                      className="bg-slate-600 border-slate-500 text-white"
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          amount_paid: e.target.value,
+                        })
+                      }
+                      
+                      />
+                    </div>
+                  )}
+
+
                 {/* Payment method */}
                 <div className="flex flex-col">
                   <Label htmlFor="method" className="text-sm font-medium mb-2">
@@ -1009,7 +1021,7 @@ const handleNewProductVendorChange = (ids) => {
                     value={formData.method}
                     required
                     className="bg-slate-600 border-slate-500 p-2 rounded text-white"
-                  >
+                    >
                     <SelectTrigger className="w-full bg-slate-600 border-slate-500">
                       <SelectValue placeholder="Select payment method" />
                     </SelectTrigger>
@@ -1022,6 +1034,7 @@ const handleNewProductVendorChange = (ids) => {
                   </Select>
                 </div>
               </div>
+            </div>
             </div>
             {formData.method === "credit" && (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1187,24 +1200,7 @@ const handleNewProductVendorChange = (ids) => {
                   This action cannot be undone. Permanently delete this transaction.
                 </DialogDescription>
               </DialogHeader>
-              {/* Inline modify stock switch and helper text to match allSales UX */}
-              <div className="py-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="deleteModifyStock"
-                    checked={modifyStock}
-                    onCheckedChange={handleModifyStockChange}
-                  />
-                  <Label htmlFor="deleteModifyStock" className="text-white">
-                    Modify Stock (restore inventory levels)
-                  </Label>
-                </div>
-                <p className="text-sm text-slate-400 mt-2">
-                  {modifyStock
-                    ? "Stock levels will be restored for deleted transactions."
-                    : "Stock levels will not be modified."}
-                </p>
-              </div>
+              
               <DialogFooter className="flex justify-end space-x-2">
                 <DialogClose asChild>
                   <Button variant="outline" className="bg-white text-black">Cancel</Button>
@@ -1219,51 +1215,7 @@ const handleNewProductVendorChange = (ids) => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          {/* Modify Stock Confirmation Dialog */}
-          <Dialog open={showModifyStockDialog} onOpenChange={setShowModifyStockDialog}>
-            <DialogContent className="bg-slate-800 text-white border-slate-700">
-              <DialogHeader>
-                <DialogTitle>
-                  {pendingModifyStockValue ? 'Enable Stock Modification?' : 'Disable Stock Modification?'}
-                </DialogTitle>
-                <DialogDescription className="text-slate-300">
-                  {pendingModifyStockValue ? (
-                    <>
-                      Are you sure you want to enable stock modification?
-                      <br /><br />
-                      <strong>When enabled:</strong> Deleting transactions will restore inventory levels for the sold items.
-                      <br />
-                      This means the stock count and stock value will be increased back.
-                    </>
-                  ) : (
-                    <>
-                      Are you sure you want to disable stock modification?
-                      <br /><br />
-                      <strong>When disabled:</strong> Deleting transactions will NOT restore inventory levels.
-                      <br />
-                      The sold items will remain as sold even after transaction deletion.
-                    </>
-                  )}
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={cancelModifyStockChange}
-                  className="text-black border-slate-600 hover:bg-slate-700"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant={pendingModifyStockValue ? 'default' : 'destructive'}
-                  onClick={confirmModifyStockChange}
-                  className={pendingModifyStockValue ? 'bg-green-600 hover:bg-green-700' : 'bg-orange-600 hover:bg-orange-700'}
-                >
-                  {pendingModifyStockValue ? 'Enable Stock Modification' : 'Disable Stock Modification'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          
         </div>
       </div>
       {/* New Product Dialog */}

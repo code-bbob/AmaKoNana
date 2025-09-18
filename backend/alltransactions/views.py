@@ -175,7 +175,7 @@ class SalesTransactionView(APIView):
             transactions = SalesTransaction.objects.filter(enterprise=enterprise,branch=branch)
         
         if search:
-            product_transactions = transactions.filter(sales__product__name__startswith = search)
+            product_transactions = transactions.filter(sales__product__name__istartswith = search)
             customer_transactions = transactions.filter(name__icontains = search)
             phone_transactions = transactions.filter(phone_number__icontains = search)
             transactions = product_transactions.union(customer_transactions,phone_transactions)
@@ -632,8 +632,13 @@ class SalesReportView(APIView):
         subtotal_sales = 0  # sum before discount
         total_discount = 0  # sum of per-line discount amounts
         cash_sales = 0
+        st = []
+        write_off = 0
         rows = []
         for sale in sales:
+            if sale.sales_transaction.id not in st:
+                write_off += sale.sales_transaction.total_amount - sale.sales_transaction.amount_paid
+                st.append(sale.sales_transaction.id)
             line_subtotal = (sale.unit_price or 0) * (sale.quantity or 0)
             line_discount = sale.discount or 0
             line_net = line_subtotal - line_discount
@@ -659,7 +664,9 @@ class SalesReportView(APIView):
             "subtotal_sales": subtotal_sales,
             "total_discount": total_discount,
             "total_sales": net_sales,
-            "cash_sales": cash_sales,
+            "write_off": write_off,
+            "net_sales": net_sales - write_off,
+            # "cash_sales": cash_sales,
         })
         return Response(rows)
 

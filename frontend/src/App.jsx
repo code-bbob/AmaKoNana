@@ -110,7 +110,7 @@ function App() {
           <Route path="debtor-transactions/branch/:branchId" element={<AllDebtorTransactions />} />
           <Route path="debtor-transactions/branch/:branchId/form" element={<DebtorTransactionForm />} />
           <Route path="debtor-transactions/branch/:branchId/editform/:debtorTransactionId" element={<EditDebtorTransactionForm />} />
-          <Route path="debtors/statement/:debtorId" element={<AllDebtorStatementPage />} />
+          <Route path="debtors/branch/:branchId/statement/:debtorId/" element={<AllDebtorStatementPage />} />
 
           <Route path="invoice/:transactionId" element={<InvoicePage />} />
           <Route path="transfer/form/branch/:branchId" element={<TransferForm />} />

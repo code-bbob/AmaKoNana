@@ -576,6 +576,10 @@ const handleNewProductVendorChange = (ids) => {
     setSubtotal(newSubtotal);
     setTotalDiscount(newTotalDiscount);
     setTotalAmount(newSubtotal - newTotalDiscount);
+    setFormData((prev) => ({
+      ...prev,
+      amount_paid: newSubtotal - newTotalDiscount,
+    }));
   }, [formData.sales]);
 
   // No separate global discount; totalAmount derived above
@@ -838,11 +842,13 @@ const handleNewProductVendorChange = (ids) => {
                     <Label className="text-sm font-medium text-white mb-2">Total Discount (Amt)</Label>
                     <Input type="number" value={totalDiscount.toFixed(2)} readOnly className="bg-slate-600 border-slate-500 text-white" />
                   </div>
+                  <div className={`grid grid-cols-1 gap-4 md:col-span-2 ${formData.method === "credit" ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+
                   <div className="flex flex-col">
                     <Label
                       htmlFor="total_amount"
                       className="text-sm font-medium text-white mb-2"
-                    >
+                      >
                       Total Amount
                     </Label>
                     <Input
@@ -852,13 +858,39 @@ const handleNewProductVendorChange = (ids) => {
                       value={totalAmount.toFixed(2)}
                       readOnly
                       className="bg-slate-600 border-slate-500 text-white"
-                    />
+                      />
                   </div>
+
+                  {formData.method!=="credit" && (
+                    <div className="flex flex-col">
+                      <Label
+                        htmlFor="amount_paid"
+                        className="text-sm font-medium text-white mb-2"
+                      >
+                      Amount Paid
+                    </Label>
+                    <Input
+                      type="number"
+                      id="amount_paid"
+                      name="amount_paid"
+                      value={formData.amount_paid}
+                      className="bg-slate-600 border-slate-500 text-white"
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          amount_paid: e.target.value,
+                        })
+                      }
+                      
+                      />
+                    </div>
+                  )}
+
                   <div className="flex flex-col">
                     <Label
                       htmlFor="total_amount"
                       className="text-sm font-medium text-white mb-2"
-                    >
+                      >
                       Payment Mehod
                     </Label>
                     <Select
@@ -868,7 +900,7 @@ const handleNewProductVendorChange = (ids) => {
                       value={formData.method}
                       required={true}
                       className="bg-slate-600 border-slate-500 text-white p-2 rounded"
-                    >
+                      >
                       <SelectTrigger className="w-full bg-slate-600 border-slate-500 text-white">
                         <SelectValue placeholder="Select payment method" />
                       </SelectTrigger>
@@ -889,6 +921,7 @@ const handleNewProductVendorChange = (ids) => {
                     </Select>
                   </div>
                 </div>
+              </div>
               </div>
               {formData.method === "credit" && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

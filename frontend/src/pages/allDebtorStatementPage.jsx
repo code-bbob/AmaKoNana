@@ -47,6 +47,7 @@ const AllDebtorStatementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const api = useAxios();
   const navigate = useNavigate();
+  const {branchId} = useParams();
 
   useEffect(() => {
     fetchDebtorStatement();
@@ -80,6 +81,16 @@ const AllDebtorStatementPage = () => {
     const params = { start_date: startDate, end_date: endDate };
     if (searchTerm) params.search = searchTerm;
     fetchDebtorStatement(params);
+  };
+
+  const handleNavigation = (e, transaction) => {
+    e.preventDefault();
+    console.log("Navigating to transaction:", transaction);
+    if (transaction.all_sales_transaction) {
+      navigate(`/sales/branch/${branchId}/editform/${transaction.all_sales_transaction}`);
+    } else{
+      navigate(`/debtor-transactions/branch/${branchId}/editform/${transaction.id}`);
+    }
   };
 
   const handlePrint = () => {
@@ -482,6 +493,7 @@ const handleDownloadCSV = () => {
                 {transactionsWithBalance.map((transaction, index) => (
                   <TableRow
                     key={transaction.id}
+                    onClick={(e) => handleNavigation(e,transaction)}
                     className={`${
                       index % 2 === 0
                         ? "bg-slate-800 print:bg-white"

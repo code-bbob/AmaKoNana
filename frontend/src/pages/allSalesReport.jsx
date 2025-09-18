@@ -269,6 +269,10 @@ const AllSalesReport = () => {
           <div className="mt-6 flex justify-end">
             <div className="w-64 bg-slate-800 p-4 rounded-lg print:bg-gray-100">
               <div className="flex justify-between mb-2">
+                <span className="font-semibold text-white print:text-black">Sales Count:</span>
+                <span className="text-white print:text-black">{data.count}</span>
+              </div>
+              <div className="flex justify-between mb-2">
                 <span className="font-semibold text-white print:text-black">Subtotal Sales:</span>
                 <span className="text-white print:text-black">
                   {data?.subtotal_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}
@@ -287,15 +291,21 @@ const AllSalesReport = () => {
                 </span>
               </div>
               <div className="flex justify-between mb-2">
-                <span className="font-semibold text-white print:text-black">Total Sales Count:</span>
-                <span className="text-white print:text-black">{data.count}</span>
+                <span className="font-semibold text-white print:text-black">Write Off:</span>
+                <span className="text-white print:text-black">{data.write_off}</span>
               </div>
-              <div className="flex justify-between font-bold text-lg">
+
+              <div className="flex justify-between mb-2">
+                <span className="font-semibold text-white print:text-black">Net Sales:</span>
+                <span className="text-white print:text-black">{data?.net_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</span>
+              </div>
+
+              {/* <div className="flex justify-between font-bold text-lg">
                  <span className="text-white print:text-black">Cash Sales:</span>
                 <span className="text-white print:text-black">
                   {data?.cash_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}
                 </span> 
-              </div>
+              </div> */}
            
             </div>
           </div>
