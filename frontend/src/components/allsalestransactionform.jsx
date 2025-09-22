@@ -891,7 +891,7 @@ const handleNewProductVendorChange = (ids) => {
                       htmlFor="total_amount"
                       className="text-sm font-medium text-white mb-2"
                       >
-                      Payment Mehod
+                      Payment Method
                     </Label>
                     <Select
                       onValueChange={(value) =>
