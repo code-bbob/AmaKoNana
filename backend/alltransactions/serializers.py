@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Vendor, Purchase, PurchaseTransaction,PurchaseReturn, Sales, SalesTransaction, VendorTransactions, SalesReturn
 from django.db import transaction
 from allinventory.models import Product,Brand
-from alltransactions.models import Staff,StaffTransactions, Debtor, DebtorTransaction
+from alltransactions.models import Staff,StaffTransactions, Debtor, DebtorTransaction, StaffTransactionDetail
 
 
 
@@ -961,43 +961,69 @@ class StaffSerializer(serializers.ModelSerializer):
         model = Staff
         fields = '__all__'
 
+class StaffTransactionDetailsSerializer(serializers.ModelSerializer):
+    product_name = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = StaffTransactionDetail
+        fields = ['id','product','product_name','quantity','rate','total']
+        read_only_fields = ['total_price']
+
+    def get_product_name(self, obj):
+        return obj.product.name if obj.product else None
+
 class StaffTransactionSerializer(serializers.ModelSerializer):
     staff_name = serializers.SerializerMethodField(read_only=True)
-    
+    staff_transaction_details = StaffTransactionDetailsSerializer(many=True, required = False)
+    date = serializers.DateField()
     class Meta:
         model = StaffTransactions
         fields = '__all__'
 
     def create(self, validated_data):
-
+        
+        transaction_details = validated_data.pop('staff_transaction_details', None)
         transaction = StaffTransactions.objects.create(**validated_data)
         staff = transaction.staff
         staff.due = (staff.due - transaction.amount) if staff.due is not None else -transaction.amount
         staff.save()
+
+        if transaction_details:
+            for detail in transaction_details:
+                StaffTransactionDetail.objects.create(staff_transaction=transaction, **detail)
+
         return transaction
     
     def update(self, instance, validated_data):
-        print("HERE")
         old_staff = instance.staff
-        old_amount = instance.amount
-        print(old_amount)
+        old_amount = instance.amount or 0
+
+        # Pull out nested details if provided
+        details_data = validated_data.pop('staff_transaction_details', None)
+
+        # Update simple fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         instance.refresh_from_db()
+
+        # Replace details if provided
+        if details_data is not None:
+            # Delete existing and recreate
+            instance.staff_transaction_details.all().delete()
+            for detail in details_data:
+                StaffTransactionDetail.objects.create(staff_transaction=instance, **detail)
+
+        # Adjust staff due based on any amount and/or staff change
         new_staff = instance.staff
-
+        new_amount = instance.amount or 0
         if old_staff == new_staff:
-            new_staff.due = new_staff.due - instance.amount + old_amount
-            print(new_staff.due)
+            # Reverse old, apply new
+            new_staff.due = (new_staff.due or 0) - new_amount + old_amount
             new_staff.save()
-            print(new_staff.due)
-            staff = Staff.objects.get(id = new_staff.id)
-            print(staff.due)
-
         else:
-            old_staff.due = old_staff.due + old_amount
-            new_staff.due = new_staff.due - instance.amount
+            # Give back to old, charge new
+            old_staff.due = (old_staff.due or 0) + old_amount
+            new_staff.due = (new_staff.due or 0) - new_amount
             old_staff.save()
             new_staff.save()
 

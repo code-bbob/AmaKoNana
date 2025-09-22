@@ -7,6 +7,8 @@ from .serializers import OrderSerializer, OrderItemSerializer
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
+from allinventory.models import IncentiveProduct
+from allinventory.serializers import IncentiveProductSerializer
 # Create your views here.
 
 
@@ -60,4 +62,52 @@ class OrderView(APIView):
         order = Order.objects.get(pk=pk, enterprise=request.user.person.enterprise)
         serializer = OrderSerializer(order)
         serializer.delete(order)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class IncentiveProductView(APIView):
+    
+    permission_classes = [IsAuthenticated]
+    def get(self, request, branch=None,pk=None, *args, **kwargs):
+
+        if pk:
+            incentive_product = IncentiveProduct.objects.get(id=pk, enterprise = request.user.person.enterprise)
+            serializer=IncentiveProductSerializer(incentive_product)
+            return Response(serializer.data)
+        incentive_products = IncentiveProduct.objects.filter(enterprise=request.user.person.enterprise, branch=branch)
+        branch = request.user.person.branch
+        if branch:
+            incentive_products = incentive_products.filter(branch=branch)
+
+        incentive_products = incentive_products.order_by('name')
+        paginator = PageNumberPagination()
+        paginator.page_size = 5  # Set the page size here
+        paginated_incentive_products = paginator.paginate_queryset(incentive_products, request)
+        serializer = IncentiveProductSerializer(paginated_incentive_products, many=True)
+        return paginator.get_paginated_response(serializer.data)
+        
+
+
+
+    def post(self, request, *args, **kwargs):
+        # Ensure enterprise is set server-side
+        data = request.data.copy()
+        data['enterprise'] = request.user.person.enterprise.id
+        serializer = IncentiveProductSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk, *args, **kwargs):
+        incentive_product = IncentiveProduct.objects.get(pk=pk, enterprise=request.user.person.enterprise)
+        serializer = IncentiveProductSerializer(incentive_product, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, *args, **kwargs):
+        incentive_product = IncentiveProduct.objects.get(pk=pk, enterprise=request.user.person.enterprise)
+        serializer = IncentiveProductSerializer(incentive_product)
+        serializer.delete(incentive_product)
         return Response(status=status.HTTP_204_NO_CONTENT)

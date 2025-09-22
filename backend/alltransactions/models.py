@@ -198,6 +198,7 @@ class StaffTransactions(models.Model):
     enterprise = models.ForeignKey('enterprise.Enterprise', on_delete=models.CASCADE,related_name='all_staff_transactions')
     branch = models.ForeignKey('enterprise.Branch', on_delete=models.CASCADE, null=True, blank=True)
     desc = models.CharField(max_length=255)
+    staff_type = models.CharField(max_length=20,choices=(('incentive','Incentive'),('salary','Salary')),default='payment')
     
     def __str__(self):
         return f"Staff Transaction {self.pk} of {self.staff.name}"
@@ -208,6 +209,14 @@ class StaffTransactions(models.Model):
         self.staff.save() 
         super().delete(*args, **kwargs)
 
+class StaffTransactionDetail(models.Model):
+    staff_transaction = models.ForeignKey(StaffTransactions, on_delete=models.CASCADE,related_name='staff_transaction_details')
+    quantity = models.IntegerField()
+    rate = models.FloatField()
+    total = models.FloatField(null=True,blank=True)
+    product = models.ForeignKey('allinventory.IncentiveProduct', on_delete=models.CASCADE, null=True, blank=True) 
+    def __str__(self):
+        return f"Staff Transaction Detail {self.pk} of {self.staff_transaction.staff.name}"
 
 class Customer(models.Model):
     name = models.CharField(max_length=255)

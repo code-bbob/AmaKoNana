@@ -100,7 +100,8 @@ export default function Sidebar() {
       mainPath: 'staff',
       items: [
         { title: 'Staffs', icon: TrendingUp, path: 'staff' },
-        { title: 'StaffTransaction', icon: TrendingUp, path: 'staff-transactions' }
+        { title: 'StaffTransaction', icon: TrendingUp, path: 'staff-transactions' },
+        { title: 'ProductIncentives', icon: Container, path: 'staff/product-incentives' }
       ]
     },
     {

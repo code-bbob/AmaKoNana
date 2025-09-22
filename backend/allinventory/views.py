@@ -4,8 +4,10 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
 from rest_framework.views import APIView
 from .models import Product,Brand
+from .models import IncentiveProduct
 from enterprise.models import Branch
 from .serializers import ProductSerializer,BrandSerializer, ManufactureSerializer
+from .serializers import IncentiveProductSerializer
 from rest_framework.decorators import api_view
 from barcode import EAN13
 from barcode.writer import SVGWriter
@@ -247,3 +249,65 @@ class ManufactureView(APIView):
             return Response("Deleted")
         except Manufacture.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class IncentiveProductView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, branch=None, pk=None, *args, **kwargs):
+        if pk:
+            try:
+                incentive_product = IncentiveProduct.objects.get(
+                    id=pk, enterprise=request.user.person.enterprise
+                )
+            except IncentiveProduct.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            serializer = IncentiveProductSerializer(incentive_product)
+            return Response(serializer.data)
+
+        incentive_products = IncentiveProduct.objects.filter(
+            enterprise=request.user.person.enterprise, branch=branch
+        )
+        user_branch = request.user.person.branch
+        if user_branch:
+            incentive_products = incentive_products.filter(branch=user_branch)
+
+        incentive_products = incentive_products.order_by('name')
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+        paginated = paginator.paginate_queryset(incentive_products, request)
+        serializer = IncentiveProductSerializer(paginated, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        data = request.data.copy()
+        data['enterprise'] = request.user.person.enterprise.id
+        serializer = IncentiveProductSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk, *args, **kwargs):
+        try:
+            incentive_product = IncentiveProduct.objects.get(
+                pk=pk, enterprise=request.user.person.enterprise
+            )
+        except IncentiveProduct.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = IncentiveProductSerializer(incentive_product, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, *args, **kwargs):
+        try:
+            incentive_product = IncentiveProduct.objects.get(
+                pk=pk, enterprise=request.user.person.enterprise
+            )
+        except IncentiveProduct.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = IncentiveProductSerializer(incentive_product)
+        serializer.delete(incentive_product)
+        return Response(status=status.HTTP_204_NO_CONTENT)

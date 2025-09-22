@@ -15,4 +15,7 @@ urlpatterns = [
     path('manufacture/', views.ManufactureView.as_view()),   
     path('manufacture/branch/<int:branch>/', views.ManufactureView.as_view()),
     path('manufacture/<int:pk>/', views.ManufactureView.as_view()),
+    path('incentiveproduct/', views.IncentiveProductView.as_view()),
+    path('incentiveproduct/<int:pk>/', views.IncentiveProductView.as_view()),
+    path('incentiveproduct/branch/<int:branch>/', views.IncentiveProductView.as_view()),
 ]

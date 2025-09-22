@@ -46,6 +46,7 @@ import OrderForm from "./components/orderForm";
 import EditOrderForm from "./components/editOrderForm";
 import OrderDetail from "./components/orderDetail";
 import OrdersPage from "./pages/ordersPage";
+import ProductIncentivesPage from "./pages/productIncentivesPage";
 
 function App() {
   const { isAuthenticated } = useSelector((state) => state.root);
@@ -94,6 +95,8 @@ function App() {
           <Route path="purchase-report/branch/:branchId" element={<AllPurchaseReport/>}/>
 
           <Route path="staff/branch/:branchId" element={<StaffPage/>}/>
+
+          <Route path="staff/product-incentives/branch/:branchId" element={<ProductIncentivesPage />} />
 
           <Route path="vendors/branch/:branchId" element={<AllVendorPage />} />
           <Route path="vendors/statement/:vendorId" element={<AllVendorStatementPage />} />

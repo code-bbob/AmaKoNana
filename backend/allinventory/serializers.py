@@ -1,6 +1,7 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from .models import Brand, Product
 from .models import ManufactureItem,Manufacture
+from .models import IncentiveProduct
 from django.db import transaction
 
 class BrandSerializer(ModelSerializer):
@@ -204,3 +205,10 @@ class ManufactureSerializer(ModelSerializer):
             
             # Finally, delete the Manufacture instance itself
             instance.delete()
+
+class IncentiveProductSerializer(ModelSerializer):
+    class Meta:
+        model = IncentiveProduct
+        fields = '__all__'
+    def delete(self, instance, *args, **kwargs):
+        instance.delete(*args, **kwargs)
