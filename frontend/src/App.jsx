@@ -41,6 +41,7 @@ import DebtorTransactionForm from "./pages/allDebtorTransactionForm";
 import EditDebtorTransactionForm from "./pages/editAllDebtors";
 import AllVendorStatementPage from "./pages/allVendorStatementPage";
 import AllDebtorStatementPage from "./pages/allDebtorStatementPage";
+import StaffStatementPage from "./pages/staffStatementPage";
 import TransferForm from "./components/transferForm";
 import OrderForm from "./components/orderForm";
 import EditOrderForm from "./components/editOrderForm";
@@ -100,6 +101,7 @@ function App() {
 
           <Route path="vendors/branch/:branchId" element={<AllVendorPage />} />
           <Route path="vendors/statement/:vendorId" element={<AllVendorStatementPage />} />
+          <Route path="staff/branch/:branchId/statement/:staffId" element={<StaffStatementPage />} />
 
           <Route path="vendor-transactions/branch/:branchId" element={<AllVendorTransactions />}/>
           <Route path="vendor-transactions/branch/:branchId/form" element={<AllVendorTransactionForm />} />

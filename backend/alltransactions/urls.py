@@ -49,6 +49,9 @@ urlpatterns = [
 
     path('debtor/statement/<int:debtorId>/',views.DebtorStatementView.as_view(), name = 'debtorstatement'),
 
+    # Staff Statement
+    path('staff/statement/<int:staffId>/', views.StaffStatementView.as_view(), name='staffstatement'),
+
     path('product-transfer/', views.ProductTransferView.as_view(), name='product_transfer')
 
 

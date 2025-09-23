@@ -281,8 +281,8 @@ export default function StaffTransactions() {
                   </div>
                 </CardContent>
                 {transaction.amount > 0 ?
-                <div className='p-4 font-bold text-white text-right'>RS. {transaction.amount}</div>:
-                <div className='p-4 font-bold text-green-500 text-right'>RS. {transaction.amount}</div>}
+                <div className='p-4 font-bold text-white text-right'>Earned: RS. {transaction.amount}</div>:
+                <div className='p-4 font-bold text-green-500 text-right'>Paid: RS. {transaction.amount}</div>}
               </Card>
             ))
           ) : (

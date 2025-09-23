@@ -1119,6 +1119,48 @@ class DebtorStatementView(APIView):
         return Response({'debtor_data': debtor, 'debtor_transactions': dts})
     
 
+class StaffStatementView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, staffId=None, branch=None):
+        enterprise = request.user.person.enterprise
+        staff = Staff.objects.filter(id=staffId, enterprise=enterprise).first()
+        staff_transactions = StaffTransactions.objects.filter(enterprise=enterprise, staff=staff)
+        due = 0
+        if not staff:
+            return Response("Staff not found", status=status.HTTP_404_NOT_FOUND)
+
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        if start_date and end_date:
+            start_date = parse_date(start_date)
+            end_date = parse_date(end_date)
+
+        if start_date and end_date:
+            due = 0
+            staff_transactions = staff_transactions.filter(
+                date__range=(start_date, end_date)
+            )
+            for st in StaffTransactions.objects.filter(staff=staff, enterprise=enterprise, date__lt=start_date).order_by('date','id'):
+                due += st.amount
+        elif start_date and not end_date:
+            staff_transactions = staff_transactions.filter(
+                date__gte=start_date
+            )
+            due = 0
+            for st in StaffTransactions.objects.filter(staff=staff, enterprise=enterprise, date__lt=start_date).order_by('date','id'):
+                due += st.amount
+        elif not start_date and end_date:
+            staff_transactions = staff_transactions.filter(
+                date__lte=end_date
+            )
+
+        staff_transactions = staff_transactions.order_by('date','id')
+        staff_data = StaffSerializer(staff).data
+        sts = StaffTransactionSerializer(staff_transactions, many=True).data
+        return Response({'staff_data': staff_data, 'staff_transactions': sts, 'due': due})
+
 
 class ProductTransferView(APIView):
 
