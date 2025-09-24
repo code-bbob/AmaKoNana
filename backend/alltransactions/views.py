@@ -12,7 +12,7 @@ from datetime import date, datetime,time
 from django.utils.dateparse import parse_date
 from rest_framework.pagination import PageNumberPagination
 from django.utils.timezone import make_aware,localtime
-from django.db.models import Max,Q
+from django.db.models import Max, Q, Sum
 from .models import Customer
 from django.db import transaction
 from .models import Debtor, DebtorTransaction
@@ -1048,6 +1048,7 @@ class VendorStatementView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, vendorId=None, branch=None):
+        print("HERE START")
         enterprise = request.user.person.enterprise
         vendor = Vendor.objects.filter(id=vendorId, enterprise=enterprise).first()
         vendor_transactions = VendorTransactions.objects.filter(enterprise=enterprise,vendor=vendor)
@@ -1058,8 +1059,10 @@ class VendorStatementView(APIView):
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
 
-        if start_date and end_date:
+        if start_date:
             start_date = parse_date(start_date)
+        
+        if end_date:
             end_date = parse_date(end_date)
 
     
@@ -1078,6 +1081,20 @@ class VendorStatementView(APIView):
 
         vendor_transactions = vendor_transactions.order_by('date','id')
         vendor = VendorSerializer(vendor).data 
+        # Calculate previous due when a start_date is provided
+        previous_due = 0
+        if start_date:
+            print("HERE IN")
+            prev_sum = VendorTransactions.objects.filter(
+                enterprise=enterprise,
+                vendor_id=vendorId,
+                date__lt=start_date
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            # Running formula is running -= amount, so opening due = -sum(amount before start)
+            previous_due = -float(prev_sum)
+            print("HERE", previous_due)
+            vendor['previous_due'] = previous_due
+            print("VENDOR", vendor)
         vts = VendorTransactionSerializer(vendor_transactions, many=True).data
         return Response({'vendor_data': vendor, 'vendor_transactions': vts})
     
@@ -1115,6 +1132,17 @@ class DebtorStatementView(APIView):
 
         debtor_transactions = debtor_transactions.order_by('date','id')
         debtor = DebtorSerializer(debtor).data
+        # Calculate previous due when a start_date is provided
+        previous_due = 0
+        if start_date:
+            prev_sum = DebtorTransaction.objects.filter(
+                enterprise=enterprise,
+                debtor_id=debtorId,
+                date__lt=start_date
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            # Running formula is running -= amount, so opening due = -sum(amount before start)
+            previous_due = -float(prev_sum)
+            debtor['previous_due'] = previous_due
         dts = DebtorTransactionSerializer(debtor_transactions, many=True).data
         return Response({'debtor_data': debtor, 'debtor_transactions': dts})
     
@@ -1158,8 +1186,18 @@ class StaffStatementView(APIView):
 
         staff_transactions = staff_transactions.order_by('date','id')
         staff_data = StaffSerializer(staff).data
+        # previous_due for staff when start_date provided
+        previous_due = 0
+        if start_date:
+            prev_sum = StaffTransactions.objects.filter(
+                enterprise=enterprise,
+                staff_id=staffId,
+                date__lt=start_date
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            previous_due = -float(prev_sum)
+            staff_data['previous_due'] = previous_due
         sts = StaffTransactionSerializer(staff_transactions, many=True).data
-        return Response({'staff_data': staff_data, 'staff_transactions': sts, 'due': due})
+        return Response({'staff_data': staff_data, 'staff_transactions': sts})
 
 
 class ProductTransferView(APIView):

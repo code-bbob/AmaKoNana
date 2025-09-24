@@ -86,11 +86,11 @@ const StaffStatementPage = () => {
   };
 
   const calculateRunningBalance = (transactions) => {
-    let running = Number(data.due) || 0;
+    let running = Number(data.staff_data.previous_due) || 0;
     return transactions.map((transaction) => {
       const amt = Number(transaction.amount) || 0;
       // Positive amounts are payments to staff (reduce payable to staff); negative increase due
-      running += amt;
+      running -= amt;
       return { ...transaction, due: running };
     });
   };
@@ -232,7 +232,10 @@ const StaffStatementPage = () => {
     );
   if (!data) return null;
 
-  const previousDue = 0; // optional: could use data.staff_data.previous_due if provided later
+  const previousDue =
+    data.staff_data && data.staff_data.previous_due !== undefined
+      ? Number(data.staff_data.previous_due)
+      : 0;
   const transactionsWithBalance = calculateRunningBalance(
     data.staff_transactions,
     previousDue
