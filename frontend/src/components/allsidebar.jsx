@@ -79,8 +79,8 @@ export default function Sidebar() {
       items: [
         { title: 'Add Purchase', icon: ShoppingCart, path: 'purchases/form' },
         { title: 'Purchases', icon: ShoppingCart, path: 'purchases' },
-        { title: 'PurchaseReturn', icon: TrendingDown, path: 'purchase-returns' },
-        { title: 'PurchaseReport', icon: TrendingDown, path: 'purchase-report', externalReport: true }
+        { title: 'Purchase Return', icon: TrendingDown, path: 'purchase-returns' },
+        { title: 'Purchase Report', icon: TrendingDown, path: 'purchase-report', externalReport: true }
       ]
     },
     {
@@ -90,8 +90,8 @@ export default function Sidebar() {
       items: [
         { title: 'Add Sales', icon: TrendingUp, path: 'sales/form' },
         { title: 'Sales', icon: TrendingUp, path: 'sales' },
-        { title: 'SalesReturn', icon: TrendingDown, path: 'sales-returns' },
-        { title: 'SalesReport', icon: TrendingUp, path: 'sales-report', externalReport: true }
+        { title: 'Sales Return', icon: TrendingDown, path: 'sales-returns' },
+        { title: 'Sales Report', icon: TrendingUp, path: 'sales-report', externalReport: true }
       ]
     },
     {
@@ -100,8 +100,8 @@ export default function Sidebar() {
       mainPath: 'staff',
       items: [
         { title: 'Staffs', icon: TrendingUp, path: 'staff' },
-        { title: 'StaffTransaction', icon: TrendingUp, path: 'staff-transactions' },
-        { title: 'ProductIncentives', icon: Container, path: 'staff/product-incentives' }
+        { title: 'Staff Transaction', icon: TrendingUp, path: 'staff-transactions' },
+        { title: 'Product Incentives', icon: Container, path: 'staff/product-incentives' }
       ]
     },
     {
@@ -110,7 +110,7 @@ export default function Sidebar() {
       mainPath: 'vendors',
       items: [
         { title: 'Vendors', icon: BookUser, path: 'vendors' },
-        { title: 'VendorTransactions', icon: BookUser, path: 'vendor-transactions' }
+        { title: 'Vendor Transactions', icon: BookUser, path: 'vendor-transactions' }
       ]
     },
     {
@@ -119,7 +119,7 @@ export default function Sidebar() {
       mainPath: 'debtors',
       items: [
         { title: 'Debtors', icon: BookUser, path: 'debtors' },
-        { title: 'DebtorTransactions', icon: BookUser, path: 'debtor-transactions' }
+        { title: 'Debtor Transactions', icon: BookUser, path: 'debtor-transactions' }
       ]
     },
     {
