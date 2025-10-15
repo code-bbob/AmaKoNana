@@ -623,7 +623,7 @@ class SalesReportView(APIView):
             end_date = parse_date(end_date)
             sales = sales.filter(sales_transaction__date__range=(start_date, end_date))
 
-        
+        sales = sales.order_by('sales_transaction__date','id') 
         if not search and not start_date and not end_date:
             sales = sales.filter(sales_transaction__date = timezone.now().date())
 
@@ -645,6 +645,7 @@ class SalesReportView(APIView):
             subtotal_sales += line_subtotal
             total_discount += line_discount
             rows.append({
+                "id": sale.id,
                 "date": sale.sales_transaction.date,
                 "brand": sale.product.brand.name,
                 "quantity": sale.quantity,
@@ -695,6 +696,8 @@ class PurchaseReportView(APIView):
             purchases = purchases.filter(purchase_transaction__date__range=(start_date, end_date))
         if not search and not start_date and not end_date:
             purchases = purchases.filter(purchase_transaction__date=timezone.now().date())
+        
+        purchases = purchases.order_by('purchase_transaction__date', 'id')
 
         count = purchases.count()
         subtotal_purchases = 0
