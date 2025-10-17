@@ -109,6 +109,12 @@ function AllSalesTransactionForm() {
   // Settings dialog & master discount state
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [masterDiscount, setMasterDiscount] = useState(""); // percentage string 0-100
+  // Mixed payment dialog states
+  const [showMixedDialog, setShowMixedDialog] = useState(false);
+  const [prevMethod, setPrevMethod] = useState(formData.method);
+  const [mixedOptions, setMixedOptions] = useState({ cash: true, card: false, online: true });
+  const [mixedAmounts, setMixedAmounts] = useState({ cash_amount: "", card_amount: "", online_amount: "" });
+  const [mixedError, setMixedError] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -384,6 +390,10 @@ const handleNewProductVendorChange = (ids) => {
         sales: preparedSales,
         subtotal: subtotal,
         total_amount: totalAmount,
+        // ensure numeric amounts for backend
+        cash_amount: Number(formData.cash_amount) || 0,
+        card_amount: Number(formData.card_amount) || 0,
+        online_amount: Number(formData.online_amount) || 0,
       };
       const response = await api.post(
         "alltransaction/salestransaction/",
@@ -466,6 +476,89 @@ const handleNewProductVendorChange = (ids) => {
         totalAmount - (parseFloat(prevFormData.amount_paid) || 0),
     }));
   }, [formData.amount_paid, totalAmount]);
+
+  // Mixed payment helper functions (moved to top-level scope)
+  const handlePaymentMethodChange = (value) => {
+    if (value === "mixed") {
+      // open mixed dialog, preserve previous method
+      setPrevMethod(formData.method);
+      setShowMixedDialog(true);
+      // default mixed amounts to split equally among enabled options
+  const enabled = [mixedOptions.cash, mixedOptions.card, mixedOptions.online].filter(Boolean).length || 1;
+  const finalPayable = totalAmount - (parseFloat(formData.credited_amount) || 0);
+  const per = (finalPayable || 0) / enabled;
+      setMixedAmounts({
+        cash_amount: mixedOptions.cash ? per.toFixed(2) : "",
+        card_amount: mixedOptions.card ? per.toFixed(2) : "",
+        online_amount: mixedOptions.online ? per.toFixed(2) : "",
+      });
+      return;
+    }
+    // Auto-fill amounts for single method and clear others
+    const paid = parseFloat(formData.amount_paid) || 0;
+    setFormData({
+      ...formData,
+      method: value,
+      cash_amount: value === "cash" ? paid : 0,
+      card_amount: value === "card" ? paid : 0,
+      online_amount: value === "online" ? paid : 0,
+    });
+  };
+
+  const handleMixedOptionToggle = (opt) => {
+    const newOpts = { ...mixedOptions, [opt]: !mixedOptions[opt] };
+    setMixedOptions(newOpts);
+  const enabled = [newOpts.cash, newOpts.card, newOpts.online].filter(Boolean).length || 1;
+  const finalPayable = totalAmount - (parseFloat(formData.credited_amount) || 0);
+  const per = (finalPayable || 0) / enabled;
+    setMixedAmounts({
+      cash_amount: newOpts.cash ? per.toFixed(2) : "",
+      card_amount: newOpts.card ? per.toFixed(2) : "",
+      online_amount: newOpts.online ? per.toFixed(2) : "",
+    });
+  };
+
+  const handleMixedAmountChange = (field, value) => {
+    setMixedAmounts({ ...mixedAmounts, [field]: value });
+    setMixedError("");
+  };
+
+  const confirmMixed = () => {
+  const cash = mixedOptions.cash ? (parseFloat(mixedAmounts.cash_amount) || 0) : 0;
+  const card = mixedOptions.card ? (parseFloat(mixedAmounts.card_amount) || 0) : 0;
+  const online = mixedOptions.online ? (parseFloat(mixedAmounts.online_amount) || 0) : 0;
+  const sum = cash + card + online;
+  const finalAmount = totalAmount - (parseFloat(formData.credited_amount) || 0);
+    // The user's instruction: amounts must match final amount after writeoff. Assuming credited_amount is writeoff/credit.
+    if (Math.abs(sum - finalAmount) > 0.005) {
+      setMixedError(`Sum of mixed amounts (NPR ${sum.toFixed(2)}) must equal final payable amount (NPR ${finalAmount.toFixed(2)})`);
+      return;
+    }
+    // write into formData fields expected by backend
+  setFormData({ ...formData, method: "mixed", cash_amount: cash, card_amount: card, online_amount: online });
+    setShowMixedDialog(false);
+  };
+
+  const cancelMixed = () => {
+    setShowMixedDialog(false);
+    setMixedError("");
+    // revert method selection
+    setFormData({ ...formData, method: prevMethod });
+  };
+
+  // Keep single-method amounts in sync with amount_paid
+  useEffect(() => {
+    setFormData((prev) => {
+      if (prev.method === "mixed" || prev.method === "credit") return prev;
+      const paid = parseFloat(prev.amount_paid) || 0;
+      return {
+        ...prev,
+        cash_amount: prev.method === "cash" ? paid : 0,
+        card_amount: prev.method === "card" ? paid : 0,
+        online_amount: prev.method === "online" ? paid : 0,
+      };
+    });
+  }, [formData.amount_paid, formData.method]);
   // Keydown handling for product scanning
   const [currentWord, setCurrentWord] = useState("");
   const handleKeyDown = (e) => {
@@ -895,7 +988,8 @@ const handleNewProductVendorChange = (ids) => {
                     </Label>
                     <Select
                       onValueChange={(value) =>
-                        setFormData({ ...formData, method: value })
+                        // intercept mixed selection to open dialog
+                        handlePaymentMethodChange(value)
                       }
                       value={formData.method}
                       required={true}
@@ -913,6 +1007,9 @@ const handleNewProductVendorChange = (ids) => {
                         </SelectItem>
                         <SelectItem value="online" className="text-white">
                           Online
+                        </SelectItem>
+                        <SelectItem value="mixed" className="text-white">
+                          Mixed
                         </SelectItem>
                         <SelectItem value="credit" className="text-white">
                           Credit
@@ -1147,6 +1244,63 @@ const handleNewProductVendorChange = (ids) => {
               </DialogContent>
             </Dialog>
 
+            {/* Mixed Payment Dialog */}
+            <Dialog open={showMixedDialog} onOpenChange={setShowMixedDialog}>
+              <DialogContent className="sm:max-w-[520px] bg-slate-800 text-white">
+                <DialogHeader>
+                  <DialogTitle>Mixed Payment</DialogTitle>
+                  <DialogDescription>
+                    Select methods to include in the mixed payment and enter amounts. The sum must equal the final payable amount after writeoff.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-4 py-4">
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" checked={mixedOptions.cash} onChange={() => handleMixedOptionToggle('cash')} />
+                      <span>Cash</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" checked={mixedOptions.online} onChange={() => handleMixedOptionToggle('online')} />
+                      <span>Online</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" checked={mixedOptions.card} onChange={() => handleMixedOptionToggle('card')} />
+                      <span>Card</span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {mixedOptions.cash && (
+                      <div className="flex flex-col">
+                        <Label className="text-white mb-2">Cash Amount</Label>
+                        <Input type="number" value={mixedAmounts.cash_amount} onChange={(e) => handleMixedAmountChange('cash_amount', e.target.value)} className="bg-slate-700 text-white" />
+                      </div>
+                    )}
+                    {mixedOptions.card && (
+                      <div className="flex flex-col">
+                        <Label className="text-white mb-2">Card Amount</Label>
+                        <Input type="number" value={mixedAmounts.card_amount} onChange={(e) => handleMixedAmountChange('card_amount', e.target.value)} className="bg-slate-700 text-white" />
+                      </div>
+                    )}
+                    {mixedOptions.online && (
+                      <div className="flex flex-col">
+                        <Label className="text-white mb-2">Online Amount</Label>
+                        <Input type="number" value={mixedAmounts.online_amount} onChange={(e) => handleMixedAmountChange('online_amount', e.target.value)} className="bg-slate-700 text-white" />
+                      </div>
+                    )}
+                  </div>
+
+                  {mixedError && <div className="text-red-400">{mixedError}</div>}
+                </div>
+
+                <DialogFooter>
+                  <Button type="button" onClick={cancelMixed} className="bg-slate-600 hover:bg-slate-500 text-white">Cancel</Button>
+                  <Button type="button" onClick={confirmMixed} className="bg-green-600 hover:bg-green-700 text-white">Confirm</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             {/* Settings Dialog */}
             <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
               <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
@@ -1311,3 +1465,7 @@ const handleNewProductVendorChange = (ids) => {
 }
 
 export default AllSalesTransactionForm;
+
+// Mixed Payment Dialog — appended to file for clarity
+// (keeps UI code in same component file per request; no global CSS changes)
+
