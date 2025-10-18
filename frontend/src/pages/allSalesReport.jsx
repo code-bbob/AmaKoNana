@@ -295,18 +295,32 @@ const AllSalesReport = () => {
                 <span className="text-white print:text-black">{data.write_off}</span>
               </div>
 
+
               <div className="flex justify-between mb-2">
                 <span className="font-semibold text-white print:text-black">Net Sales:</span>
                 <span className="text-white print:text-black">{data?.net_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</span>
               </div>
-
-              {/* <div className="flex justify-between font-bold text-lg">
+              <div className="border-t border-slate-200 mt-2 pt-2"></div>
+              <div className="flex justify-between font-bold text-sm">
                  <span className="text-white print:text-black">Cash Sales:</span>
                 <span className="text-white print:text-black">
                   {data?.cash_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}
                 </span> 
-              </div> */}
-           
+              </div>
+
+              <div className="flex justify-between font-bold text-sm">
+                 <span className="text-white print:text-black">Online Sales:</span>
+                <span className="text-white print:text-black">
+                  {data?.online_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}
+                </span> 
+              </div>
+              
+              <div className="flex justify-between font-bold text-sm">
+                 <span className="text-white print:text-black">Card Sales:</span>
+                <span className="text-white print:text-black">
+                  {data?.card_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}
+                </span> 
+              </div>
             </div>
           </div>
 

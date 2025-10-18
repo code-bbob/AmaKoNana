@@ -16,13 +16,7 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import {
-  PlusCircle,
-  Trash2,
-  Check,
-  ChevronsUpDown,
-  ArrowLeft,
-} from "lucide-react";
+import { PlusCircle, Trash2, Check, ChevronsUpDown, ArrowLeft } from "lucide-react";
 import { cn } from "../lib/utils";
 import {
   Command,
@@ -34,34 +28,29 @@ import {
 } from "./ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import Sidebar from "./allsidebar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import NewProductDialog from "@/components/newProductDialog";
- 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import NewProductDialog from "./newProductDialog";
+import { Checkbox } from "./ui/checkbox";
 
 export default function EditAllSalesTransactionForm() {
   const api = useAxios();
   const navigate = useNavigate();
-  const { salesId, branchId } = useParams();
+  const { branchId, salesId } = useParams();
 
-  // Original data
   const [originalSalesData, setOriginalSalesData] = useState(null);
   const [formData, setFormData] = useState({
     date: "",
     name: "",
     phone_number: "",
     bill_no: "",
-    branch: "",
+    branch: branchId,
     sales: [],
-    method: "",
-    // Debtor fields
-    debtor: null,
-    amount_paid: null,
+    method: "cash",
+    cash_amount: 0,
+    card_amount: 0,
+    online_amount: 0,
+    debtor: "",
+    amount_paid: "",
     credited_amount: "",
   });
 
@@ -99,9 +88,10 @@ export default function EditAllSalesTransactionForm() {
   const [returned, setReturned] = useState(false);
   const [customerTotal, setCustomerTotal] = useState("");
 
-  // Delete confirmation
+  // Delete confirmation (kept minimal)
   const [isChecked, setIsChecked] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [modifyStock, setModifyStock] = useState(true);
 
   // Return dialog state
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
@@ -112,6 +102,13 @@ export default function EditAllSalesTransactionForm() {
   const [subtotal, setSubtotal] = useState(0);
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
+  // Mixed payment dialog states
+  const [showMixedDialog, setShowMixedDialog] = useState(false);
+  const [prevMethod, setPrevMethod] = useState("");
+  const [mixedOptions, setMixedOptions] = useState({ cash: true, online: true, card: false });
+  const [mixedAmounts, setMixedAmounts] = useState({ cash_amount: "", card_amount: "", online_amount: "" });
+  const [mixedError, setMixedError] = useState("");
+
 
   // Fetch initial data: products, brands, transaction, debtors
   useEffect(() => {
@@ -130,6 +127,12 @@ export default function EditAllSalesTransactionForm() {
         setVendors(vendorRes.data);
 
         const data = saleRes.data;
+        console.log("HERE IS THE SALES DATA", data);
+        setMixedAmounts({
+          cash_amount: data.cash_amount?.toString() || "0",
+          card_amount: data.card_amount?.toString() || "0",
+          online_amount: data.online_amount?.toString() || "0",
+        });
         setOriginalSalesData(data);
         setFormData({
           date: data.date,
@@ -170,6 +173,9 @@ export default function EditAllSalesTransactionForm() {
             };
           }),
           method: data.method,
+          cash_amount: data.cash_amount ?? 0,
+          card_amount: data.card_amount ?? 0,
+          online_amount: data.online_amount ?? 0,
           debtor: data.debtor,
           amount_paid: data.amount_paid,
           credited_amount: data.credited_amount?.toString() || "",
@@ -247,6 +253,20 @@ export default function EditAllSalesTransactionForm() {
       ).toFixed(2),
     }));
   }, [formData.amount_paid, totalAmount]);
+
+  // Keep single-method amounts in sync with amount_paid
+  useEffect(() => {
+    setFormData((prev) => {
+      if (prev.method === "mixed" || prev.method === "credit") return prev;
+      const paid = parseFloat(prev.amount_paid) || 0;
+      return {
+        ...prev,
+        cash_amount: prev.method === "cash" ? paid : 0,
+        card_amount: prev.method === "card" ? paid : 0,
+        online_amount: prev.method === "online" ? paid : 0,
+      };
+    });
+  }, [formData.amount_paid, formData.method]);
 
   // Handlers
   // Checkbox confirmation handlers
@@ -348,6 +368,118 @@ const handleNewProductVendorChange = (ids) => {
     setOpenProduct(op);
   };
 
+  // Mixed payment helpers
+  const handlePaymentMethodChange = (value) => {
+    if (value === "mixed") {
+  // open with prefilled values if any
+  openMixedDialogPrefilled();
+      return;
+    }
+    const paid = parseFloat(formData.amount_paid) || 0;
+    setFormData({
+      ...formData,
+      method: value,
+      cash_amount: value === "cash" ? paid : 0,
+      card_amount: value === "card" ? paid : 0,
+      online_amount: value === "online" ? paid : 0,
+    });
+  };
+
+  const handleMixedOptionToggle = (opt) => {
+    const newOpts = { ...mixedOptions, [opt]: !mixedOptions[opt] };
+    setMixedOptions(newOpts);
+    const next = {
+      cash_amount: newOpts.cash ? mixedAmounts.cash_amount : "",
+      card_amount: newOpts.card ? mixedAmounts.card_amount : "",
+      online_amount: newOpts.online ? mixedAmounts.online_amount : "",
+    };
+    setMixedAmounts(next);
+    recalcMixedRemainder(next);
+  };
+
+  const handleMixedAmountChange = (field, value) => {
+    const updated = { ...mixedAmounts, [field]: value };
+    setMixedAmounts(updated);
+    setMixedError("");
+    recalcMixedRemainder(updated);
+  };
+
+  // Open Mixed dialog prefilled from current split amounts
+  const openMixedDialogPrefilled = () => {
+    setPrevMethod(formData.method);
+    const cash = Number(formData.cash_amount) || 0;
+    const card = Number(formData.card_amount) || 0;
+    const online = Number(formData.online_amount) || 0;
+    const opts = {
+      cash: cash > 0,
+      card: card > 0,
+      online: online > 0,
+    };
+    setMixedOptions(opts);
+    setMixedAmounts({
+      cash_amount: opts.cash ? String(cash) : "",
+      card_amount: opts.card ? String(card) : "",
+      online_amount: opts.online ? String(online) : "",
+    });
+    setMixedError("");
+    setShowMixedDialog(true);
+  };
+
+  const recalcMixedRemainder = (amountsObj) => {
+    const base = parseFloat(formData.amount_paid) || 0;
+    const order = ["cash_amount", "online_amount", "card_amount"];
+    const enabled = order.filter((k) => (k === "cash_amount" ? mixedOptions.cash : k === "online_amount" ? mixedOptions.online : mixedOptions.card));
+    if (enabled.length === 2) {
+      const firstKey = enabled[0];
+      const secondKey = enabled[1];
+      const firstVal = parseFloat(amountsObj[firstKey]);
+      if (isNaN(firstVal)) {
+        setMixedAmounts((prev) => ({ ...prev, [secondKey]: "" }));
+        return;
+      }
+      const remainder = base - firstVal;
+      const patch = remainder < 0 ? 0 : remainder;
+      if (remainder < 0) setMixedError(`Entered amounts exceed amount paid by NPR ${Math.abs(remainder).toFixed(2)}. Adjust the first field.`);
+      setMixedAmounts((prev) => ({ ...prev, [secondKey]: patch.toFixed(2) }));
+      return;
+    }
+    if (enabled.length === 3) {
+      const firstKey = enabled[0];
+      const secondKey = enabled[1];
+      const thirdKey = enabled[2];
+      const firstVal = parseFloat(amountsObj[firstKey]);
+      const secondVal = parseFloat(amountsObj[secondKey]);
+      if (isNaN(firstVal) || isNaN(secondVal)) {
+        setMixedAmounts((prev) => ({ ...prev, [thirdKey]: "" }));
+        return;
+      }
+      const remainder = base - firstVal - secondVal;
+      const patch = remainder < 0 ? 0 : remainder;
+      if (remainder < 0) setMixedError(`Entered amounts exceed amount paid by NPR ${Math.abs(remainder).toFixed(2)}. Adjust the first two fields.`);
+      setMixedAmounts((prev) => ({ ...prev, [thirdKey]: patch.toFixed(2) }));
+    }
+  };
+  console.log("MIXED AMOUNTS:", mixedAmounts);
+  const confirmMixed = () => {
+    const cash = mixedOptions.cash ? (parseFloat(mixedAmounts.cash_amount) || 0) : 0;
+    const card = mixedOptions.card ? (parseFloat(mixedAmounts.card_amount) || 0) : 0;
+    const online = mixedOptions.online ? (parseFloat(mixedAmounts.online_amount) || 0) : 0;
+    const sum = cash + card + online;
+    const finalAmount = parseFloat(formData.amount_paid) || 0;
+    if (Math.abs(sum - finalAmount) > 0.005) {
+      setMixedError(`Sum of mixed amounts (NPR ${sum.toFixed(2)}) must equal Amount Paid (NPR ${finalAmount.toFixed(2)})`);
+      return;
+    }
+    setFormData({ ...formData, method: "mixed", cash_amount: cash, card_amount: card, online_amount: online });
+    setShowMixedDialog(false);
+  };
+
+  const cancelMixed = () => {
+    setShowMixedDialog(false);
+    setMixedError("");
+    setFormData({ ...formData, method: prevMethod });
+  };
+
   const appendReturn = (id) => {
     setReturns((r) => [...r, id]);
     setFormData((prev) => ({
@@ -446,7 +578,7 @@ const handleNewProductVendorChange = (ids) => {
   const handleDelete = async () => {
     try {
       setSubLoading(true);
-  await api.delete(`alltransaction/salestransaction/${salesId}/?flag=true`);
+      await api.delete(`alltransaction/salestransaction/${salesId}/?flag=true`);
       navigate("/sales/branch/" + branchId);
     } catch (err) {
       console.error(err);
@@ -536,6 +668,18 @@ const handleNewProductVendorChange = (ids) => {
       formData.sales.length !== originalSalesData.sales.length
     )
       return true;
+
+    // compare split amounts (enable Update when mixed split changed)
+    const origCash = Number(originalSalesData.cash_amount || 0);
+    const origCard = Number(originalSalesData.card_amount || 0);
+    const origOnline = Number(originalSalesData.online_amount || 0);
+    if (
+      Number(formData.cash_amount || 0) !== origCash ||
+      Number(formData.card_amount || 0) !== origCard ||
+      Number(formData.online_amount || 0) !== origOnline
+    ) {
+      return true;
+    }
     // compare each sale
     for (let i = 0; i < formData.sales.length; i++) {
       const s = formData.sales[i];
@@ -605,6 +749,9 @@ const handleNewProductVendorChange = (ids) => {
         sales: preparedSales,
         subtotal: subtotal,
         total_amount: totalAmount,
+        cash_amount: Number(formData.cash_amount) || 0,
+        card_amount: Number(formData.card_amount) || 0,
+        online_amount: Number(formData.online_amount) || 0,
       };
       await api.patch(`alltransaction/salestransaction/${salesId}/`, payload);
       navigate("/sales/branch/" + branchId);
@@ -616,7 +763,12 @@ const handleNewProductVendorChange = (ids) => {
     }
   };
 
-  if (loading) return <div className="text-white bg-gradient-to-br flex items-center justify-center from-slate-900 to-slate-800 min-h-screen">Loading...</div>;
+  if (loading)
+    return (
+      <div className="text-white bg-gradient-to-br flex items-center justify-center from-slate-900 to-slate-800 min-h-screen">
+        Loading...
+      </div>
+    );
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-slate-900 to-slate-800">
@@ -632,13 +784,10 @@ const handleNewProductVendorChange = (ids) => {
           </Button>
         </div>
         <div className="max-w-4xl mx-auto bg-slate-800 p-4 sm:p-8 rounded-lg shadow-lg">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-white">
-            Edit Sales Transaction
-          </h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-white">Edit Sales Transaction</h2>
           {error && <p className="text-red-400 mb-4">{error}</p>}
           <form onSubmit={handleSubmit} className="space-y-6">
-
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
             {/* Date */}
             <div className="flex flex-col col-span-3">
@@ -725,6 +874,7 @@ const handleNewProductVendorChange = (ids) => {
                 </Dialog> */}
               </div>
             </div>
+            {/* end header grid */}
             </div>
             {/* Sales items */}
             <h3 className="text-xl font-semibold mb-2 text-white">Sales</h3>
@@ -964,8 +1114,7 @@ const handleNewProductVendorChange = (ids) => {
                     className="bg-slate-600 border-slate-500 text-white"
                   />
                 </div>
-                
-                  <div className={`grid grid-cols-1 gap-4 md:col-span-2 ${formData.method === "credit" ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+                <div className={`grid grid-cols-1 gap-4 md:col-span-2 ${formData.method === "credit" ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
 
                 <div className="flex flex-col">
                   <Label
@@ -983,7 +1132,7 @@ const handleNewProductVendorChange = (ids) => {
                     className="bg-slate-600 border-slate-500"
                   />
                 </div>
-                  {formData.method!=="credit" && (
+                  {formData.method !== "credit" && (
                     <div className="flex flex-col">
                       <Label
                         htmlFor="amount_paid"
@@ -1009,15 +1158,13 @@ const handleNewProductVendorChange = (ids) => {
                   )}
 
 
-                {/* Payment method */}
+        {/* Payment method */}
                 <div className="flex flex-col">
                   <Label htmlFor="method" className="text-sm font-medium mb-2">
                     Payment Method
                   </Label>
                   <Select
-                    onValueChange={(v) =>
-                      setFormData({ ...formData, method: v })
-                    }
+                    onValueChange={(v) => handlePaymentMethodChange(v)}
                     value={formData.method}
                     required
                     className="bg-slate-600 border-slate-500 p-2 rounded text-white"
@@ -1029,14 +1176,27 @@ const handleNewProductVendorChange = (ids) => {
                       <SelectItem value="cash">Cash</SelectItem>
                       <SelectItem value="card">Card</SelectItem>
                       <SelectItem value="online">Online</SelectItem>
+                      <SelectItem value="mixed">Mixed</SelectItem>
                       <SelectItem value="credit">Credit</SelectItem>
                     </SelectContent>
                   </Select>
+                  {formData.method === "mixed" && (
+                    <div className="mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-8 px-2 bg-slate-700 border-slate-500 text-white"
+                        onClick={openMixedDialogPrefilled}
+                      >
+                        Edit split
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-            </div>
-            {formData.method === "credit" && (
+          </div>
+      {formData.method === "credit" && (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                               <div className="flex flex-col">
                                 <Label
@@ -1150,7 +1310,7 @@ const handleNewProductVendorChange = (ids) => {
                                 />
                               </div>
                             </div>
-                          )}
+          )}
             {/* Add sale & submit */}
             <Button
               type="button"
@@ -1218,6 +1378,62 @@ const handleNewProductVendorChange = (ids) => {
           
         </div>
       </div>
+  {/* Mixed Payment Dialog */}
+      <Dialog open={showMixedDialog} onOpenChange={setShowMixedDialog}>
+        <DialogContent className="sm:max-w-[520px] bg-slate-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Mixed Payment</DialogTitle>
+            <DialogDescription>
+              Select methods and enter amounts. The sum must equal the Amount Paid.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2">
+                <Checkbox checked={mixedOptions.cash} onCheckedChange={() => handleMixedOptionToggle('cash')} />
+                <span>Cash</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <Checkbox checked={mixedOptions.online} onCheckedChange={() => handleMixedOptionToggle('online')} />
+                <span>Online</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <Checkbox checked={mixedOptions.card} onCheckedChange={() => handleMixedOptionToggle('card')} />
+                <span>Card</span>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              {mixedOptions.cash && (
+                <div className="flex flex-col">
+                  <Label className="text-white mb-2">Cash Amount</Label>
+                  <Input type="number" value={mixedAmounts.cash_amount} onChange={(e) => handleMixedAmountChange('cash_amount', e.target.value)} className="bg-slate-700 text-white" />
+                </div>
+              )}
+              {mixedOptions.online && (
+                <div className="flex flex-col">
+                  <Label className="text-white mb-2">Online Amount</Label>
+                  <Input type="number" value={mixedAmounts.online_amount} onChange={(e) => handleMixedAmountChange('online_amount', e.target.value)} className="bg-slate-700 text-white" />
+                </div>
+              )}
+              {mixedOptions.card && (
+                <div className="flex flex-col">
+                  <Label className="text-white mb-2">Card Amount</Label>
+                  <Input type="number" value={mixedAmounts.card_amount} onChange={(e) => handleMixedAmountChange('card_amount', e.target.value)} className="bg-slate-700 text-white" />
+                </div>
+              )}
+            </div>
+
+            {mixedError && <div className="text-red-400">{mixedError}</div>}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" onClick={cancelMixed} className="bg-slate-600 hover:bg-slate-500 text-white">Cancel</Button>
+            <Button type="button" onClick={confirmMixed} className="bg-green-600 hover:bg-green-700 text-white">Confirm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* New Product Dialog */}
       <NewProductDialog
         open={showNewProductDialog}

@@ -622,6 +622,12 @@ class SalesReportView(APIView):
             start_date = parse_date(start_date)
             end_date = parse_date(end_date)
             sales = sales.filter(sales_transaction__date__range=(start_date, end_date))
+        elif start_date and not end_date:
+            start_date = parse_date(start_date)
+            sales = sales.filter(sales_transaction__date__gte=start_date)
+        elif end_date and not start_date:
+            end_date = parse_date(end_date)
+            sales = sales.filter(sales_transaction__date__lte=end_date)
 
         sales = sales.order_by('sales_transaction__date','id') 
         if not search and not start_date and not end_date:
@@ -632,6 +638,8 @@ class SalesReportView(APIView):
         subtotal_sales = 0  # sum before discount
         total_discount = 0  # sum of per-line discount amounts
         cash_sales = 0
+        card_sales = 0
+        online_sales = 0
         st = []
         write_off = 0
         rows = []
@@ -639,6 +647,9 @@ class SalesReportView(APIView):
             if sale.sales_transaction.id not in st:
                 write_off += sale.sales_transaction.total_amount - sale.sales_transaction.amount_paid
                 st.append(sale.sales_transaction.id)
+                cash_sales += sale.sales_transaction.cash_amount
+                card_sales += sale.sales_transaction.card_amount
+                online_sales += sale.sales_transaction.online_amount
             line_subtotal = (sale.unit_price or 0) * (sale.quantity or 0)
             line_discount = sale.discount or 0
             line_net = line_subtotal - line_discount
@@ -657,8 +668,6 @@ class SalesReportView(APIView):
                 "method": sale.sales_transaction.method,
                 "transaction_id": sale.sales_transaction.id
             })
-            if sale.sales_transaction.method == "cash":
-                cash_sales += line_net
         net_sales = subtotal_sales - total_discount
         rows.append({
             "count": count,
@@ -667,7 +676,9 @@ class SalesReportView(APIView):
             "total_sales": net_sales,
             "write_off": write_off,
             "net_sales": net_sales - write_off,
-            # "cash_sales": cash_sales,
+            "cash_sales": cash_sales,
+            "card_sales": card_sales,
+            "online_sales": online_sales,
         })
         return Response(rows)
 

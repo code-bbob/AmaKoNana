@@ -47,6 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import NewProductDialog from "@/components/newProductDialog"; // Adjust the path as needed
+import { Checkbox } from "@/components/ui/checkbox";
 
 function AllSalesTransactionForm() {
   const api = useAxios();
@@ -483,15 +484,11 @@ const handleNewProductVendorChange = (ids) => {
       // open mixed dialog, preserve previous method
       setPrevMethod(formData.method);
       setShowMixedDialog(true);
-      // default mixed amounts to split equally among enabled options
-  const enabled = [mixedOptions.cash, mixedOptions.card, mixedOptions.online].filter(Boolean).length || 1;
-  const finalPayable = totalAmount - (parseFloat(formData.credited_amount) || 0);
-  const per = (finalPayable || 0) / enabled;
-      setMixedAmounts({
-        cash_amount: mixedOptions.cash ? per.toFixed(2) : "",
-        card_amount: mixedOptions.card ? per.toFixed(2) : "",
-        online_amount: mixedOptions.online ? per.toFixed(2) : "",
-      });
+  // initialize amounts blank and compute remainder into last enabled field from amount_paid
+  const blank = { cash_amount: "", card_amount: "", online_amount: "" };
+  setMixedAmounts(blank);
+  // compute immediately based on current options
+  recalcMixedRemainder(blank);
       return;
     }
     // Auto-fill amounts for single method and clear others
@@ -508,34 +505,72 @@ const handleNewProductVendorChange = (ids) => {
   const handleMixedOptionToggle = (opt) => {
     const newOpts = { ...mixedOptions, [opt]: !mixedOptions[opt] };
     setMixedOptions(newOpts);
-  const enabled = [newOpts.cash, newOpts.card, newOpts.online].filter(Boolean).length || 1;
-  const finalPayable = totalAmount - (parseFloat(formData.credited_amount) || 0);
-  const per = (finalPayable || 0) / enabled;
-    setMixedAmounts({
-      cash_amount: newOpts.cash ? per.toFixed(2) : "",
-      card_amount: newOpts.card ? per.toFixed(2) : "",
-      online_amount: newOpts.online ? per.toFixed(2) : "",
-    });
+    const next = {
+      cash_amount: newOpts.cash ? mixedAmounts.cash_amount : "",
+      card_amount: newOpts.card ? mixedAmounts.card_amount : "",
+      online_amount: newOpts.online ? mixedAmounts.online_amount : "",
+    };
+    setMixedAmounts(next);
+    recalcMixedRemainder(next);
   };
 
   const handleMixedAmountChange = (field, value) => {
-    setMixedAmounts({ ...mixedAmounts, [field]: value });
+    const updated = { ...mixedAmounts, [field]: value };
+    setMixedAmounts(updated);
     setMixedError("");
+    // Recalculate the auto field based on enabled count and UI order
+    recalcMixedRemainder(updated);
+  };
+
+  const recalcMixedRemainder = (amountsObj) => {
+    const base = parseFloat(formData.amount_paid) || 0;
+    const order = ["cash_amount", "online_amount", "card_amount"]; // UI order in dialog
+    const enabled = order.filter((k) => (k === "cash_amount" ? mixedOptions.cash : k === "online_amount" ? mixedOptions.online : mixedOptions.card));
+    if (enabled.length === 2) {
+      const firstKey = enabled[0];
+      const secondKey = enabled[1];
+      const firstVal = parseFloat(amountsObj[firstKey]);
+      if (isNaN(firstVal)) {
+        // wait until first is entered
+        setMixedAmounts((prev) => ({ ...prev, [secondKey]: "" }));
+        return;
+      }
+      const remainder = base - firstVal;
+      const patch = remainder < 0 ? 0 : remainder;
+      if (remainder < 0) setMixedError(`Entered amounts exceed amount paid by NPR ${Math.abs(remainder).toFixed(2)}. Adjust the first field.`);
+      setMixedAmounts((prev) => ({ ...prev, [secondKey]: patch.toFixed(2) }));
+      return;
+    }
+    if (enabled.length === 3) {
+      const firstKey = enabled[0];
+      const secondKey = enabled[1];
+      const thirdKey = enabled[2];
+      const firstVal = parseFloat(amountsObj[firstKey]);
+      const secondVal = parseFloat(amountsObj[secondKey]);
+      if (isNaN(firstVal) || isNaN(secondVal)) {
+        // wait for both first two
+        setMixedAmounts((prev) => ({ ...prev, [thirdKey]: "" }));
+        return;
+      }
+      const remainder = base - firstVal - secondVal;
+      const patch = remainder < 0 ? 0 : remainder;
+      if (remainder < 0) setMixedError(`Entered amounts exceed amount paid by NPR ${Math.abs(remainder).toFixed(2)}. Adjust the first two fields.`);
+      setMixedAmounts((prev) => ({ ...prev, [thirdKey]: patch.toFixed(2) }));
+    }
   };
 
   const confirmMixed = () => {
-  const cash = mixedOptions.cash ? (parseFloat(mixedAmounts.cash_amount) || 0) : 0;
-  const card = mixedOptions.card ? (parseFloat(mixedAmounts.card_amount) || 0) : 0;
-  const online = mixedOptions.online ? (parseFloat(mixedAmounts.online_amount) || 0) : 0;
-  const sum = cash + card + online;
-  const finalAmount = totalAmount - (parseFloat(formData.credited_amount) || 0);
-    // The user's instruction: amounts must match final amount after writeoff. Assuming credited_amount is writeoff/credit.
+    const cash = mixedOptions.cash ? (parseFloat(mixedAmounts.cash_amount) || 0) : 0;
+    const card = mixedOptions.card ? (parseFloat(mixedAmounts.card_amount) || 0) : 0;
+    const online = mixedOptions.online ? (parseFloat(mixedAmounts.online_amount) || 0) : 0;
+    const sum = cash + card + online;
+    const finalAmount = parseFloat(formData.amount_paid) || 0;
     if (Math.abs(sum - finalAmount) > 0.005) {
-      setMixedError(`Sum of mixed amounts (NPR ${sum.toFixed(2)}) must equal final payable amount (NPR ${finalAmount.toFixed(2)})`);
+      setMixedError(`Sum of mixed amounts (NPR ${sum.toFixed(2)}) must equal Amount Paid (NPR ${finalAmount.toFixed(2)})`);
       return;
     }
     // write into formData fields expected by backend
-  setFormData({ ...formData, method: "mixed", cash_amount: cash, card_amount: card, online_amount: online });
+    setFormData({ ...formData, method: "mixed", cash_amount: cash, card_amount: card, online_amount: online });
     setShowMixedDialog(false);
   };
 
@@ -1255,41 +1290,41 @@ const handleNewProductVendorChange = (ids) => {
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-6">
                     <label className="flex items-center gap-2">
-                      <input type="checkbox" checked={mixedOptions.cash} onChange={() => handleMixedOptionToggle('cash')} />
+                      <Checkbox checked={mixedOptions.cash} onCheckedChange={() => handleMixedOptionToggle('cash')} />
                       <span>Cash</span>
                     </label>
                     <label className="flex items-center gap-2">
-                      <input type="checkbox" checked={mixedOptions.online} onChange={() => handleMixedOptionToggle('online')} />
+                      <Checkbox checked={mixedOptions.online} onCheckedChange={() => handleMixedOptionToggle('online')} />
                       <span>Online</span>
                     </label>
                     <label className="flex items-center gap-2">
-                      <input type="checkbox" checked={mixedOptions.card} onChange={() => handleMixedOptionToggle('card')} />
+                      <Checkbox checked={mixedOptions.card} onCheckedChange={() => handleMixedOptionToggle('card')} />
                       <span>Card</span>
                     </label>
                   </div>
 
                   <div className="grid grid-cols-1 gap-3">
-                    {mixedOptions.cash && (
+          {mixedOptions.cash && (
                       <div className="flex flex-col">
                         <Label className="text-white mb-2">Cash Amount</Label>
-                        <Input type="number" value={mixedAmounts.cash_amount} onChange={(e) => handleMixedAmountChange('cash_amount', e.target.value)} className="bg-slate-700 text-white" />
+            <Input type="number" value={mixedAmounts.cash_amount} onChange={(e) => handleMixedAmountChange('cash_amount', e.target.value)} className="bg-slate-700 text-white" />
                       </div>
                     )}
-                    {mixedOptions.card && (
-                      <div className="flex flex-col">
-                        <Label className="text-white mb-2">Card Amount</Label>
-                        <Input type="number" value={mixedAmounts.card_amount} onChange={(e) => handleMixedAmountChange('card_amount', e.target.value)} className="bg-slate-700 text-white" />
-                      </div>
-                    )}
-                    {mixedOptions.online && (
-                      <div className="flex flex-col">
+          {mixedOptions.online && (
+            <div className="flex flex-col">
                         <Label className="text-white mb-2">Online Amount</Label>
-                        <Input type="number" value={mixedAmounts.online_amount} onChange={(e) => handleMixedAmountChange('online_amount', e.target.value)} className="bg-slate-700 text-white" />
+            <Input type="number" value={mixedAmounts.online_amount} onChange={(e) => handleMixedAmountChange('online_amount', e.target.value)} className="bg-slate-700 text-white" />
                       </div>
                     )}
                   </div>
+                    {mixedOptions.card && (
+                                <div className="flex flex-col">
+                                  <Label className="text-white mb-2">Card Amount</Label>
+                      <Input type="number" value={mixedAmounts.card_amount} onChange={(e) => handleMixedAmountChange('card_amount', e.target.value)} className="bg-slate-700 text-white" />
+                                </div>
+                              )}
 
                   {mixedError && <div className="text-red-400">{mixedError}</div>}
                 </div>
