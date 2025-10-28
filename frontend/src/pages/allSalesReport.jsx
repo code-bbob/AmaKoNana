@@ -238,6 +238,7 @@ const AllSalesReport = () => {
                 <TableHead className="w-[160px] text-white print:text-black">Product</TableHead>
                 <TableHead className="text-white print:text-black">Qty</TableHead>
                 <TableHead className="text-white print:text-black">Method</TableHead>
+                <TableHead className="text-right text-white print:text-black">Bill No.</TableHead>
                 <TableHead className="text-right text-white print:text-black">Unit</TableHead>
                 <TableHead className="text-right text-white print:text-black">Subtotal</TableHead>
                 <TableHead className="text-right text-white print:text-black">Discount</TableHead>
@@ -256,6 +257,7 @@ const AllSalesReport = () => {
                     <TableCell className="font-medium text-white print:text-black">{item.product}</TableCell>
                     <TableCell className="text-white print:text-black">{item.quantity}</TableCell>
                     <TableCell className="text-white print:text-black">{item.method}</TableCell>
+                    <TableCell className="text-right text-white print:text-black">{item.bill_no}</TableCell>
                     <TableCell className="text-right text-white print:text-black">{lineSubtotal && item.quantity ? (item.unit_price).toLocaleString("en-US", { style: "currency", currency: "NPR" }) : ''}</TableCell>
                     <TableCell className="text-right text-white print:text-black">{lineSubtotal.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
                     <TableCell className="text-right text-white print:text-black">{discount.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>

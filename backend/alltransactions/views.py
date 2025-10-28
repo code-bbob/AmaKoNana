@@ -657,6 +657,7 @@ class SalesReportView(APIView):
             total_discount += line_discount
             rows.append({
                 "id": sale.id,
+                "bill_no": sale.sales_transaction.bill_no,
                 "date": sale.sales_transaction.date,
                 "brand": sale.product.brand.name,
                 "quantity": sale.quantity,
