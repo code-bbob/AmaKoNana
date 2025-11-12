@@ -55,6 +55,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import NewProductDialog from "@/components/newProductDialog"; // Adjust the path as needed
 
 function AllSalesTransactionForm() {
@@ -71,6 +72,10 @@ function AllSalesTransactionForm() {
     debtor: "", // New field for debtor's name
     amount_paid: null,
     credited_amount: "",
+    // Mixed payment breakdown
+    cash_amount: 0,
+    card_amount: 0,
+    online_amount: 0,
   });
   const [products, setProducts] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -391,11 +396,30 @@ const handleNewProductVendorChange = (ids) => {
           total_price: net,
         };
       });
+      // Mixed payment validation & calculations
+      if (formData.method === 'mixed') {
+        const c = parseFloat(formData.cash_amount) || 0;
+        const o = parseFloat(formData.online_amount) || 0;
+        const d = parseFloat(formData.card_amount) || 0;
+        const sum = c + o + d;
+        if (Math.abs(sum - totalAmount) > 0.01) {
+          // simple error alert and abort
+          alert(`Mixed payment breakdown (${sum.toFixed(2)}) must equal total (${totalAmount.toFixed(2)})`);
+          setSubLoading(false);
+          return;
+        }
+      }
       const payload = {
         ...formData,
         sales: preparedSales,
         subtotal: subtotal,
         total_amount: totalAmount,
+        cash_amount: parseFloat(formData.cash_amount) || 0,
+        card_amount: parseFloat(formData.card_amount) || 0,
+        online_amount: parseFloat(formData.online_amount) || 0,
+        amount_paid: formData.method === 'mixed'
+          ? ((parseFloat(formData.cash_amount)||0) + (parseFloat(formData.card_amount)||0) + (parseFloat(formData.online_amount)||0))
+          : formData.amount_paid,
       };
       const response = await api.post(
         "alltransaction/salestransaction/",
@@ -483,7 +507,11 @@ const handleNewProductVendorChange = (ids) => {
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       // If dialog is open, let dialog form handle Enter
-      if (showPaymentDialog) return;
+      if (showPaymentDialog) {
+        // submit if open
+        handleSubmit();
+        return;
+      }
       // If no current barcode word, open payment dialog instead of submitting directly
       if (currentWord.trim().length === 0){
         setShowPaymentDialog(true);
@@ -570,6 +598,17 @@ const handleNewProductVendorChange = (ids) => {
     };
   }, [currentWord, products, showPaymentDialog]);
 
+  // ESC to close payment dialog
+  useEffect(() => {
+    const escHandler = (e) => {
+      if (e.key === 'Escape' && showPaymentDialog) {
+        setShowPaymentDialog(false);
+      }
+    };
+    window.addEventListener('keydown', escHandler);
+    return () => window.removeEventListener('keydown', escHandler);
+  }, [showPaymentDialog]);
+
   // Recompute summary when sales change
   useEffect(() => {
     let newSubtotal = 0;
@@ -591,10 +630,10 @@ const handleNewProductVendorChange = (ids) => {
     setSubtotal(newSubtotal);
     setTotalDiscount(newTotalDiscount);
     setTotalAmount(newSubtotal - newTotalDiscount);
-    // Auto-fill amount_paid with total when not in credit mode
+    // Auto-fill amount_paid with total when not in credit/mixed mode
     setFormData((prev) => ({
       ...prev,
-      amount_paid: prev.method === "credit" ? prev.amount_paid : (newSubtotal - newTotalDiscount),
+      amount_paid: (prev.method === "credit" || prev.method === "mixed") ? prev.amount_paid : (newSubtotal - newTotalDiscount),
     }));
   }, [formData.sales]);
 
@@ -948,131 +987,205 @@ const handleNewProductVendorChange = (ids) => {
               </DialogContent>
             </Dialog>
 
-            {/* Payment Dialog */}
+            {/* Payment Dialog (Full-screen with left/right split and mixed payments) */}
             <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-              <DialogContent className="sm:max-w-[560px] bg-slate-800 text-white">
-                <DialogHeader>
-                  <DialogTitle>Payment Details</DialogTitle>
-                  <DialogDescription className="text-slate-300">
-                    Review totals and capture payment to complete this sale.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  {/* Totals summary */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <Label className="text-slate-300">Subtotal</Label>
-                      <Input readOnly value={subtotal.toFixed(2)} className="bg-slate-700 border-slate-600 text-white" />
-                    </div>
-                    <div>
-                      <Label className="text-slate-300">Discount</Label>
-                      <Input readOnly value={totalDiscount.toFixed(2)} className="bg-slate-700 border-slate-600 text-white" />
-                    </div>
-                    <div>
-                      <Label className="text-slate-300">Total</Label>
-                      <Input readOnly value={totalAmount.toFixed(2)} className="bg-slate-700 border-slate-600 text-white" />
-                    </div>
+              <DialogContent
+                className="fixed inset-0 m-5 p-0 bg-slate-900/95 text-white flex flex-col rounded-none border-0 shadow-none translate-x-0 translate-y-0 overflow-hidden"
+                style={{ width: '98vw', maxWidth: '97vw', height: '97vh' }}
+              >
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
+                  <div>
+                    <DialogTitle className="text-xl font-semibold">Payment</DialogTitle>
+                    <DialogDescription className="text-slate-400 mt-1">Bill #{formData.bill_no} • {formData.date}</DialogDescription>
                   </div>
-                  {/* Payment method */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
-                    <div className="md:col-span-1">
-                      <Label className="text-slate-300 mb-2">Payment Method</Label>
-                      <Select
-                        onValueChange={(value) => {
-                          if (value === "credit") {
-                            setFormData({ ...formData, method: value, amount_paid: 0 });
-                          } else {
-                            setFormData({ ...formData, method: value, amount_paid: totalAmount });
-                          }
-                        }}
-                        value={formData.method}
-                      >
-                        <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white">
-                          <SelectValue placeholder="Select payment method" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-700">
-                          <SelectItem value="cash" className="text-white">Cash</SelectItem>
-                          <SelectItem value="card" className="text-white">Card</SelectItem>
-                          <SelectItem value="online" className="text-white">Online</SelectItem>
-                          <SelectItem value="credit" className="text-white">Credit</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {formData.method !== "credit" && (
-                      <div>
-                        <Label className="text-slate-300 mb-2">Amount Paid</Label>
-                        <Input
-                          type="number"
-                          value={formData.amount_paid}
-                          onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
-                          className="bg-slate-700 border-slate-600 text-white"
-                        />
-                      </div>
-                    )}
-                  </div>
-                  {/* Credit options */}
-                  {formData.method === "credit" && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div className="md:col-span-2">
-                        <Label className="text-sm font-medium text-white mb-2">Debtor</Label>
-                        <Popover open={openDebtor} onOpenChange={setOpenDebtor}>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" role="combobox" aria-expanded={openDebtor} className="w-full justify-between bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
-                              {formData.debtor
-                                ? debtors.find((d) => d.id.toString() === formData.debtor)?.name
-                                : "Select a debtor..."}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0 bg-slate-700 border-slate-600">
-                            <Command className="bg-slate-700 border-slate-600" required>
-                              <CommandInput placeholder="Search debtor..." className="bg-slate-700 text-white" />
-                              <CommandList>
-                                <CommandEmpty>No debtor found.</CommandEmpty>
-                                <CommandGroup>
-                                  {debtors.map((debtor) => (
-                                    <CommandItem
-                                      key={debtor.id}
-                                      onSelect={() => {
-                                        setFormData({ ...formData, debtor: debtor.id.toString() });
-                                        setOpenDebtor(false);
-                                      }}
-                                      className="text-white hover:bg-slate-600"
-                                    >
-                                      <Check className={cn("mr-2 h-4 w-4", formData.debtor === debtor?.id?.toString() ? "opacity-100" : "opacity-0")} />
-                                      {debtor.name}
-                                    </CommandItem>
-                                  ))}
-                                  <CommandItem
-                                    onSelect={() => {
-                                      setShowNewDebtorDialog(true);
-                                      setOpenDebtor(false);
-                                    }}
-                                    className="text-white hover:bg-slate-600"
-                                  >
-                                    <PlusCircle className="mr-2 h-4 w-4" /> Add a new debtor
-                                  </CommandItem>
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <div>
-                        <Label className="text-slate-300 mb-2">Credited Amount</Label>
-                        <Input type="number" value={formData.credited_amount} readOnly className="bg-slate-700 border-slate-600 text-white" />
-                      </div>
-                    </div>
-                  )}
+                  <Button variant="outline" onClick={() => setShowPaymentDialog(false)} className="border-slate-600 bg-slate-800 hover:bg-slate-700 text-white">Close</Button>
                 </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" className="bg-slate-600 hover:bg-slate-500 text-white" onClick={() => setShowPaymentDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="button" className="bg-green-600 hover:bg-green-700 text-white" onClick={handleSubmit} disabled={subLoading}>
-                    Confirm & Submit
-                  </Button>
-                </DialogFooter>
+                {/* Body */}
+                <div className="flex flex-1 overflow-hidden">
+                  {/* Left: details */}
+                  <div className="w-1/2 border-r border-slate-800 flex flex-col">
+                    <div className="px-6 py-3 flex items-center justify-between">
+                      <h3 className="text-lg font-medium">Details</h3>
+                      <span className="text-xs text-slate-400">{formData.sales.length} items</span>
+                    </div>
+                    <div className="flex-1 overflow-hidden px-6 pb-4">
+                      <ScrollArea className="h-full">
+                        <Table className="text-sm">
+                          <TableHeader>
+                            <TableRow className="border-slate-700">
+                              <TableHead className="text-slate-400 w-10">#</TableHead>
+                              <TableHead className="text-slate-400">Item</TableHead>
+                              <TableHead className="text-slate-400 text-right w-16">Qty</TableHead>
+                              <TableHead className="text-slate-400 text-right w-24">Price</TableHead>
+                              <TableHead className="text-slate-400 text-right w-24">Disc</TableHead>
+                              <TableHead className="text-slate-400 text-right w-24">Net</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {formData.sales.map((s,i)=>{
+                              const prod = products.find(p=>p.id?.toString()===s.product);
+                              const name = prod?.name || 'Item';
+                              const qty = parseFloat(s.quantity)||0;
+                              const price = parseFloat(s.unit_price)||0;
+                              const net = parseFloat(s.total_price)||0;
+                              const hasDisc = (s.discount_type==='percent' && (parseFloat(s.discount_value)||0)>0) || (s.discount_type==='amount' && (parseFloat(s.discount_value)||0)>0);
+                              const discLabel = hasDisc ? (s.discount_type==='percent' ? `${parseFloat(s.discount_value||0)}%` : `${parseFloat(s.discount_value||0).toFixed(2)}`) : '-';
+                              return (
+                                <TableRow key={i} className="border-slate-800">
+                                  <TableCell className="text-slate-300">{i+1}</TableCell>
+                                  <TableCell className="text-slate-200 truncate max-w-[220px]">{name}</TableCell>
+                                  <TableCell className="text-right font-mono tabular-nums">{qty}</TableCell>
+                                  <TableCell className="text-right font-mono tabular-nums">{price.toFixed(2)}</TableCell>
+                                  <TableCell className="text-right font-mono tabular-nums">{discLabel}</TableCell>
+                                  <TableCell className="text-right font-mono tabular-nums">{net.toFixed(2)}</TableCell>
+                                </TableRow>
+                              )
+                            })}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                    </div>
+                    <div className="mt-auto border-t border-slate-800 bg-slate-900 px-6 py-4 space-y-2">
+                      <div className="flex justify-between text-slate-300 text-sm"><span>Subtotal</span><span className="font-mono">{subtotal.toFixed(2)}</span></div>
+                      <div className="flex justify-between text-slate-300 text-sm"><span>Discount</span><span className="font-mono">{totalDiscount.toFixed(2)}</span></div>
+                      <div className="flex justify-between text-white text-base font-semibold"><span>Total</span><span className="font-mono">{totalAmount.toFixed(2)}</span></div>
+                    </div>
+                  </div>
+                  {/* Right: payment */}
+                  <div className="w-1/2 flex flex-col">
+                    <div className="px-6 py-3">
+                      <h3 className="text-lg font-medium mb-4">Payment</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-slate-300 mb-1">Method</Label>
+                          <Select
+                            value={formData.method}
+                            onValueChange={(value)=>{
+                              if(value==='credit'){
+                                setFormData(prev=>({...prev, method:'credit', amount_paid:0}));
+                                return;
+                              }
+                              if(value==='mixed'){
+                                // initialize all into cash by default
+                                setFormData(prev=>({...prev, method:'mixed', cash_amount: totalAmount, card_amount:0, online_amount:0, amount_paid: totalAmount }));
+                                return;
+                              }
+                              setFormData(prev=>({...prev, method:value, amount_paid: totalAmount, cash_amount: value==='cash'?totalAmount:0, card_amount: value==='card'?totalAmount:0, online_amount: value==='online'?totalAmount:0 }));
+                            }}
+                          >
+                            <SelectTrigger className="w-full bg-slate-800 border-slate-700 text-white">
+                              <SelectValue placeholder="Select method" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-slate-800 border-slate-700">
+                              <SelectItem value="cash" className="text-white">Cash</SelectItem>
+                              <SelectItem value="card" className="text-white">Card</SelectItem>
+                              <SelectItem value="online" className="text-white">Online</SelectItem>
+                              <SelectItem value="mixed" className="text-white">Mixed</SelectItem>
+                              <SelectItem value="credit" className="text-white">Credit</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {formData.method !== 'credit' && formData.method !== 'mixed' && (
+                          <div>
+                            <Label className="text-slate-300 mb-1">Amount Paid</Label>
+                            <Input type="number" value={formData.amount_paid} onChange={(e)=>setFormData(prev=>({...prev, amount_paid: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" />
+                            <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                              <div className="bg-slate-800 border border-slate-700 rounded p-2 flex justify-between"><span className="text-slate-400">Change</span><span className="font-mono">{Math.max(0,(parseFloat(formData.amount_paid)||0)-totalAmount).toFixed(2)}</span></div>
+                              <div className="bg-slate-800 border border-slate-700 rounded p-2 flex justify-between"><span className="text-slate-400">Balance</span><span className="font-mono">{Math.max(0,totalAmount-(parseFloat(formData.amount_paid)||0)).toFixed(2)}</span></div>
+                            </div>
+                          </div>
+                        )}
+
+                        {formData.method === 'mixed' && (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-3 gap-4">
+                              <div>
+                                <Label className="text-slate-300 mb-1">Cash</Label>
+                                <Input type="number" value={formData.cash_amount} onChange={(e)=>{
+                                  const val = parseFloat(e.target.value)||0; const card=formData.card_amount; const online=formData.online_amount; const sum = val+card+online; setFormData(prev=>({...prev,cash_amount: val, amount_paid: sum }));
+                                }} className="bg-slate-800 border-slate-700 text-white" />
+                              </div>
+                              <div>
+                                <Label className="text-slate-300 mb-1">Online</Label>
+                                <Input type="number" value={formData.online_amount} onChange={(e)=>{
+                                  const val = parseFloat(e.target.value)||0; const cash=formData.cash_amount; const card=formData.card_amount; const sum = cash+card+val; setFormData(prev=>({...prev,online_amount: val, amount_paid: sum }));
+                                }} className="bg-slate-800 border-slate-700 text-white" />
+                              </div>
+                              <div>
+                                <Label className="text-slate-300 mb-1">Card</Label>
+                                <Input type="number" value={formData.card_amount} onChange={(e)=>{
+                                  const val = parseFloat(e.target.value)||0; const cash=formData.cash_amount; const online=formData.online_amount; const sum = cash+online+val; setFormData(prev=>({...prev,card_amount: val, amount_paid: sum }));
+                                }} className="bg-slate-800 border-slate-700 text-white" />
+                              </div>
+                            </div>
+                            <div className="flex justify-between text-xs text-slate-400">
+                              <span>Breakdown Total</span>
+                              <span className="font-mono">{((parseFloat(formData.cash_amount)||0)+(parseFloat(formData.card_amount)||0)+(parseFloat(formData.online_amount)||0)).toFixed(2)}</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 text-xs">
+                              {(() => { const sum = (parseFloat(formData.cash_amount)||0)+(parseFloat(formData.card_amount)||0)+(parseFloat(formData.online_amount)||0); return (
+                                <>
+                                  <div className="bg-slate-800 border border-slate-700 rounded p-2 flex justify-between"><span className="text-slate-400">Remaining</span><span className="font-mono">{(totalAmount - sum).toFixed(2)}</span></div>
+                                  <div className="bg-slate-800 border border-slate-700 rounded p-2 flex justify-between"><span className="text-slate-400">Change</span><span className="font-mono">{Math.max(0, sum - totalAmount).toFixed(2)}</span></div>
+                                  <div className="bg-slate-800 border border-slate-700 rounded p-2 flex justify-between"><span className="text-slate-400">Balance</span><span className="font-mono">{Math.max(0, totalAmount - sum).toFixed(2)}</span></div>
+                                </>
+                              ); })()}
+                            </div>
+                          </div>
+                        )}
+
+                        {formData.method === 'credit' && (
+                          <div className="space-y-3">
+                            <div>
+                              <Label className="text-sm font-medium text-white mb-2">Debtor</Label>
+                              <Popover open={openDebtor} onOpenChange={setOpenDebtor}>
+                                <PopoverTrigger asChild>
+                                  <Button variant="outline" role="combobox" aria-expanded={openDebtor} className="w-full justify-between bg-slate-800 border-slate-700 text-white hover:bg-slate-700">
+                                    {formData.debtor ? debtors.find((d)=>d.id.toString()===formData.debtor)?.name : 'Select a debtor...'}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-full p-0 bg-slate-800 border-slate-700">
+                                  <Command className="bg-slate-800 border-slate-700" required>
+                                    <CommandInput placeholder="Search debtor..." className="bg-slate-800 text-white" />
+                                    <CommandList>
+                                      <CommandEmpty>No debtor found.</CommandEmpty>
+                                      <CommandGroup>
+                                        {debtors.map((debtor) => (
+                                          <CommandItem key={debtor.id} onSelect={()=>{ setFormData(prev=>({...prev, debtor: debtor.id.toString()})); setOpenDebtor(false); }} className="text-white hover:bg-slate-700">
+                                            <Check className={cn('mr-2 h-4 w-4', formData.debtor === debtor.id.toString() ? 'opacity-100' : 'opacity-0')} />
+                                            {debtor.name}
+                                          </CommandItem>
+                                        ))}
+                                        <CommandItem onSelect={()=>{ setShowNewDebtorDialog(true); setOpenDebtor(false); }} className="text-white hover:bg-slate-700">
+                                          <PlusCircle className="mr-2 h-4 w-4" /> Add a new debtor
+                                        </CommandItem>
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                            <div>
+                              <Label className="text-slate-300 mb-1">Credited Amount</Label>
+                              <Input type="number" value={formData.credited_amount} readOnly className="bg-slate-800 border-slate-700 text-white" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* Footer */}
+                <div className="px-6 py-4 border-t border-slate-800 flex justify-between items-center bg-slate-900">
+                  <div className="text-xs text-slate-400">Press Enter to confirm • Esc to cancel</div>
+                  <div className="flex gap-3">
+                    <Button type="button" variant="outline" className="bg-slate-800 border-slate-700 text-white" onClick={()=>setShowPaymentDialog(false)}>Cancel</Button>
+                    <Button type="button" className="bg-green-600 hover:bg-green-700 text-white" disabled={subLoading} onClick={handleSubmit}>Confirm & Submit</Button>
+                  </div>
+                </div>
               </DialogContent>
             </Dialog>
 
