@@ -46,6 +46,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+  TableFooter,
+} from "@/components/ui/table";
 import NewProductDialog from "@/components/newProductDialog"; // Adjust the path as needed
 
 function AllSalesTransactionForm() {
@@ -109,6 +118,7 @@ function AllSalesTransactionForm() {
   // Settings dialog & master discount state
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [masterDiscount, setMasterDiscount] = useState(""); // percentage string 0-100
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -253,7 +263,9 @@ const handleNewProductVendorChange = (ids) => {
     setNewBrandName(e.target.value);
   };
 
-  const handleAddSale = () => {
+  const handleAddSale = (e) => {
+    e.preventDefault();
+    e.stopPropagation();  
     const newSaleItem = { 
       product: "", 
       unit_price: "", 
@@ -470,9 +482,12 @@ const handleNewProductVendorChange = (ids) => {
   const [currentWord, setCurrentWord] = useState("");
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-
+      // If dialog is open, let dialog form handle Enter
+      if (showPaymentDialog) return;
+      // If no current barcode word, open payment dialog instead of submitting directly
       if (currentWord.trim().length === 0){
-        handleSubmit();
+        setShowPaymentDialog(true);
+        return;
       }
       const scannedCode = currentWord.slice(-13, -1);
 
@@ -553,7 +568,7 @@ const handleNewProductVendorChange = (ids) => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [currentWord, products]);
+  }, [currentWord, products, showPaymentDialog]);
 
   // Recompute summary when sales change
   useEffect(() => {
@@ -576,9 +591,10 @@ const handleNewProductVendorChange = (ids) => {
     setSubtotal(newSubtotal);
     setTotalDiscount(newTotalDiscount);
     setTotalAmount(newSubtotal - newTotalDiscount);
+    // Auto-fill amount_paid with total when not in credit mode
     setFormData((prev) => ({
       ...prev,
-      amount_paid: newSubtotal - newTotalDiscount,
+      amount_paid: prev.method === "credit" ? prev.amount_paid : (newSubtotal - newTotalDiscount),
     }));
   }, [formData.sales]);
 
@@ -587,19 +603,8 @@ const handleNewProductVendorChange = (ids) => {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
       <Sidebar className="hidden lg:block w-64 flex-shrink-0" />
-      <div className="flex-grow p-4 lg:p-6 lg:ml-64 overflow-auto">
-        <div className="max-w-4xl mx-auto">
-          {/* Top bar actions */}
-          <div className="flex items-center justify-end mb-4">
-                     </div>
-          <Button
-            onClick={() => navigate("/")}
-            variant="outline"
-            className="mb-6 px-4 py-2 text-black border-white hover:bg-gray-700 hover:text-white"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
+      <div className="flex-grow lg:ml-64 overflow-auto">
+        <div className="">
           <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl lg:text-3xl font-bold mb-6 text-white">
@@ -618,8 +623,8 @@ const handleNewProductVendorChange = (ids) => {
               </div>
 
             {error && <p className="text-red-600 mb-4">{error}</p>}
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+            <form onSubmit={(e)=>{e.preventDefault(); setShowPaymentDialog(true);}} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
                 <div className="flex flex-col col-span-3">
                   <Label
                     htmlFor="date"
@@ -724,335 +729,131 @@ const handleNewProductVendorChange = (ids) => {
                 </Select>
               </div> */}
 
-              {/* Sales details simplified */}
-              {formData.sales.map((sale, index) => (
-                <div key={index} className="bg-slate-700 text-white p-4 rounded-md shadow mb-4">
-                  <h3 className="text-lg font-semibold mb-4">Sale {index + 1}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Product */}
-                    <div className="flex flex-col">
-                      <Label htmlFor={`product-${index}`} className="text-sm font-medium text-white mb-2">Product</Label>
-                      <Popover
-                        open={openProduct[index]}
-                        onOpenChange={(open) => {
-                          const newOpenProduct = [...openProduct];
-                          newOpenProduct[index] = open;
-                          setOpenProduct(newOpenProduct);
-                        }}
-                      >
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" role="combobox" aria-expanded={openProduct[index]} className="w-full justify-between bg-slate-600 border-slate-500 text-white hover:bg-slate-500">
-                            {sale.product ? products.find(p => p.id.toString() === sale.product)?.name : "Select a product..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-full p-0 bg-slate-700 border-slate-600">
-                          <Command className="bg-slate-700 border-slate-600">
-                            <CommandInput placeholder="Search product..." className="bg-slate-700 text-white" />
-                            <CommandList>
-                              <CommandEmpty>No product found.</CommandEmpty>
-                              <CommandGroup>
-                                {products.map(product => (
-                                  <CommandItem key={product.id} onSelect={() => handleProductChange(index, product.id.toString())} className="text-white hover:bg-slate-600">
-                                    <Check className={cn("mr-2 h-4 w-4", sale.product === product.id.toString() ? "opacity-100" : "opacity-0")} />
-                                    {product.name}
-                                  </CommandItem>
-                                ))}
-                                <CommandItem onSelect={() => handleProductChange(index, "new")} className="text-white hover:bg-slate-600">
-                                  <PlusCircle className="mr-2 h-4 w-4" /> Add a new product
-                                </CommandItem>
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    {/* Unit Price */}
-                    <div className="flex flex-col">
-                      <Label htmlFor={`unit_price-${index}`} className="text-sm font-medium text-white mb-2">Unit Price</Label>
-                      <Input type="number" id={`unit_price-${index}`} name="unit_price" value={sale.unit_price} onChange={(e) => handleChange(index, e)} className="bg-slate-600 border-slate-500 text-white" placeholder="Price" required />
-                    </div>
-                    {/* Quantity */}
-                    <div className="flex flex-col">
-                      <Label htmlFor={`quantity-${index}`} className="text-sm font-medium text-white mb-2">Qty</Label>
-                      <Input type="number" id={`quantity-${index}`} name="quantity" value={sale.quantity} onChange={(e) => handleChange(index, e)} className="bg-slate-600 border-slate-500 text-white" placeholder="Qty" required />
-                    </div>
-                    {/* Subtotal */}
-                    <div className="flex flex-col ">
-                      <Label className="text-sm font-medium text-white mb-2">Subtotal</Label>
-                      <Input type="number" value={sale.line_subtotal} readOnly className="bg-slate-600 border-slate-500 text-white" />
-                    </div>
-                    <div className="flex flex-col">
-                      <Label htmlFor={`discount-${index}`} className="text-sm font-medium text-white mb-2">Discount</Label>
-                      <div className="flex gap-2">
-                        <Select value={sale.discount_type} onValueChange={(value) => handleDiscountTypeChange(index, value)}>
-                          <SelectTrigger className="w-28 bg-slate-600 border-slate-500 text-white">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-slate-800 border-slate-700">
-                            <SelectItem value="percent" className="text-white">%</SelectItem>
-                            <SelectItem value="amount" className="text-white">Amount</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Input 
-                          type="number" 
-                          id={`discount-${index}`} 
-                          name="discount_value" 
-                          value={sale.discount_value} 
-                          onChange={(e) => handleChange(index, e)} 
-                          className="bg-slate-600 border-slate-500 text-white flex-1" 
-                          placeholder={sale.discount_type === "percent" ? "%" : "Amount"} 
-                        />
-                      </div>
-                    </div>
-                    {/* Net Total */}
-                    <div className="flex flex-col">
-                      <Label className="text-sm font-medium text-white mb-2">Total (Net)</Label>
-                      <Input type="number" value={sale.total_price} readOnly className="bg-slate-600 border-slate-500 text-white" />
-                    </div>
-                  </div>
-                  {formData.sales.length > 1 && (
-                    <Button type="button" variant="destructive" size="sm" className="mt-4 bg-red-600 hover:bg-red-700 text-white" onClick={() => handleRemoveSale(index)}>
-                      <Trash2 className="w-4 h-4 mr-2" /> Remove Sale
-                    </Button>
-                  )}
-                </div>
-              ))}
-
-              {/* Summary Fields */}
-              <div className="bg-slate-700 text-white p-4 rounded-md shadow mb-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex flex-col">
-                    <Label
-                      htmlFor="subtotal"
-                      className="text-sm font-medium text-white mb-2"
-                    >
-                      Subtotal
-                    </Label>
-                    <Input
-                      type="number"
-                      id="subtotal"
-                      name="subtotal"
-                      value={subtotal.toFixed(2)}
-                      readOnly
-                      className="bg-slate-600 border-slate-500 text-white"
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <Label className="text-sm font-medium text-white mb-2">Total Discount (Amt)</Label>
-                    <Input type="number" value={totalDiscount.toFixed(2)} readOnly className="bg-slate-600 border-slate-500 text-white" />
-                  </div>
-                  <div className={`grid grid-cols-1 gap-4 md:col-span-2 ${formData.method === "credit" ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
-
-                  <div className="flex flex-col">
-                    <Label
-                      htmlFor="total_amount"
-                      className="text-sm font-medium text-white mb-2"
-                      >
-                      Total Amount
-                    </Label>
-                    <Input
-                      type="number"
-                      id="total_amount"
-                      name="total_amount"
-                      value={totalAmount.toFixed(2)}
-                      readOnly
-                      className="bg-slate-600 border-slate-500 text-white"
-                      />
-                  </div>
-
-                  {formData.method!=="credit" && (
-                    <div className="flex flex-col">
-                      <Label
-                        htmlFor="amount_paid"
-                        className="text-sm font-medium text-white mb-2"
-                      >
-                      Amount Paid
-                    </Label>
-                    <Input
-                      type="number"
-                      id="amount_paid"
-                      name="amount_paid"
-                      value={formData.amount_paid}
-                      className="bg-slate-600 border-slate-500 text-white"
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          amount_paid: e.target.value,
-                        })
-                      }
-                      
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex flex-col">
-                    <Label
-                      htmlFor="total_amount"
-                      className="text-sm font-medium text-white mb-2"
-                      >
-                      Payment Method
-                    </Label>
-                    <Select
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, method: value })
-                      }
-                      value={formData.method}
-                      required={true}
-                      className="bg-slate-600 border-slate-500 text-white p-2 rounded"
-                      >
-                      <SelectTrigger className="w-full bg-slate-600 border-slate-500 text-white">
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        <SelectItem value="cash" className="text-white">
-                          Cash
-                        </SelectItem>
-                        <SelectItem value="card" className="text-white">
-                          Card
-                        </SelectItem>
-                        <SelectItem value="online" className="text-white">
-                          Online
-                        </SelectItem>
-                        <SelectItem value="credit" className="text-white">
-                          Credit
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              </div>
-              {formData.method === "credit" && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="flex flex-col">
-                    <Label
-                      htmlFor="debtor"
-                      className="text-sm font-medium text-white mb-2"
-                    >
-                      Debtor
-                    </Label>
-                    <Popover open={openDebtor} onOpenChange={setOpenDebtor}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={openDebtor}
-                          className="w-full justify-between bg-slate-600 border-slate-500 text-white hover:bg-slate-500"
-                        >
-                          {formData.debtor
-                            ? debtors.find(
-                                (d) => d.id.toString() === formData.debtor
-                              )?.name
-                            : "Select a debtor..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0 bg-slate-700 border-slate-600">
-                        <Command className="bg-slate-700 border-slate-600" required>
-                          <CommandInput
-                            placeholder="Search debtor..."
-                            className="bg-slate-700 text-white"
-                          />
-                          <CommandList>
-                            <CommandEmpty>No debtor found.</CommandEmpty>
-                            <CommandGroup>
-                              {debtors.map((debtor) => (
-                                <CommandItem
-                                  key={debtor.id}
-                                  onSelect={() => {
-                                    setFormData({
-                                      ...formData,
-                                      debtor: debtor.id.toString(),
-                                    });
-                                    setOpenDebtor(false);
-                                  }}
-                                  className="text-white hover:bg-slate-600"
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      formData.debtor === debtor?.id?.toString()
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    )}
-                                  />
-                                  {debtor.name}
-                                </CommandItem>
-                              ))}
-                              <CommandItem
-                                onSelect={() => {
-                                  setShowNewDebtorDialog(true);
-                                  setOpenDebtor(false);
+              {/* Bill-like items table */}
+              <div className="bg-slate-700 rounded shadow p-4">
+                <Table className="text-white">
+                  <TableHeader>
+                    <TableRow className="border-slate-600">
+                      <TableHead className="text-slate-300">#</TableHead>
+                      <TableHead className="text-slate-300">Product</TableHead>
+                      <TableHead className="text-slate-300 ">Unit Price</TableHead>
+                      <TableHead className="text-slate-300 ">Qty</TableHead>
+                      <TableHead className="text-slate-300 ">Subtotal</TableHead>
+                      <TableHead className="text-slate-300">Discount</TableHead>
+                      <TableHead className="text-slate-300 ">Net</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {formData.sales.map((sale, index) => (
+                      <TableRow key={index} className="border-slate-600">
+                        <TableCell className="text-slate-200">{index + 1}</TableCell>
+                        <TableCell className="w-[360px]">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <Popover
+                                open={openProduct[index]}
+                                onOpenChange={(open) => {
+                                  const newOpenProduct = [...openProduct];
+                                  newOpenProduct[index] = open;
+                                  setOpenProduct(newOpenProduct);
                                 }}
-                                className="text-white hover:bg-slate-600"
                               >
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Add a new debtor
-                              </CommandItem>
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                                <PopoverTrigger asChild>
+                                  <Button variant="outline" role="combobox" aria-expanded={openProduct[index]} className="w-full justify-between bg-slate-600 border-slate-500 text-white hover:bg-slate-500">
+                                    {sale.product ? products.find(p => p.id.toString() === sale.product)?.name : "Select a product..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[320px] p-0 bg-slate-700 border-slate-600">
+                                  <Command className="bg-slate-700 border-slate-600">
+                                    <CommandInput placeholder="Search product..." className="bg-slate-700 text-white" />
+                                    <CommandList>
+                                      <CommandEmpty>No product found.</CommandEmpty>
+                                      <CommandGroup>
+                                        {products.map(product => (
+                                          <CommandItem key={product.id} onSelect={() => handleProductChange(index, product.id.toString())} className="text-white hover:bg-slate-600">
+                                            <Check className={cn("mr-2 h-4 w-4", sale.product === product.id.toString() ? "opacity-100" : "opacity-0")} />
+                                            {product.name}
+                                          </CommandItem>
+                                        ))}
+                                        <CommandItem onSelect={() => handleProductChange(index, "new")} className="text-white hover:bg-slate-600">
+                                          <PlusCircle className="mr-2 h-4 w-4" /> Add a new product
+                                        </CommandItem>
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                            {formData.sales.length > 1 && (
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="text-red-400 hover:text-red-300 hover:bg-transparent"
+                                title="Remove line"
+                                onClick={() => handleRemoveSale(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="w-[140px] ">
+                          <Input type="number" name="unit_price" value={sale.unit_price} onChange={(e) => handleChange(index, e)} className="bg-slate-600 border-slate-500 text-white  font-mono tabular-nums" placeholder="0.00" required />
+                        </TableCell>
+                        <TableCell className="w-[120px] ">
+                          <Input type="number" name="quantity" value={sale.quantity} onChange={(e) => handleChange(index, e)} className="bg-slate-600 border-slate-500 text-white  font-mono tabular-nums" placeholder="0" required />
+                        </TableCell>
+                        <TableCell className="w-[140px] ">
+                          <Input type="number" value={sale.line_subtotal} readOnly className="bg-slate-600 border-slate-500 text-white  font-mono tabular-nums" />
+                        </TableCell>
+                        <TableCell className="w-[220px]">
+                          <div className="flex">
+                            <Select value={sale.discount_type} onValueChange={(value) => handleDiscountTypeChange(index, value)}>
+                              <SelectTrigger className="w-16 bg-slate-600 border-slate-500 rounded-none rounded-l text-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-slate-800 border-slate-700">
+                                <SelectItem value="percent" className="text-white">%</SelectItem>
+                                <SelectItem value="amount" className="text-white">Amount</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input type="number" name="discount_value" value={sale.discount_value} onChange={(e) => handleChange(index, e)} className="bg-slate-600 rounded-none rounded-r border-slate-500 text-white flex-1  font-mono tabular-nums" placeholder={sale.discount_type === "percent" ? "%" : "0.00"} />
+                          </div>
+                        </TableCell>
+                        <TableCell className="w-[140px] text-right">
+                          <Input type="number" value={sale.total_price} readOnly className="bg-slate-600 border-slate-500 text-white  font-mono tabular-nums" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {/* <Button type="button" className=" p-0"> */}
+                      <PlusCircle onClick={(e) => handleAddSale(e)} className="w-6 h-6 hover:text-green-500 mt-2 text-white font-bold" />
+                    {/* </Button> */}
 
-                    
-                  </div>
-                  <div className="flex flex-col">
-                    <Label
-                      htmlFor="amount_paid"
-                      className="text-sm font-medium text-white mb-2"
-                    >
-                      Amount Paid
-                    </Label>
-                    <Input
-                      type="number"
-                      id="amount_paid"
-                      name="amount_paid"
-                      value={formData.amount_paid}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          amount_paid: e.target.value,
-                        })
-                      }
-                      className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
-                      
-                    />
-                    </div>
-                  <div className="flex flex-col">
-                    <Label
-                      htmlFor="cashout_date"
-                      className="text-sm font-medium text-white mb-2"
-                    >
-                      Credited Amount
-                    </Label>
-                    <Input
-                      type="number"
-                      id="credited_amount"
-                      name="credited_amount"
-                      value={formData.credited_amount}
-                      className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
-                      required
-                    />
-                  </div>
-                </div>
-              )}
+                  </TableBody>
+                  <TableFooter>
+                    <TableRow className="border-t border-slate-600">
+                      <TableCell colSpan={4}></TableCell>
+                      <TableCell className="text-right font-medium ">{subtotal.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-medium ">{totalDiscount.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-bold text-white">{totalAmount.toFixed(2)}</TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+              </div>
 
-              <Button
-                type="button"
-                onClick={handleAddSale}
-                className="w-full bg-purple-600 hover:bg-purple-700"
-              >
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Add Another Sale
-              </Button>
+              {/* Table footer already shows totals; removed extra summary card for a more bill-like feel */}
+
+              
+                
+              
               <Button
                 type="submit"
                 disabled={subLoading}
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
-                Submit Transaction
+                Proceed to Payment (Enter)
               </Button>
             </form>
 
@@ -1142,6 +943,134 @@ const handleNewProductVendorChange = (ids) => {
                     onClick={addNewDebtor}
                   >
                     Add Debtor
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Payment Dialog */}
+            <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+              <DialogContent className="sm:max-w-[560px] bg-slate-800 text-white">
+                <DialogHeader>
+                  <DialogTitle>Payment Details</DialogTitle>
+                  <DialogDescription className="text-slate-300">
+                    Review totals and capture payment to complete this sale.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  {/* Totals summary */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-slate-300">Subtotal</Label>
+                      <Input readOnly value={subtotal.toFixed(2)} className="bg-slate-700 border-slate-600 text-white" />
+                    </div>
+                    <div>
+                      <Label className="text-slate-300">Discount</Label>
+                      <Input readOnly value={totalDiscount.toFixed(2)} className="bg-slate-700 border-slate-600 text-white" />
+                    </div>
+                    <div>
+                      <Label className="text-slate-300">Total</Label>
+                      <Input readOnly value={totalAmount.toFixed(2)} className="bg-slate-700 border-slate-600 text-white" />
+                    </div>
+                  </div>
+                  {/* Payment method */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+                    <div className="md:col-span-1">
+                      <Label className="text-slate-300 mb-2">Payment Method</Label>
+                      <Select
+                        onValueChange={(value) => {
+                          if (value === "credit") {
+                            setFormData({ ...formData, method: value, amount_paid: 0 });
+                          } else {
+                            setFormData({ ...formData, method: value, amount_paid: totalAmount });
+                          }
+                        }}
+                        value={formData.method}
+                      >
+                        <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white">
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-700">
+                          <SelectItem value="cash" className="text-white">Cash</SelectItem>
+                          <SelectItem value="card" className="text-white">Card</SelectItem>
+                          <SelectItem value="online" className="text-white">Online</SelectItem>
+                          <SelectItem value="credit" className="text-white">Credit</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {formData.method !== "credit" && (
+                      <div>
+                        <Label className="text-slate-300 mb-2">Amount Paid</Label>
+                        <Input
+                          type="number"
+                          value={formData.amount_paid}
+                          onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
+                          className="bg-slate-700 border-slate-600 text-white"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {/* Credit options */}
+                  {formData.method === "credit" && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="md:col-span-2">
+                        <Label className="text-sm font-medium text-white mb-2">Debtor</Label>
+                        <Popover open={openDebtor} onOpenChange={setOpenDebtor}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" role="combobox" aria-expanded={openDebtor} className="w-full justify-between bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
+                              {formData.debtor
+                                ? debtors.find((d) => d.id.toString() === formData.debtor)?.name
+                                : "Select a debtor..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0 bg-slate-700 border-slate-600">
+                            <Command className="bg-slate-700 border-slate-600" required>
+                              <CommandInput placeholder="Search debtor..." className="bg-slate-700 text-white" />
+                              <CommandList>
+                                <CommandEmpty>No debtor found.</CommandEmpty>
+                                <CommandGroup>
+                                  {debtors.map((debtor) => (
+                                    <CommandItem
+                                      key={debtor.id}
+                                      onSelect={() => {
+                                        setFormData({ ...formData, debtor: debtor.id.toString() });
+                                        setOpenDebtor(false);
+                                      }}
+                                      className="text-white hover:bg-slate-600"
+                                    >
+                                      <Check className={cn("mr-2 h-4 w-4", formData.debtor === debtor?.id?.toString() ? "opacity-100" : "opacity-0")} />
+                                      {debtor.name}
+                                    </CommandItem>
+                                  ))}
+                                  <CommandItem
+                                    onSelect={() => {
+                                      setShowNewDebtorDialog(true);
+                                      setOpenDebtor(false);
+                                    }}
+                                    className="text-white hover:bg-slate-600"
+                                  >
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Add a new debtor
+                                  </CommandItem>
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div>
+                        <Label className="text-slate-300 mb-2">Credited Amount</Label>
+                        <Input type="number" value={formData.credited_amount} readOnly className="bg-slate-700 border-slate-600 text-white" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" className="bg-slate-600 hover:bg-slate-500 text-white" onClick={() => setShowPaymentDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="button" className="bg-green-600 hover:bg-green-700 text-white" onClick={handleSubmit} disabled={subLoading}>
+                    Confirm & Submit
                   </Button>
                 </DialogFooter>
               </DialogContent>
