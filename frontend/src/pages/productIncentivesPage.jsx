@@ -22,7 +22,7 @@ import {
 import { Plus } from "lucide-react";
 import { Container } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { List, Search, ArrowLeft, Trash2, PlusCircle } from "lucide-react";
+import { List, Search, ArrowLeft, Trash2, PlusCircle, Pencil } from "lucide-react";
 
 export default function ProductIncentivesPage() {
   const api = useAxios();
@@ -39,6 +39,9 @@ export default function ProductIncentivesPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({ name: "", rate: "" });
+  // Edit dialog state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ id: null, name: "", rate: "" });
 
   // Fetch incentives for this branch
   useEffect(() => {
@@ -100,6 +103,37 @@ export default function ProductIncentivesPage() {
       setSelectedIds([]);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Open edit dialog with selected item
+  const openEdit = (item) => {
+    setEditForm({ id: item.id, name: item.name || "", rate: String(item.rate ?? "") });
+    setIsEditDialogOpen(true);
+  };
+
+  // Submit PATCH update
+  const handleUpdate = async (e) => {
+    e?.preventDefault?.();
+    if (!editForm.id) return;
+    const payload = {
+      name: (editForm.name || "").trim(),
+      rate: parseFloat(editForm.rate) || 0,
+    };
+    try {
+      setIsSaving(true);
+      const r = await api.patch(`allinventory/incentiveproduct/${editForm.id}/`, payload);
+      const updated = r.data || { id: editForm.id, ...payload };
+      setIncentives((prev) =>
+        Array.isArray(prev)
+          ? prev.map((x) => (x.id === editForm.id ? { ...x, ...updated } : x))
+          : prev
+      );
+      setIsEditDialogOpen(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -182,7 +216,8 @@ export default function ProductIncentivesPage() {
             <div className="grid grid-cols-12 gap-2 p-2 sm:p-4 text-xs sm:text-sm font-medium text-slate-300 border-b border-slate-700">
               <div className="col-span-1"></div>
               <div className="col-span-7 lg:col-span-7">Name</div>
-              <div className="col-span-4 lg:col-span-4 text-right">Rate</div>
+              <div className="col-span-3 lg:col-span-3 text-right">Rate</div>
+              <div className="col-span-1 lg:col-span-1 text-right">Edit</div>
             </div>
 
             {filtered.map((item) => (
@@ -208,10 +243,15 @@ export default function ProductIncentivesPage() {
                   <Container className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-purple-400 mr-1 sm:mr-2 flex-shrink-0" />
                   <span className="text-white text-xs sm:text-sm lg:text-base truncate">{item.name}</span>
                 </div>
-                <div className="col-span-4 lg:col-span-4 text-right">
+                <div className="col-span-3 lg:col-span-3 text-right">
                   <span className="text-white text-xs sm:text-sm lg:text-base">
                     RS. {typeof item.rate === "number" ? item.rate.toFixed(2) : item.rate}
                   </span>
+                </div>
+                <div className="col-span-1 lg:col-span-1 flex justify-end">
+                  <Button size="icon" variant="outline" className="h-7 w-7 bg-slate-700 border-slate-600 text-white hover:bg-slate-600" onClick={() => openEdit(item)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                 </div>
               </motion.div>
             ))}
@@ -290,6 +330,51 @@ export default function ProductIncentivesPage() {
             <DialogFooter className="mt-6">
               <Button type="submit" disabled={isSaving} className="w-full bg-purple-600 hover:bg-purple-700">
                 {isSaving ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="bg-slate-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Edit Product Incentive</DialogTitle>
+            <DialogDescription className="text-slate-300">
+              Update the name or rate and save changes.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdate}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
+                  className="mt-1 bg-slate-700 text-white border-slate-600"
+                  placeholder="Name"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-rate">Rate</Label>
+                <Input
+                  id="edit-rate"
+                  type="number"
+                  step="0.01"
+                  value={editForm.rate}
+                  onChange={(e) => setEditForm((p) => ({ ...p, rate: e.target.value }))}
+                  className="mt-1 bg-slate-700 text-white border-slate-600"
+                  placeholder="Rate"
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter className="mt-6">
+              <Button type="submit" disabled={isSaving} className="w-full bg-purple-600 hover:bg-purple-700">
+                {isSaving ? "Saving..." : "Update"}
               </Button>
             </DialogFooter>
           </form>

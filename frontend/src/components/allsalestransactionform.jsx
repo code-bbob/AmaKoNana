@@ -5,7 +5,6 @@ import useAxios from "@/utils/useAxios";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -14,14 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  PlusCircle,
-  Trash2,
-  Check,
-  ChevronsUpDown,
-  ArrowLeft,
-  Menu,
-} from "lucide-react";
+import { PlusCircle, Trash2, Check, ChevronsUpDown, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -132,15 +124,14 @@ function AllSalesTransactionForm() {
   const safeWriteoff = Math.min(Math.max(parseFloat(formData.writeoff) || 0, 0), totalAmount);
 
   useEffect(() => {
-   setPayable(totalAmount - formData.writeoff);
-   console.log("Payable updated to:", totalAmount - formData.writeoff);
-  }, [safeWriteoff, totalAmount, formData.writeoff]);
+    // Clamp payable to non-negative and use clamped write-off
+    setPayable(Math.max(0, totalAmount - safeWriteoff));
+  }, [safeWriteoff, totalAmount]);
 
   const [change, setChange] = useState(0);
 
   useEffect(() => {
-    console.log("THIS IS AMOUNT PAID:",formData.amount_paid)
-    setChange(Math.max(0,(parseFloat(formData.amount_paid)||0)-payable).toFixed(2));
+    setChange(Math.max(0, (parseFloat(formData.amount_paid) || 0) - payable).toFixed(2));
   }, [formData.amount_paid, payable]);
 
   useEffect(() => {
@@ -161,7 +152,6 @@ function AllSalesTransactionForm() {
         setVendors(vendorResponse.data); // Setting vendors data
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching data:", error);
         setError("Failed to fetch data");
         setLoading(false);
       }
@@ -341,12 +331,11 @@ const handleNewProductVendorChange = (ids) => {
     setOpenProduct(newOpenProduct);
   };
 
-  const handleCheck = async (e, phone_number) => {
+  const handleCheck = async (phone_number) => {
     try {
       const res = await api.get(
         "alltransaction/customer/" + phone_number + "/"
       );
-      console.log(res.data);
       setCustomerTotal(res.data.total_spent);
       setCustomerName(res.data.name);
       
@@ -365,7 +354,6 @@ const handleNewProductVendorChange = (ids) => {
         setFormData(prev => ({ ...prev, sales: updatedSales }));
       }
     } catch (error) {
-      console.error("Error fetching data:", error);
       if (error.response && error.response.status === 404) {
         // Customer not found, show dialog to create new customer
         setCustomerEligibleForDiscount(false);
@@ -384,7 +372,6 @@ const handleNewProductVendorChange = (ids) => {
   const handleCreateCustomer = async () => {
     try {
       const res = await api.post("alltransaction/customer/", newCustomerData);
-      console.log("New customer created:", res.data);
       setCustomerTotal(res.data.total_spent);
       setCustomerName(res.data.name);
       // New customer will have total_spent = 0, so no discount eligibility
@@ -392,7 +379,6 @@ const handleNewProductVendorChange = (ids) => {
       setShowNewCustomerDialog(false);
       setNewCustomerData({ customer_name: "", phone_number: "" });
     } catch (error) {
-      console.error("Error creating customer:", error);
       setError("Failed to create customer");
     }
   };
@@ -426,14 +412,12 @@ const handleNewProductVendorChange = (ids) => {
           total_price: net,
         };
       });
-      console.log("formdata before submit:", formData);
+      // console.debug("formdata before submit:", formData);
       // Mixed payment validation & calculations against payable (total - writeoff)
       if (formData.method === 'mixed') {
         const c = parseFloat(formData.cash_amount) || 0;
         const o = parseFloat(formData.online_amount) || 0;
         const d = parseFloat(formData.card_amount) || 0;
-        console.log("Mixed payment amounts:", {c, o, d, payable});
-        console.log("Formdata.method is ",formData.method);
         const sum = c + o + d;
         if (Math.abs(sum - payable) > 0.01) {
           // simple error alert and abort
@@ -462,11 +446,10 @@ const handleNewProductVendorChange = (ids) => {
         "alltransaction/salestransaction/",
         payload
       );
-      console.log("payload:", payload);
       // navigate('/invoice/' + response.data.id);
       navigate("/sales/branch/" + branchId);
     } catch (error) {
-      console.error("Error posting data:", error);
+      // Optionally set error UI
     } finally {
       setSubLoading(false);
     }
@@ -476,12 +459,11 @@ const handleNewProductVendorChange = (ids) => {
     e.preventDefault();
     try {
       const response = await api.post("allinventory/product/", newProductData);
-      console.log("New Product Added:", response.data);
       setProducts([...products, response.data]);
-      setNewProductData({ name: "", brand: "", branch:branchId });
+      setNewProductData({ name: "", brand: "", selling_price: "", cost_price: "", branch: branchId });
       setShowNewProductDialog(false);
     } catch (error) {
-      console.error("Error adding product:", error);
+      // Optionally set error UI
     }
   };
 
@@ -492,7 +474,6 @@ const handleNewProductVendorChange = (ids) => {
         name: newBrandName,
         branch: branchId, // Assuming brand belongs to the same branch
       });
-      console.log("New Brand Added:", response.data);
       setBrands([...brands, response.data]);
       setNewBrandName("");
       setShowNewBrandDialog(false);
@@ -501,13 +482,11 @@ const handleNewProductVendorChange = (ids) => {
         brand: response.data.id.toString(),
       });
     } catch (error) {
-      console.error("Error adding brand:", error);
+      // Optionally set error UI
     }
   };
 
-  const calculateTotalPrice = (quantity, unit_price) => {
-    return quantity * unit_price;
-  };
+  // removed unused calculateTotalPrice helper
 
   // Recalculate a single line based on discount type and value
   const recalcLine = (line) => {
@@ -565,11 +544,9 @@ const handleNewProductVendorChange = (ids) => {
       }
       const scannedCode = currentWord.slice(-13, -1);
 
-      console.log("Word is:", scannedCode);
       const matchingProduct = products.find(
         (product) => product.uid === scannedCode
       );
-      console.log("Matching product:", matchingProduct);
 
       if (matchingProduct) {
         const productIdStr = matchingProduct.id.toString();
@@ -628,8 +605,6 @@ const handleNewProductVendorChange = (ids) => {
             }));
           }
         }
-      } else {
-        console.log("Product not found");
       }
       setCurrentWord("");
     } else {
@@ -689,8 +664,6 @@ const handleNewProductVendorChange = (ids) => {
   // Keep amount_paid in sync when writeoff, method, or total changes (non-credit, non-mixed)
   useEffect(() => {
     if (formData.method !== 'credit' && formData.method !== 'mixed') {
-      console.log("HERE IN EFFECT", totalAmount, formData.writeoff);
-      console.log("Payable is:", payable);
       setFormData((prev) => ({
         ...prev,
         amount_paid: payable,
@@ -840,7 +813,7 @@ const handleNewProductVendorChange = (ids) => {
                     />
                     <Button 
                       type="button"
-                      onClick={(e) => handleCheck(e, formData.phone_number)}
+                      onClick={() => handleCheck(formData.phone_number)}
                     >
                       Check
                     </Button>
@@ -1290,7 +1263,7 @@ const handleNewProductVendorChange = (ids) => {
                             </div>
                             <div>
                               <Label className="text-slate-300 mb-1">Credited Amount</Label>
-                              <Input type="number" value={formData.credited_amount} className="bg-slate-800 border-slate-700 text-white" />
+                              <Input type="number" value={formData.credited_amount} readOnly className="bg-slate-800 border-slate-700 text-white" />
                             </div>
                             </div>
                           </div>
