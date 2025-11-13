@@ -136,6 +136,13 @@ function AllSalesTransactionForm() {
    console.log("Payable updated to:", totalAmount - formData.writeoff);
   }, [safeWriteoff, totalAmount, formData.writeoff]);
 
+  const [change, setChange] = useState(0);
+
+  useEffect(() => {
+    console.log("THIS IS AMOUNT PAID:",formData.amount_paid)
+    setChange(Math.max(0,(parseFloat(formData.amount_paid)||0)-payable).toFixed(2));
+  }, [formData.amount_paid, payable]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -172,6 +179,18 @@ function AllSalesTransactionForm() {
       }));
     }
   }, [nextBill]);
+
+  //for credited amount calculation
+
+  useEffect(() => {
+    if (formData.method === 'credit') {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        credited_amount: totalAmount - formData.writeoff - formData.amount_paid,
+      }));
+      // console.log("Credited amount updated to:", totalAmount - formData.writeoff - formData.amount_paid);
+    }
+  }, [formData.amount_paid, totalAmount, formData.method, formData.writeoff]);
 
   // New useEffect to fetch branch info – adjust endpoints as needed
   useEffect(() => {
@@ -661,21 +680,23 @@ const handleNewProductVendorChange = (ids) => {
     setTotalDiscount(newTotalDiscount);
     setTotalAmount(newSubtotal - newTotalDiscount);
     // Auto-fill amount_paid with payable when not in credit/mixed mode
-    setFormData((prev) => ({
-      ...prev,
-      amount_paid: (prev.method === "credit" || prev.method === "mixed") ? prev.amount_paid : Math.max(0, (newSubtotal - newTotalDiscount) - (Math.min(Math.max(parseFloat(prev.writeoff) || 0, 0), (newSubtotal - newTotalDiscount))))
-    }));
+    // setFormData((prev) => ({
+    //   ...prev,
+    //   amount_paid: (prev.method === "credit" || prev.method === "mixed") ? prev.amount_paid : Math.max(0, (newSubtotal - newTotalDiscount) - (Math.min(Math.max(parseFloat(prev.writeoff) || 0, 0), (newSubtotal - newTotalDiscount))))
+    // }));
   }, [formData.sales]);
 
   // Keep amount_paid in sync when writeoff, method, or total changes (non-credit, non-mixed)
   useEffect(() => {
     if (formData.method !== 'credit' && formData.method !== 'mixed') {
+      console.log("HERE IN EFFECT", totalAmount, formData.writeoff);
+      console.log("Payable is:", payable);
       setFormData((prev) => ({
         ...prev,
         amount_paid: payable,
       }));
     }
-  }, [formData.method, formData.writeoff, totalAmount]);
+  }, [formData.method, formData.writeoff, totalAmount, payable]);
 
   // Normalize mixed breakdown when payable changes so that sum matches payable
   useEffect(() => {
@@ -1182,10 +1203,10 @@ const handleNewProductVendorChange = (ids) => {
 
                         {formData.method !== 'credit' && formData.method !== 'mixed' && (
                           <div>
-                            <Label className="text-slate-300 mb-1">Amount Paid</Label>
+                            <Label className="text-slate-300 mb-1">Amount Received:</Label>
                             <Input type="number" onChange={(e)=>setFormData(prev=>({...prev, amount_paid: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" />
                             <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-                              <div className="bg-slate-800 border border-slate-700 rounded p-2 flex justify-between"><span className="text-slate-400">Change</span><span className="font-mono">{Math.max(0,(parseFloat(formData.amount_paid)||0)-payable).toFixed(2)}</span></div>
+                              <div className="bg-slate-800 border border-slate-700 rounded p-2 flex justify-between"><span className="text-slate-400">Change</span><span className="font-mono">{change}</span></div>
                               {/* <div className="bg-slate-800 border border-slate-700 rounded p-2 flex justify-between"><span className="text-slate-400">Balance</span><span className="font-mono">{Math.max(0,totalAmount-(parseFloat(formData.amount_paid)||0)).toFixed(2)}</span></div> */}
                             </div>
                           </div>
@@ -1261,9 +1282,16 @@ const handleNewProductVendorChange = (ids) => {
                                 </PopoverContent>
                               </Popover>
                             </div>
+                            <div className="flex gap-5">
+
+                            <div>
+                              <Label className="text-slate-300 mb-1">Amount paid</Label>
+                              <Input type="number" value={formData.amount_paid} onChange={(e)=>setFormData(prev=>({...prev, amount_paid: e.target.value}))} className="bg-slate-800 border-slate-700 text-white" />
+                            </div>
                             <div>
                               <Label className="text-slate-300 mb-1">Credited Amount</Label>
                               <Input type="number" value={formData.credited_amount} className="bg-slate-800 border-slate-700 text-white" />
+                            </div>
                             </div>
                           </div>
                         )}
