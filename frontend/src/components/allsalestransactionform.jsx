@@ -63,13 +63,14 @@ function AllSalesTransactionForm() {
     method: "cash",
     debtor: "", // New field for debtor's name
     amount_paid: null,
+    amount_received: "", // separate field for cash received used only for change display
     credited_amount: "",
     // Write-off amount to reduce payable total (not sent as total_amount)
     writeoff: 0,
     // Mixed payment breakdown
-    cash_amount: 0,
-    card_amount: 0,
-    online_amount: 0,
+    cash_amount: '',
+    card_amount: '',
+    online_amount: '',
   });
   const [products, setProducts] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -120,19 +121,48 @@ function AllSalesTransactionForm() {
   const [masterDiscount, setMasterDiscount] = useState(""); // percentage string 0-100
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
-  // Derived payable considering write-off (clamped between 0 and total)
-  const safeWriteoff = Math.min(Math.max(parseFloat(formData.writeoff) || 0, 0), totalAmount);
-
+  // User enters amount_paid; we derive writeoff = totalAmount - amount_paid (clamped).
+  // Payable for non-mixed/non-credit stays as totalAmount so UI shows original bill.
   useEffect(() => {
-    // Clamp payable to non-negative and use clamped write-off
-    setPayable(Math.max(0, totalAmount - safeWriteoff));
-  }, [safeWriteoff, totalAmount]);
+    if (formData.method === 'mixed') return; // mixed handled elsewhere
+    if (formData.method === 'credit') {
+      setPayable(totalAmount);
+      setFormData(prev => ({ ...prev, writeoff: 0 }));
+      return;
+    }
+    const raw = parseFloat(formData.amount_paid);
+    if (isNaN(raw)) {
+      setPayable(totalAmount);
+      setFormData(prev => ({ ...prev, writeoff: 0 }));
+      return;
+    }
+    const safePaid = Math.min(Math.max(raw, 0), totalAmount);
+    const derivedWriteoff = Math.max(0, totalAmount - safePaid);
+    setPayable(totalAmount); // always show full payable before writeoff
+    setFormData(prev => ({ ...prev, writeoff: derivedWriteoff }));
+  }, [formData.amount_paid, formData.method, totalAmount]);
 
   const [change, setChange] = useState(0);
 
   useEffect(() => {
-    setChange(Math.max(0, (parseFloat(formData.amount_paid) || 0) - payable).toFixed(2));
-  }, [formData.amount_paid, payable]);
+    //change payable when writeoff changes
+    if (formData.method === 'mixed' || formData.method === 'credit') return;
+    setPayable(parseFloat(formData.amount_paid));
+  }, [formData.writeoff, formData.method, formData.amount_paid]);
+    
+
+  useEffect(() => {
+    // For non-mixed/non-credit: change is based on amount_received input against totalAmount.
+    // For mixed: change based on sum parts vs totalAmount. For credit: no change.
+    if (formData.method === 'credit') { setChange('0.00'); return; }
+    if (formData.method === 'mixed') {
+      const sum = (parseFloat(formData.cash_amount)||0)+(parseFloat(formData.card_amount)||0)+(parseFloat(formData.online_amount)||0);
+      setChange(Math.max(0, sum - totalAmount).toFixed(2));
+      return;
+    }
+    const received = parseFloat(formData.amount_received) || 0;
+    setChange(Math.max(0, received - formData.amount_paid).toFixed(2));
+  }, [formData.amount_received, formData.cash_amount, formData.card_amount, formData.online_amount, formData.method, totalAmount]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -174,13 +204,13 @@ function AllSalesTransactionForm() {
 
   useEffect(() => {
     if (formData.method === 'credit') {
-      setFormData((prevFormData) => ({
+      setFormData(prevFormData => ({
         ...prevFormData,
-        credited_amount: totalAmount - formData.writeoff - formData.amount_paid,
+        credited_amount: Math.max(0, totalAmount - (parseFloat(prevFormData.amount_paid) || 0)),
+        writeoff: 0
       }));
-      // console.log("Credited amount updated to:", totalAmount - formData.writeoff - formData.amount_paid);
     }
-  }, [formData.amount_paid, totalAmount, formData.method, formData.writeoff]);
+  }, [formData.amount_paid, totalAmount, formData.method]);
 
   // New useEffect to fetch branch info – adjust endpoints as needed
   useEffect(() => {
@@ -427,19 +457,24 @@ const handleNewProductVendorChange = (ids) => {
         }
       }
       const originalTotal = totalAmount;
+      // Determine safe paid amount for payload
+      let safePaid;
+      if (formData.method === 'mixed') {
+        safePaid = payable; // payable already sum of breakdown
+      } else {
+        const enteredPaid = parseFloat(formData.amount_paid) || 0;
+        safePaid = Math.min(Math.max(enteredPaid, 0), originalTotal);
+      }
   
       const payload = {
         ...formData,
         sales: preparedSales,
         subtotal: subtotal,
-        // Submit original total without write-off
         total_amount: originalTotal,
         cash_amount: parseFloat(formData.cash_amount) || 0,
         card_amount: parseFloat(formData.card_amount) || 0,
         online_amount: parseFloat(formData.online_amount) || 0,
-        // No matter what is typed, amount_paid is original total minus write-off
-        amount_paid: payable,
-        // Keep credited_amount consistent on backend (credit becomes the write-off)
+        amount_paid: safePaid,
         credited_amount: formData.credited_amount || 0
       };
       const response = await api.post(
@@ -661,61 +696,20 @@ const handleNewProductVendorChange = (ids) => {
     // }));
   }, [formData.sales]);
 
-  // Keep amount_paid in sync when writeoff, method, or total changes (non-credit, non-mixed)
-  useEffect(() => {
-    if (formData.method !== 'credit' && formData.method !== 'mixed') {
-      setFormData((prev) => ({
-        ...prev,
-        amount_paid: payable,
-      }));
-    }
-  }, [formData.method, formData.writeoff, totalAmount, payable]);
+  // (Removed previous effect that overwrote user-entered amount_paid.)
 
-  // Normalize mixed breakdown when payable changes so that sum matches payable
+  // Mixed payment: payable is sum of parts; derive writeoff = totalAmount - sum
   useEffect(() => {
     if (formData.method !== 'mixed') return;
     const cash = parseFloat(formData.cash_amount) || 0;
     const card = parseFloat(formData.card_amount) || 0;
     const online = parseFloat(formData.online_amount) || 0;
-    const nonCash = card + online;
-    let newCash = cash;
-    let newCard = card;
-    let newOnline = online;
-
-    if (nonCash <= payable) {
-      // keep non-cash as is, cash becomes remainder
-      newCash = Math.max(0, payable - nonCash);
-    } else {
-      // scale down card and online proportionally to fit payable; set cash to 0
-      if (nonCash > 0) {
-        const scale = payable / nonCash;
-        newCard = parseFloat((card * scale).toFixed(2));
-        newOnline = parseFloat((online * scale).toFixed(2));
-        const adjusted = newCard + newOnline;
-        const roundingDiff = parseFloat((payable - adjusted).toFixed(2));
-        // push rounding diff into card to exactly match payable
-        newCard = parseFloat((newCard + roundingDiff).toFixed(2));
-      } else {
-        newCard = 0; newOnline = 0;
-      }
-      newCash = 0;
-    }
-
-    const sum = newCash + newCard + newOnline;
-    const epsilon = 0.009; // tolerate cent-level differences
-    const changed = Math.abs(newCash - cash) > epsilon || Math.abs(newCard - card) > epsilon || Math.abs(newOnline - online) > epsilon;
-    if (changed) {
-      setFormData((prev) => ({
-        ...prev,
-        cash_amount: newCash,
-        card_amount: newCard,
-        online_amount: newOnline,
-        amount_paid: sum,
-      }));
-    } else if (Math.abs((parseFloat(formData.amount_paid)||0) - sum) > epsilon) {
-      setFormData((prev) => ({ ...prev, amount_paid: sum }));
-    }
-  }, [payable, formData.method]);
+    let sum = cash + card + online;
+    if (sum > totalAmount) sum = totalAmount; // clamp
+    setPayable(sum);
+    const derivedWriteoff = Math.max(0, totalAmount - sum);
+    setFormData(prev => ({ ...prev, writeoff: derivedWriteoff, amount_paid: sum }));
+  }, [formData.cash_amount, formData.card_amount, formData.online_amount, formData.method, totalAmount]);
 
   // No separate global discount; totalAmount derived above
 
@@ -1079,7 +1073,7 @@ const handleNewProductVendorChange = (ids) => {
                     <DialogTitle className="text-xl font-semibold">Payment</DialogTitle>
                     <DialogDescription className="text-slate-400 mt-1">Bill #{formData.bill_no} • {formData.date}</DialogDescription>
                   </div>
-                  <Button variant="outline" onClick={() => setShowPaymentDialog(false)} className="border-slate-600 bg-slate-800 hover:bg-slate-700 text-white">Close</Button>
+                  {/* <Button variant="outline" onClick={() => setShowPaymentDialog(false)} className="border-slate-600 bg-slate-800 hover:bg-slate-700 text-white">Close</Button> */}
                 </div>
                 {/* Body */}
                 <div className="flex flex-1 overflow-hidden">
@@ -1129,7 +1123,7 @@ const handleNewProductVendorChange = (ids) => {
                     <div className="mt-auto border-t border-slate-800 bg-slate-900 px-6 py-4 space-y-2">
                       <div className="flex justify-between text-slate-300 text-sm"><span>Subtotal</span><span className="font-mono">{subtotal.toFixed(2)}</span></div>
                       <div className="flex justify-between text-slate-300 text-sm"><span>Discount</span><span className="font-mono">{totalDiscount.toFixed(2)}</span></div>
-                      <div className="flex justify-between text-slate-300 text-sm"><span>Write-off</span><span className="font-mono">{safeWriteoff.toFixed(2)}</span></div>
+                      <div className="flex justify-between text-slate-300 text-sm"><span>Write-off</span><span className="font-mono">{(parseFloat(formData.writeoff)||0).toFixed(2)}</span></div>
                       <div className="flex justify-between text-white text-base font-semibold"><span>Payable</span><span className="font-mono">{payable.toFixed(2)}</span></div>
                     </div>
                   </div>
@@ -1140,15 +1134,25 @@ const handleNewProductVendorChange = (ids) => {
                       <div className="space-y-4">
                         <div>
 
-                          <div className="flex justify-between mb-1">
-                            Total : <span className="font-mono">{totalAmount.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between my-3">
-                            Write Off: <Input type="number" value={formData.writeoff} onChange={(e)=>setFormData(prev=>({...prev, writeoff: e.target.value }))} className="bg-slate-800 border-slate-700 text-white w-24 font-mono" />
-                          </div>
-                          <div className="flex justify-between mb-1">
-                            Amount Paid : <span className="font-mono">{payable.toFixed(2)}</span>
-                          </div>
+                              <div className="flex justify-between mb-1">
+                                Total: <span className="font-mono">{totalAmount.toFixed(2)}</span>
+                              </div>
+                              <div className="flex items-center justify-between my-3 gap-4">
+                                <span>Amount Paid:</span>
+                                <Input
+                                  type="number"
+                                  value={formData.amount_paid ?? ''}
+                                  onChange={(e)=>setFormData(prev=>({...prev, amount_paid: e.target.value }))}
+                                  className="bg-slate-800 border-slate-700 text-white w-32 font-mono"
+                                  placeholder="0.00"
+                                />
+                              </div>
+                              <div className="flex justify-between my-3">
+                                Write-off: <span className="font-mono">{(parseFloat(formData.writeoff)||0).toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between mb-1">
+                                Payable: <span className="font-mono">{payable.toFixed(2)}</span>
+                              </div>
                         </div>
                         <div>
                           <Label className="text-slate-300 mb-1">Method</Label>
@@ -1175,12 +1179,15 @@ const handleNewProductVendorChange = (ids) => {
                         </div>
 
                         {formData.method !== 'credit' && formData.method !== 'mixed' && (
-                          <div>
-                            <Label className="text-slate-300 mb-1">Amount Received:</Label>
-                            <Input type="number" onChange={(e)=>setFormData(prev=>({...prev, amount_paid: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" />
-                            <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-                              <div className="bg-slate-800 border border-slate-700 rounded p-2 flex justify-between"><span className="text-slate-400">Change</span><span className="font-mono">{change}</span></div>
-                              {/* <div className="bg-slate-800 border border-slate-700 rounded p-2 flex justify-between"><span className="text-slate-400">Balance</span><span className="font-mono">{Math.max(0,totalAmount-(parseFloat(formData.amount_paid)||0)).toFixed(2)}</span></div> */}
+                          <div className="bg-slate-800 border border-slate-600 rounded p-4 mt-4">
+                            {/* <div className="text-xs uppercase tracking-wide text-slate-400 mb-2">Only for change amount</div> */}
+                            <Label className="text-slate-300 mb-1">Amount Received (cash):</Label>
+                            <Input type="number" value={formData.amount_received ?? ''} onChange={(e)=>setFormData(prev=>({...prev, amount_received: e.target.value }))} className="bg-slate-900 border-slate-700 text-white" placeholder="0.00" />
+                            <div className="mt-">
+                              <div className="mt-2 border border-yellow-500 rounded p-2 flex justify-between items-center">
+                                <span className="text-yellow-300 font-semibold text-lg">Change</span>
+                                <span className="font-mono text-2xl text-yellow-200">{change}</span>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -1272,8 +1279,9 @@ const handleNewProductVendorChange = (ids) => {
                     </div>
                   </div>
                 </div>
+                
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-slate-800 flex justify-between items-center bg-slate-900">
+                <div className="px-6 py-2 border-t border-slate-800 flex justify-between items-center bg-slate-900">
                   <div className="text-xs text-slate-400">Press Enter to confirm • Esc to cancel</div>
                   <div className="flex gap-3">
                     <Button type="button" variant="outline" className="bg-slate-800 border-slate-700 text-white" onClick={()=>setShowPaymentDialog(false)}>Cancel</Button>
