@@ -168,7 +168,7 @@ export default function StaffPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
-                onClick={() => navigate(`/staff-transactions/${staff.id}`)}
+                onClick={() => navigate(`/staff/branch/${branchId}/statement/${staff.id}`)}
                 className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-800 transition-colors duration-200"
               >
                 <div className="col-span-6 md:col-span-9 flex items-center">
@@ -176,8 +176,8 @@ export default function StaffPage() {
                   <span className="text-white truncate">{staff.name}</span>
                 </div>
                 
-                <div className="col-span-6 md:col-span-3 text-right text-white">
-                  {staff.due ? `RS. ${staff?.due.toLocaleString()}` : 'N/A'}
+                <div className="col-span-6 md:col-span-3 text-right text-white flex items-center justify-end gap-3">
+                  <span>{staff.due ? `RS. ${staff?.due.toLocaleString()}` : 'N/A'}</span>
                 </div>
                 
               </motion.div>

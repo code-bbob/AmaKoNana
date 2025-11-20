@@ -12,7 +12,7 @@ from datetime import date, datetime,time
 from django.utils.dateparse import parse_date
 from rest_framework.pagination import PageNumberPagination
 from django.utils.timezone import make_aware,localtime
-from django.db.models import Max,Q
+from django.db.models import Max, Q, Sum
 from .models import Customer
 from django.db import transaction
 from .models import Debtor, DebtorTransaction
@@ -622,8 +622,14 @@ class SalesReportView(APIView):
             start_date = parse_date(start_date)
             end_date = parse_date(end_date)
             sales = sales.filter(sales_transaction__date__range=(start_date, end_date))
+        elif start_date and not end_date:
+            start_date = parse_date(start_date)
+            sales = sales.filter(sales_transaction__date__gte=start_date)
+        elif end_date and not start_date:
+            end_date = parse_date(end_date)
+            sales = sales.filter(sales_transaction__date__lte=end_date)
 
-        
+        sales = sales.order_by('sales_transaction__date','id') 
         if not search and not start_date and not end_date:
             sales = sales.filter(sales_transaction__date = timezone.now().date())
 
@@ -632,6 +638,8 @@ class SalesReportView(APIView):
         subtotal_sales = 0  # sum before discount
         total_discount = 0  # sum of per-line discount amounts
         cash_sales = 0
+        card_sales = 0
+        online_sales = 0
         st = []
         write_off = 0
         rows = []
@@ -639,12 +647,17 @@ class SalesReportView(APIView):
             if sale.sales_transaction.id not in st:
                 write_off += sale.sales_transaction.total_amount - sale.sales_transaction.amount_paid
                 st.append(sale.sales_transaction.id)
+                cash_sales += sale.sales_transaction.cash_amount
+                card_sales += sale.sales_transaction.card_amount
+                online_sales += sale.sales_transaction.online_amount
             line_subtotal = (sale.unit_price or 0) * (sale.quantity or 0)
             line_discount = sale.discount or 0
             line_net = line_subtotal - line_discount
             subtotal_sales += line_subtotal
             total_discount += line_discount
             rows.append({
+                "id": sale.id,
+                "bill_no": sale.sales_transaction.bill_no,
                 "date": sale.sales_transaction.date,
                 "brand": sale.product.brand.name,
                 "quantity": sale.quantity,
@@ -656,8 +669,6 @@ class SalesReportView(APIView):
                 "method": sale.sales_transaction.method,
                 "transaction_id": sale.sales_transaction.id
             })
-            if sale.sales_transaction.method == "cash":
-                cash_sales += line_net
         net_sales = subtotal_sales - total_discount
         rows.append({
             "count": count,
@@ -666,7 +677,9 @@ class SalesReportView(APIView):
             "total_sales": net_sales,
             "write_off": write_off,
             "net_sales": net_sales - write_off,
-            # "cash_sales": cash_sales,
+            "cash_sales": cash_sales,
+            "card_sales": card_sales,
+            "online_sales": online_sales,
         })
         return Response(rows)
 
@@ -695,6 +708,8 @@ class PurchaseReportView(APIView):
             purchases = purchases.filter(purchase_transaction__date__range=(start_date, end_date))
         if not search and not start_date and not end_date:
             purchases = purchases.filter(purchase_transaction__date=timezone.now().date())
+        
+        purchases = purchases.order_by('purchase_transaction__date', 'id')
 
         count = purchases.count()
         subtotal_purchases = 0
@@ -1048,6 +1063,7 @@ class VendorStatementView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, vendorId=None, branch=None):
+        print("HERE START")
         enterprise = request.user.person.enterprise
         vendor = Vendor.objects.filter(id=vendorId, enterprise=enterprise).first()
         vendor_transactions = VendorTransactions.objects.filter(enterprise=enterprise,vendor=vendor)
@@ -1058,8 +1074,10 @@ class VendorStatementView(APIView):
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
 
-        if start_date and end_date:
+        if start_date:
             start_date = parse_date(start_date)
+        
+        if end_date:
             end_date = parse_date(end_date)
 
     
@@ -1078,6 +1096,20 @@ class VendorStatementView(APIView):
 
         vendor_transactions = vendor_transactions.order_by('date','id')
         vendor = VendorSerializer(vendor).data 
+        # Calculate previous due when a start_date is provided
+        previous_due = 0
+        if start_date:
+            print("HERE IN")
+            prev_sum = VendorTransactions.objects.filter(
+                enterprise=enterprise,
+                vendor_id=vendorId,
+                date__lt=start_date
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            # Running formula is running -= amount, so opening due = -sum(amount before start)
+            previous_due = -float(prev_sum)
+            print("HERE", previous_due)
+            vendor['previous_due'] = previous_due
+            print("VENDOR", vendor)
         vts = VendorTransactionSerializer(vendor_transactions, many=True).data
         return Response({'vendor_data': vendor, 'vendor_transactions': vts})
     
@@ -1115,9 +1147,72 @@ class DebtorStatementView(APIView):
 
         debtor_transactions = debtor_transactions.order_by('date','id')
         debtor = DebtorSerializer(debtor).data
+        # Calculate previous due when a start_date is provided
+        previous_due = 0
+        if start_date:
+            prev_sum = DebtorTransaction.objects.filter(
+                enterprise=enterprise,
+                debtor_id=debtorId,
+                date__lt=start_date
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            # Running formula is running -= amount, so opening due = -sum(amount before start)
+            previous_due = -float(prev_sum)
+            debtor['previous_due'] = previous_due
         dts = DebtorTransactionSerializer(debtor_transactions, many=True).data
         return Response({'debtor_data': debtor, 'debtor_transactions': dts})
     
+
+class StaffStatementView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, staffId=None, branch=None):
+        enterprise = request.user.person.enterprise
+        staff = Staff.objects.filter(id=staffId, enterprise=enterprise).first()
+        staff_transactions = StaffTransactions.objects.filter(enterprise=enterprise, staff=staff)
+        due = 0
+        if not staff:
+            return Response("Staff not found", status=status.HTTP_404_NOT_FOUND)
+
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        if start_date and end_date:
+            start_date = parse_date(start_date)
+            end_date = parse_date(end_date)
+
+        if start_date and end_date:
+            due = 0
+            staff_transactions = staff_transactions.filter(
+                date__range=(start_date, end_date)
+            )
+            for st in StaffTransactions.objects.filter(staff=staff, enterprise=enterprise, date__lt=start_date).order_by('date','id'):
+                due += st.amount
+        elif start_date and not end_date:
+            staff_transactions = staff_transactions.filter(
+                date__gte=start_date
+            )
+            due = 0
+            for st in StaffTransactions.objects.filter(staff=staff, enterprise=enterprise, date__lt=start_date).order_by('date','id'):
+                due += st.amount
+        elif not start_date and end_date:
+            staff_transactions = staff_transactions.filter(
+                date__lte=end_date
+            )
+
+        staff_transactions = staff_transactions.order_by('date','id')
+        staff_data = StaffSerializer(staff).data
+        # previous_due for staff when start_date provided
+        previous_due = 0
+        if start_date:
+            prev_sum = StaffTransactions.objects.filter(
+                enterprise=enterprise,
+                staff_id=staffId,
+                date__lt=start_date
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            previous_due = -float(prev_sum)
+            staff_data['previous_due'] = previous_due
+        sts = StaffTransactionSerializer(staff_transactions, many=True).data
+        return Response({'staff_data': staff_data, 'staff_transactions': sts})
 
 
 class ProductTransferView(APIView):

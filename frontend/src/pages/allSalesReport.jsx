@@ -238,6 +238,7 @@ const AllSalesReport = () => {
                 <TableHead className="w-[160px] text-white print:text-black">Product</TableHead>
                 <TableHead className="text-white print:text-black">Qty</TableHead>
                 <TableHead className="text-white print:text-black">Method</TableHead>
+                <TableHead className="text-right text-white print:text-black">Bill No.</TableHead>
                 <TableHead className="text-right text-white print:text-black">Unit</TableHead>
                 <TableHead className="text-right text-white print:text-black">Subtotal</TableHead>
                 <TableHead className="text-right text-white print:text-black">Discount</TableHead>
@@ -256,6 +257,7 @@ const AllSalesReport = () => {
                     <TableCell className="font-medium text-white print:text-black">{item.product}</TableCell>
                     <TableCell className="text-white print:text-black">{item.quantity}</TableCell>
                     <TableCell className="text-white print:text-black">{item.method}</TableCell>
+                    <TableCell className="text-right text-white print:text-black">{item.bill_no}</TableCell>
                     <TableCell className="text-right text-white print:text-black">{lineSubtotal && item.quantity ? (item.unit_price).toLocaleString("en-US", { style: "currency", currency: "NPR" }) : ''}</TableCell>
                     <TableCell className="text-right text-white print:text-black">{lineSubtotal.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
                     <TableCell className="text-right text-white print:text-black">{discount.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
@@ -295,18 +297,32 @@ const AllSalesReport = () => {
                 <span className="text-white print:text-black">{data.write_off}</span>
               </div>
 
+
               <div className="flex justify-between mb-2">
                 <span className="font-semibold text-white print:text-black">Net Sales:</span>
                 <span className="text-white print:text-black">{data?.net_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</span>
               </div>
-
-              {/* <div className="flex justify-between font-bold text-lg">
+              <div className="border-t border-slate-200 mt-2 pt-2"></div>
+              <div className="flex justify-between font-bold text-sm">
                  <span className="text-white print:text-black">Cash Sales:</span>
                 <span className="text-white print:text-black">
                   {data?.cash_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}
                 </span> 
-              </div> */}
-           
+              </div>
+
+              <div className="flex justify-between font-bold text-sm">
+                 <span className="text-white print:text-black">Online Sales:</span>
+                <span className="text-white print:text-black">
+                  {data?.online_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}
+                </span> 
+              </div>
+              
+              <div className="flex justify-between font-bold text-sm">
+                 <span className="text-white print:text-black">Card Sales:</span>
+                <span className="text-white print:text-black">
+                  {data?.card_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}
+                </span> 
+              </div>
             </div>
           </div>
 

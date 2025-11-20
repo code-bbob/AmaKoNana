@@ -92,7 +92,10 @@ class SalesTransaction(models.Model):
     bill_no = models.IntegerField()
     branch = models.ForeignKey(Branch,related_name='sales_transaction',on_delete=models.CASCADE, null=True, blank=True)
     subtotal = models.FloatField(null=True,blank=True)
-    method = models.CharField(max_length=20,choices=(('cash','cash'),('online','online'),('card','card'),('credit','credit'),('transfer','transfer')),default='cash')
+    method = models.CharField(max_length=20,choices=(('cash','cash'),('online','online'),('card','card'),('credit','credit'),('mixed','mixed')),default='cash')
+    cash_amount = models.FloatField(null=True,blank=True,default=0)
+    online_amount = models.FloatField(null=True,blank=True,default=0)
+    card_amount = models.FloatField(null=True,blank=True,default=0)
     debtor = models.ForeignKey('Debtor', on_delete=models.CASCADE, null=True, blank=True, related_name='all_sales_transaction')
     credited_amount = models.FloatField(null=True,blank=True,default=0)
     amount_paid = models.FloatField(null=True,blank=True,default=0)
@@ -102,9 +105,7 @@ class SalesTransaction(models.Model):
     
     def calculate_total_amount(self):
         total = sum((sales.unit_price * sales.quantity - sales.discount) for sales in self.sales.all())
-        print("HERE IS THE TOTAL AMOUNT", total)
         self.total_amount = total
-
         self.save()
         return self.total_amount
     

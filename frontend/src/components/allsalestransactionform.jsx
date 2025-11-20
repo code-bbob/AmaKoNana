@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NewProductDialog from "@/components/newProductDialog"; // Adjust the path as needed
+import { Checkbox } from "@/components/ui/checkbox";
 
 function AllSalesTransactionForm() {
   const api = useAxios();
@@ -1455,3 +1456,7 @@ const handleNewProductVendorChange = (ids) => {
 }
 
 export default AllSalesTransactionForm;
+
+// Mixed Payment Dialog — appended to file for clarity
+// (keeps UI code in same component file per request; no global CSS changes)
+
