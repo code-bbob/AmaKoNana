@@ -30,6 +30,8 @@ urlpatterns = [
     path('sales-report/branch/<int:branch>/',views.SalesReportView.as_view(), name='salesreport'),
     path('purchase-report/',views.PurchaseReportView.as_view(), name='purchasereport'),
     path('purchase-report/branch/<int:branch>/',views.PurchaseReportView.as_view(), name='purchasereport'),
+    path('expenses-report/',views.ExpensesReportView.as_view(), name='expensesreport'),
+    path('expenses-report/branch/<int:branch>/',views.ExpensesReportView.as_view(), name='expensesreport'),
     path('next-bill-no/',views.NextBillNo.as_view(), name='nextbillno'),
     path('stafftransaction/',views.StaffTransactionView.as_view(), name='stafftransaction'),
     path('stafftransaction/branch/<int:branch>/',views.StaffTransactionView.as_view(), name='stafftransaction'),
@@ -52,7 +54,17 @@ urlpatterns = [
     # Staff Statement
     path('staff/statement/<int:staffId>/', views.StaffStatementView.as_view(), name='staffstatement'),
 
-    path('product-transfer/', views.ProductTransferView.as_view(), name='product_transfer')
+    path('product-transfer/', views.ProductTransferView.as_view(), name='product_transfer'),
 
+    path('expenses/', views.ExpensesView.as_view(), name='expenses'),
+    path('expenses/branch/<int:branch>/', views.ExpensesView.as_view(), name='expenses'),
+    path('expenses/<int:pk>/', views.ExpensesView.as_view(), name='expenses_detail'),  # pk handled in view.get
+    path('withdrawals/', views.WithdrawalView.as_view(), name='withdrawals'),
+    path('withdrawals/branch/<int:branch>/', views.WithdrawalView.as_view(), name='withdrawals'),
+    path('withdrawals/<int:pk>/', views.WithdrawalView.as_view(), name='withdrawal_detail'),
+    path('withdrawals-report/', views.WithdrawalReportView.as_view(), name='withdrawalsreport'),
+    path('withdrawals-report/branch/<int:branch>/', views.WithdrawalReportView.as_view(), name='withdrawalsreport'),
 
+    path('income-expense-report/', views.IncomeExpenseReportView.as_view(), name='incomeexpensereport'),
+    path('income-expense-report/branch/<int:branch>/', views.IncomeExpenseReportView.as_view(), name='incomeexpensereport'),
 ]

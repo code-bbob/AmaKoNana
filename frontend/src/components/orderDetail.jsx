@@ -326,9 +326,9 @@ function OrderDetail() {
             <CardContent className="pt-6">
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-slate-300">Amount Received:</span>
+                  <span className="text-slate-300">Advance Received:</span>
                   <span className="text-lg font-semibold text-blue-400">
-                    ₹{orderData.amount_received?.toLocaleString() || '0'}
+                    Rs. {orderData.advance_received?.toLocaleString() || '0'}
                   </span>
                 </div>
                 
@@ -341,24 +341,39 @@ function OrderDetail() {
                   </div>
                 )}
 
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-slate-300">Remaining Received:</span>
+                  <span className="text-lg font-semibold text-blue-400">
+                    Rs. {orderData.remaining_received?.toLocaleString() || '0'}
+                  </span>
+                </div>
+
+                {orderData.remaining_received_method && (
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-slate-300">Remaining Payment Method:</span>
+                    <span className="text-white capitalize">
+                      {orderData.remaining_received_method.replace('_', ' ')}
+                    </span>
+                  </div>
+                )}
                 <Separator className="bg-slate-600" />
                 
                 <div className="flex justify-between items-center py-2">
                   <span className="text-xl font-semibold text-white">Total Amount:</span>
                   <span className="text-2xl font-bold text-green-400">
-                    ₹{orderData.total_amount?.toLocaleString() || '0'}
+                    Rs. {orderData.total_amount?.toLocaleString() || '0'}
                   </span>
                 </div>
 
-                {orderData.total_amount && orderData.amount_received && (
+                {orderData.total_amount && orderData.advance_received && (
                   <div className="flex justify-between items-center py-2">
                     <span className="text-slate-300">Remaining Balance:</span>
                     <span className={`text-lg font-semibold ${
-                      (orderData.total_amount - orderData.amount_received) > 0 
+                      (orderData.total_amount - orderData.advance_received) > 0 
                         ? 'text-red-400' 
                         : 'text-green-400'
                     }`}>
-                      ₹{(orderData.total_amount - orderData.amount_received).toLocaleString()}
+                      Rs. {(orderData.total_amount - orderData.advance_received - orderData.remaining_received).toLocaleString()}
                     </span>
                   </div>
                 )}

@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from .models import Vendor, Purchase, PurchaseTransaction,PurchaseReturn, Sales, SalesTransaction, VendorTransactions, SalesReturn
+from .models import ClosingCash, Vendor, Purchase, PurchaseTransaction,PurchaseReturn, Sales, SalesTransaction, VendorTransactions, SalesReturn, Expenses
 from django.db import transaction
 from allinventory.models import Product,Brand
-from alltransactions.models import Staff,StaffTransactions, Debtor, DebtorTransaction, StaffTransactionDetail
+from alltransactions.models import Staff,StaffTransactions, Debtor, DebtorTransaction, StaffTransactionDetail, Withdrawal, ClosingCash
 
 
 
@@ -827,8 +827,6 @@ class SalesReturnSerializer(serializers.ModelSerializer):
             'enterprise',
             'sales_transaction',
             'sales_transaction_id',  # for write
-            # 'sales',       # for read
-            # 'sales_ids' ,    # for write
             'returns',
             'returned_sales',
         ]
@@ -896,6 +894,15 @@ class SalesReturnSerializer(serializers.ModelSerializer):
                 'type': 'return',
                 'bill_no': sales_return.sales_transaction.bill_no
             })
+        else:
+            Expenses.objects.create(
+                enterprise = sales_return.enterprise,
+                branch = sales_return.branch,
+                date = sales_return.date,
+                amount = amount_diff,
+                desc = f'Expense recorded for sales return id {sales_return.id} with bill no {sales_return.sales_transaction.bill_no}\nDetails: {desc}',
+                method = 'cash',
+            )
 
         return sales_return
 
@@ -1080,4 +1087,35 @@ class DebtorTransactionSerializer(serializers.ModelSerializer):
 class DebtorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Debtor
+        fields = '__all__'
+
+
+
+class ExpensesSerializer(serializers.ModelSerializer):
+    date = serializers.DateField()
+    person_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Expenses
+        fields = '__all__'
+
+    def get_person_name(self, obj):
+        return obj.person.user.name if obj.person else None
+
+class WithdrawalSerializer(serializers.ModelSerializer):
+    date = serializers.DateField()
+    person_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Withdrawal
+        fields = '__all__'
+
+    def get_person_name(self, obj):
+        return obj.person.user.name if obj.person else None
+
+class ClosingCashSerializer(serializers.ModelSerializer):
+    date = serializers.DateField()
+
+    class Meta:
+        model = ClosingCash
         fields = '__all__'

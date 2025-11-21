@@ -31,6 +31,15 @@ import InvoicePage from "./pages/invoicePage";
 import EditProductForm from "./components/editProductForm";
 import AllSalesReturns from "./pages/allSalesReturn";
 import StaffPage from "./pages/staffs";
+import AllExpensesPage from "./pages/allExpenses";
+import AllExpenseForm from "./components/allexpenseform";
+import EditAllExpense from "./components/editallexpense";
+import AllExpensesReport from "./pages/allExpensesReport";
+import AllWithdrawalsPage from "./pages/allWithdrawals";
+import AllWithdrawalForm from "./components/allwithdrawalform";
+import EditAllWithdrawal from "./components/editalwithdrawal";
+import AllWithdrawalsReport from "./pages/allWithdrawalsReport";
+import AllDailyReport from "./pages/allDailyReport";
 import AllBranchSelectionPage from "./pages/allBranchSelect";
 import StaffTransactions from "./pages/stafftransactions";
 import StaffTransactionForm from "./pages/staffTransactionForm";
@@ -94,6 +103,17 @@ function App() {
           <Route path="sales-returns/branch/:branchId" element={<AllSalesReturns/>}/>
           <Route path="sales-report/branch/:branchId" element={<AllSalesReport/>}/>
           <Route path="purchase-report/branch/:branchId" element={<AllPurchaseReport/>}/>
+          {/* Expenses */}
+          <Route path="expenses/branch/:branchId" element={<AllExpensesPage />} />
+          <Route path="expenses/form/branch/:branchId" element={<AllExpenseForm />} />
+          <Route path="expenses/branch/:branchId/edit/:expenseId" element={<EditAllExpense />} />
+          <Route path="expenses-report/branch/:branchId" element={<AllExpensesReport />} />
+          {/* Withdrawals */}
+          <Route path="withdrawals/branch/:branchId" element={<AllWithdrawalsPage />} />
+          <Route path="withdrawals/form/branch/:branchId" element={<AllWithdrawalForm />} />
+          <Route path="withdrawals/branch/:branchId/edit/:withdrawalId" element={<EditAllWithdrawal />} />
+          <Route path="withdrawals-report/branch/:branchId" element={<AllWithdrawalsReport />} />
+          <Route path="income-expense-report/branch/:branchId" element={<AllDailyReport />} />
 
           <Route path="staff/branch/:branchId" element={<StaffPage/>}/>
 

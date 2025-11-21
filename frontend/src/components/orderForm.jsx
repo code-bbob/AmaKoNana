@@ -17,12 +17,13 @@ function OrderForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
+    bill_no: "",
     customer_name: "",
     customer_phone: "",
     branch: branchId,
     enterprise: null, // set on submit via backend expected enterprise from token, but keep for clarity
     total_amount: "",
-    amount_received: "",
+    advance_received: "",
     advance_method: "cash",
     status: "pending",
     due_date: "",
@@ -99,11 +100,12 @@ function OrderForm() {
         const formDataToSend = new FormData();
         
         // Append main order fields
+        formDataToSend.append('bill_no', formData.bill_no);
         formDataToSend.append('customer_name', formData.customer_name);
         formDataToSend.append('customer_phone', formData.customer_phone);
         formDataToSend.append('status', formData.status);
         formDataToSend.append('total_amount', formData.total_amount);
-        formDataToSend.append('amount_received', formData.amount_received);
+        formDataToSend.append('advance_received', formData.advance_received);
         formDataToSend.append('advance_method', formData.advance_method);
         formDataToSend.append('due_date', formData.due_date);
         formDataToSend.append('branch', branchId);
@@ -160,7 +162,25 @@ function OrderForm() {
             </h2>
             {error && <p className="text-red-400 mb-4">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex flex-col md:col-span-1">
+                  <Label
+                    htmlFor="bill_no"
+                    className="text-sm font-medium text-white mb-2"
+                  >
+                    Bill No
+                  </Label>
+                  <Input
+                    type="text"
+                    id="bill_no"
+                    name="bill_no"
+                    placeholder="Enter bill number"
+                    value={formData.bill_no}
+                    onChange={handleChange}
+                    className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                    required
+                  />
+                </div>
                 <div className="flex flex-col">
                   <Label
                     htmlFor="customer_name"
@@ -262,17 +282,17 @@ function OrderForm() {
 
                 <div className="flex flex-col">
                   <Label
-                    htmlFor="amount_received"
+                    htmlFor="advance_received"
                     className="text-sm font-medium text-white mb-2"
                   >
-                    Amount Received
+                    Advance Received
                   </Label>
                   <Input
                     type="number"
-                    id="amount_received"
-                    name="amount_received"
+                    id="advance_received"
+                    name="advance_received"
                     onWheel={handleWheel}
-                    value={formData.amount_received}
+                    value={formData.advance_received}
                     onChange={handleChange}
                     className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
                     placeholder="Enter amount received"
@@ -293,8 +313,8 @@ function OrderForm() {
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700">
                     <SelectItem value="cash" className="text-white">Cash</SelectItem>
-                    <SelectItem value="credit_card" className="text-white">Credit Card</SelectItem>
-                    <SelectItem value="mobile_payment" className="text-white">Mobile Payment</SelectItem>
+                    <SelectItem value="card" className="text-white">Card</SelectItem>
+                    <SelectItem value="online" className="text-white">Online Payment</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

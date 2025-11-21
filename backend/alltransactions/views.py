@@ -1,9 +1,10 @@
 from django.shortcuts import render
+from datetime import timedelta
 from rest_framework.response import Response
-from .serializers import PurchaseTransactionSerializer,PurchaseReturnSerializer,SalesTransactionSerializer,SalesReturnSerializer,VendorSerializer,VendorTransactionSerializer,StaffTransactionSerializer,StaffSerializer
+from .serializers import PurchaseTransactionSerializer,PurchaseReturnSerializer,SalesTransactionSerializer,SalesReturnSerializer,VendorSerializer,VendorTransactionSerializer,StaffTransactionSerializer,StaffSerializer, ExpensesSerializer, WithdrawalSerializer
 from rest_framework.views import APIView
 from rest_framework import status
-from .models import PurchaseTransaction,SalesTransaction,Vendor,VendorTransactions,SalesReturn,Purchase,Sales,PurchaseReturn,StaffTransactions,Staff
+from .models import PurchaseTransaction,SalesTransaction,Vendor,VendorTransactions,SalesReturn,Purchase,Sales,PurchaseReturn,StaffTransactions,Staff, Expenses
 from rest_framework.permissions import IsAuthenticated
 from allinventory.models import Product,Brand
 from django.utils.dateparse import parse_date
@@ -18,6 +19,8 @@ from django.db import transaction
 from .models import Debtor, DebtorTransaction
 from .serializers import DebtorSerializer, DebtorTransactionSerializer
 import json
+from alltransactions.models import StaffTransactionDetail,Withdrawal, ClosingCash
+from order.models import Order
 
 
 
@@ -1302,3 +1305,466 @@ class ProductTransferView(APIView):
             return Response(f"Product transferred successfully from {from_branch} to {to_branch}", status=status.HTTP_200_OK)
 
         return Response(f"Failed to transfer product from {from_branch} to {to_branch}", status=status.HTTP_400_BAD_REQUEST)
+
+class ExpensesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, branch=None, pk=None):
+        enterprise = request.user.person.enterprise
+        # Single expense fetch
+        if pk is not None:
+            expense = Expenses.objects.filter(id=pk, enterprise=enterprise).first()
+            if not expense:
+                return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+            serializer = ExpensesSerializer(expense)
+            return Response(serializer.data)
+        expenses = Expenses.objects.filter(enterprise=enterprise)
+
+        if branch:
+            expenses = expenses.filter(branch=branch)
+
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        search = request.GET.get('search')
+
+        if search:
+            expenses = expenses.filter(Q(desc__icontains=search) | Q(method__icontains=search))
+
+        if start_date and end_date:
+            start_date = parse_date(start_date)
+            end_date = parse_date(end_date)
+
+    
+        if start_date and end_date:
+            expenses = expenses.filter(
+                date__range=(start_date, end_date)
+            )
+        elif start_date and not end_date:
+            expenses = expenses.filter(
+                date__gte=start_date
+            )
+        elif not start_date and end_date:
+            expenses = expenses.filter(
+                date__lte=end_date
+            )
+
+        expenses = expenses.order_by('-date','-id')
+
+        # Paginate to mirror purchase list behavior
+        paginator = PageNumberPagination()
+        paginator.page_size = 5
+        page = paginator.paginate_queryset(expenses, request)
+        serializer = ExpensesSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+    
+
+    def post(self,request):
+
+        data = request.data 
+        user = request.user
+        enterprise = user.person.enterprise
+        data['enterprise'] = enterprise.id 
+        # Record who created the expense for consistency with other flows
+        data['person'] = getattr(user, 'person', None)
+        serializer = ExpensesSerializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self,request,pk):
+        data = request.data 
+        user = request.user
+        enterprise = user.person.enterprise
+        role = request.user.person.role
+        if role != "Admin":
+            return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
+        expense = Expenses.objects.get(id=pk, enterprise=enterprise)
+        serializer = ExpensesSerializer(expense,data=data,partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)
+
+    
+    def delete(self,request,pk):
+        role = request.user.person.role
+        enterprise = request.user.person.enterprise
+        if role != "Admin":
+            return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
+        expense = Expenses.objects.get(id=pk, enterprise=enterprise)
+        expense.delete()
+        return Response("Deleted", status=status.HTTP_204_NO_CONTENT)
+        
+
+class ExpensesReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, branch=None):
+        """Return expense rows plus a summary object (last element)."""
+        enterprise = request.user.person.enterprise
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        search = request.GET.get('search')
+
+        expenses = Expenses.objects.filter(enterprise=enterprise)
+        if branch:
+            expenses = expenses.filter(branch=branch)
+
+        # Apply search filter
+        if search:
+            expenses = expenses.filter(Q(desc__icontains=search) | Q(method__icontains=search))
+
+        # Apply date filters
+        if start_date and end_date:
+            sd = parse_date(start_date)
+            ed = parse_date(end_date)
+            if sd and ed:
+                expenses = expenses.filter(date__range=(sd, ed))
+        elif start_date and not end_date:
+            sd = parse_date(start_date)
+            if sd:
+                expenses = expenses.filter(date__gte=sd)
+        elif end_date and not start_date:
+            ed = parse_date(end_date)
+            if ed:
+                expenses = expenses.filter(date__lte=ed)
+
+        # Default to today's expenses when no filters/search provided
+        if not search and not start_date and not end_date:
+            expenses = expenses.filter(date=timezone.now().date())
+
+        expenses = expenses.order_by('date', 'id')
+
+        count = expenses.count()
+        total_expenses = 0
+        cash_expenses = 0
+        cheque_expenses = 0
+        transfer_expenses = 0
+
+        rows = []
+        for exp in expenses:
+            amt = exp.amount or 0
+            total_expenses += amt
+            if exp.method == 'cash':
+                cash_expenses += amt
+            elif exp.method == 'cheque':
+                cheque_expenses += amt
+            elif exp.method == 'transfer':
+                transfer_expenses += amt
+
+            rows.append({
+                'id': exp.id,
+                'date': exp.date,
+                'method': exp.method,
+                'amount': amt,
+                'desc': exp.desc,
+                'person_name': exp.person.user.name if exp.person else None,
+            })
+
+        rows.append({
+            'count': count,
+            'total_expenses': total_expenses,
+            'cash_expenses': cash_expenses,
+            'cheque_expenses': cheque_expenses,
+            'transfer_expenses': transfer_expenses,
+        })
+
+        return Response(rows)
+
+
+class WithdrawalView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, branch=None, pk=None):
+        enterprise = request.user.person.enterprise
+        if pk is not None:
+            withdrawal = Withdrawal.objects.filter(id=pk, enterprise=enterprise).first()
+            if not withdrawal:
+                return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(WithdrawalSerializer(withdrawal).data)
+
+        withdrawals = Withdrawal.objects.filter(enterprise=enterprise)
+        if branch:
+            withdrawals = withdrawals.filter(branch=branch)
+
+        # Filters
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        search = request.GET.get('search')  # amount search
+
+        if search:
+            if search.isdigit():
+                withdrawals = withdrawals.filter(amount=float(search))
+
+        if start_date and end_date:
+            sd = parse_date(start_date)
+            ed = parse_date(end_date)
+            if sd and ed:
+                withdrawals = withdrawals.filter(date__range=(sd, ed))
+        elif start_date and not end_date:
+            sd = parse_date(start_date)
+            if sd:
+                withdrawals = withdrawals.filter(date__gte=sd)
+        elif end_date and not start_date:
+            ed = parse_date(end_date)
+            if ed:
+                withdrawals = withdrawals.filter(date__lte=ed)
+
+        withdrawals = withdrawals.order_by('-date', '-id')
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 5
+        page = paginator.paginate_queryset(withdrawals, request)
+        serializer = WithdrawalSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    def post(self, request):
+        data = request.data.copy()
+        user = request.user
+        enterprise = user.person.enterprise
+        data['enterprise'] = enterprise.id
+        data['person'] = getattr(user, 'person', None)
+        serializer = WithdrawalSerializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk):
+        enterprise = request.user.person.enterprise
+        role = request.user.person.role
+        if role != "Admin":
+            return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
+        withdrawal = Withdrawal.objects.filter(id=pk, enterprise=enterprise).first()
+        if not withdrawal:
+            return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = WithdrawalSerializer(withdrawal, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        enterprise = request.user.person.enterprise
+        role = request.user.person.role
+        if role != "Admin":
+            return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
+        withdrawal = Withdrawal.objects.filter(id=pk, enterprise=enterprise).first()
+        if not withdrawal:
+            return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+        withdrawal.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class WithdrawalReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, branch=None):
+        enterprise = request.user.person.enterprise
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        search = request.GET.get('search')
+
+        withdrawals = Withdrawal.objects.filter(enterprise=enterprise)
+        if branch:
+            withdrawals = withdrawals.filter(branch=branch)
+
+        if search and search.isdigit():
+            withdrawals = withdrawals.filter(amount=float(search))
+
+        if start_date and end_date:
+            sd = parse_date(start_date); ed = parse_date(end_date)
+            if sd and ed:
+                withdrawals = withdrawals.filter(date__range=(sd, ed))
+        elif start_date and not end_date:
+            sd = parse_date(start_date); withdrawals = withdrawals.filter(date__gte=sd) if sd else withdrawals
+        elif end_date and not start_date:
+            ed = parse_date(end_date); withdrawals = withdrawals.filter(date__lte=ed) if ed else withdrawals
+
+        if not search and not start_date and not end_date:
+            withdrawals = withdrawals.filter(date=timezone.now().date())
+
+        withdrawals = withdrawals.order_by('date', 'id')
+
+        total = 0
+        count = withdrawals.count()
+        rows = []
+        for w in withdrawals:
+            amt = w.amount or 0
+            total += amt
+            rows.append({
+                'id': w.id,
+                'date': w.date,
+                'amount': amt,
+                'person_name': w.person.user.name if w.person else None,
+            })
+        rows.append({
+            'count': count,
+            'total_withdrawals': total,
+        })
+        return Response(rows)
+
+
+class IncomeExpenseReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, branch=None):
+        enterprise = request.user.person.enterprise
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        total_cash_amount = 0
+        total_online_amount = 0
+        total_card_amount = 0
+        if start_date:
+            report_start_date = parse_date(start_date)
+        else:
+            report_start_date = timezone.now().date()
+
+        if end_date:
+            report_end_date = parse_date(end_date)
+        else:
+            report_end_date = timezone.now().date()
+        # Sales
+        sales = SalesTransaction.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))
+        if branch:
+            sales = sales.filter(branch=branch)
+
+        closing_cash = ClosingCash.objects.filter(enterprise=enterprise, date__lte=report_start_date - timedelta(days=1))
+        closing_cash = closing_cash.order_by('-date', '-id')  # Get the latest closing cash before the report start date
+        list1=[]
+        for sale in sales:
+            desc = ""
+            for s in sale.sales.all():
+                desc += f"{s.product.name} (x{s.quantity}), \n "
+            sale.description = desc.rstrip(", ")
+            list1.append({
+                'id': sale.id,
+                'bill_no': sale.bill_no,
+                'net_amount': sale.amount_paid,
+                'description': sale.description,
+                'method': sale.method,
+                'cash_amount': sale.cash_amount,
+                'card_amount': sale.card_amount,
+                'online_amount': sale.online_amount,
+                'type': 'Sale',
+            })
+            total_cash_amount += sale.cash_amount or 0
+            total_card_amount += sale.card_amount or 0
+            total_online_amount += sale.online_amount or 0
+
+        orders = Order.objects.filter(enterprise=enterprise, received_date__range=(report_start_date, report_end_date))
+        if branch:
+            orders = orders.filter(branch=branch)
+        for order in orders:
+            desc = "Order's Advanced Payment for: "
+            for o in order.items.all():
+                desc += f"{o.item}), \n "
+            order.description = desc.rstrip(", ")
+            list1.append({
+                'id': order.id,
+                'bill_no': order.bill_no,
+                'net_amount': order.advance_received,
+                'description': order.description,
+                'method': order.advance_method,
+                'type': 'Order',
+                # 'cash_amount': order.cash_amount,
+                # 'cheque_amount': order.cheque_amount,
+                # 'transfer_amount': order.transfer_amount,
+            })
+            if order.advance_method == 'cash':
+                total_cash_amount += order.advance_received or 0
+            elif order.advance_method == 'card':
+                total_card_amount += order.advance_received or 0
+            elif order.advance_method == 'online':
+                total_online_amount += order.advance_received or 0
+
+        remaining_payment_orders = Order.objects.filter(enterprise=enterprise, remaining_received_date__range=(report_start_date, report_end_date))
+        if branch:
+            remaining_payment_orders = remaining_payment_orders.filter(branch=branch)
+
+        for order in remaining_payment_orders:
+            desc = "Order's Remaining Payment for: "
+            for o in order.items.all():
+                desc += f"{o.item}), \n "
+            order.description = desc.rstrip(", ")
+            list1.append({
+                'id': order.id,
+                'bill_no': order.bill_no,
+                'net_amount': order.remaining_received,
+                'description': order.description,
+                'method': order.remaining_received_method,
+                'type': 'Order',
+            })
+            if order.remaining_received_method == 'cash':
+                total_cash_amount += order.remaining_received or 0
+            elif order.remaining_received_method == 'card':
+                total_card_amount += order.remaining_received or 0
+            elif order.remaining_received_method == 'online':
+                total_online_amount += order.remaining_received or 0
+
+        dts = DebtorTransaction.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))
+        if branch:
+            dts = dts.filter(branch=branch)
+
+        for dt in dts:
+            if dt.method == 'credit':
+                continue
+            list1.append({
+                'id': dt.id,
+                'bill_no': 'Debtor Transaction',
+                'net_amount': dt.amount,
+                'description': f"Debtor Transaction for {dt.debtor.name} {dt.desc}:",
+                'method': dt.method,
+            })
+            if dt.method == 'cash':
+                total_cash_amount += dt.amount or 0
+            elif dt.method == 'card':
+                total_card_amount += dt.amount or 0
+            elif dt.method == 'online':
+                total_online_amount += dt.amount or 0
+
+        expenses = Expenses.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))
+        if branch:
+            expenses = expenses.filter(branch=branch)
+        for exp in expenses:
+            list1.append({
+                'id': exp.id,
+                'bill_no': 'Expense',
+                'net_amount': -exp.amount,
+                'description': f"Expense: {exp.desc}",
+                'method': exp.method,
+                'type': 'Expense',
+            })
+            if exp.method == 'cash':
+                total_cash_amount -= exp.amount or 0
+            elif exp.method == 'card':
+                total_card_amount -= exp.amount or 0
+            elif exp.method == 'online':
+                total_online_amount -= exp.amount or 0
+
+        withdrawals = Withdrawal.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))
+        if branch:
+            withdrawals = withdrawals.filter(branch=branch)
+        for wd in withdrawals:
+            list1.append({
+                'id': wd.id,
+                'bill_no': 'Withdrawal',
+                'net_amount': -wd.amount,
+                'description': f"Withdrawal by {wd.person.user.name if wd.person else 'Unknown'}",
+                'method': 'N/A',
+                'type': 'Withdrawal',
+            })
+            total_cash_amount -= wd.amount or 0
+        
+
+        net_cash_in_hand = closing_cash.first().amount + total_cash_amount if closing_cash.exists() else total_cash_amount
+
+        report = {
+            'transactions' : list1,
+            'total_cash_amount': total_cash_amount,
+            'total_online_amount': total_online_amount,
+            'total_card_amount': total_card_amount,
+            'previous_closing_cash': closing_cash.first().amount if closing_cash.exists() else 0,
+            'net_cash_in_hand': net_cash_in_hand,
+        }
+        return Response(report)

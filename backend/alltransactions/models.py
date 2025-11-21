@@ -263,3 +263,42 @@ class DebtorTransaction(models.Model):
         self.debtor.save() 
         super().delete(*args, **kwargs)
 
+
+
+class Expenses(models.Model):
+    date = models.DateField()
+    enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE,related_name='all_expenses')
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True, blank=True)
+    amount = models.FloatField(null=True,blank=True)
+    method = models.CharField(max_length=20,choices=(('cash','Cash'),('card','Card'),('online','Online')),default='cash')
+    cheque_number = models.CharField(max_length=255,null=True,blank=True)
+    cashout_date = models.DateField(null=True)
+    desc = models.CharField(max_length=1000,null=True,blank=True)
+    person = models.ForeignKey('enterprise.Person', on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"Expense {self.pk} of {self.enterprise.name}"
+
+
+class Withdrawal(models.Model):
+    date = models.DateField()
+    enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE,related_name='all_withdrawals')
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True, blank=True)
+    amount = models.FloatField(null=True,blank=True)
+    # method = models.CharField(max_length=20,choices=(('cash','Cash'),('cheque','Cheque'),('transfer','Transfer')),default='cash')
+    # cheque_number = models.CharField(max_length=255,null=True,blank=True)
+    # cashout_date = models.DateField(null=True)
+    # desc = models.CharField(max_length=1000,null=True,blank=True)
+    person = models.ForeignKey('enterprise.Person', on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"Withdrawal of amount {self.amount} at branch {self.branch.name} of {self.enterprise.name}"
+
+class ClosingCash(models.Model):
+    date = models.DateField(auto_now_add=True)
+    enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE,related_name='all_cash_in_hand')
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True, blank=True)
+    amount = models.FloatField(null=True,blank=True)
+
+    def __str__(self):
+        return f"Closing cash at branch {self.branch.name} of {self.enterprise.name}"

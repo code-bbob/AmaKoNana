@@ -53,13 +53,17 @@ function EditOrderForm() {
           }
         }
         
-        setFormData({
+    setFormData({
           customer_name: data.customer_name || "",
           customer_phone: data.customer_phone || "",
             branch: data.branch,
             total_amount: data.total_amount || "",
-            amount_received: data.amount_received || "",
-            advance_method: data.advance_method || "cash",
+      // UPDATED: advance & remaining payment fields
+      advance_received: data.advance_received || "",
+      advance_method: data.advance_method || "cash",
+      remaining_received: data.remaining_received || "",
+      remaining_received_method: data.remaining_received_method || "cash",
+      remaining_received_date: data.remaining_received_date || "",
             status: data.status || "pending",
             due_date: formattedDueDate,
             items: (data.items || []).map(it => ({ 
@@ -79,9 +83,19 @@ function EditOrderForm() {
     fetchOrder();
   }, [orderId]);
 
+  const todaysDate = () => new Date().toISOString().split('T')[0];
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      let next = { ...prev, [name]: value };
+      // Auto-set remaining_received_date when remaining_received entered first time
+      if ((name === 'remaining_received' && value && !prev.remaining_received_date) ||
+          (name === 'remaining_received_method' && value && !prev.remaining_received_date && prev.remaining_received)) {
+        next.remaining_received_date = todaysDate();
+      }
+      return next;
+    });
   };
   const handleSelect = (name, value) => setFormData(prev => ({ ...prev, [name]: value }));
 
@@ -148,9 +162,12 @@ function EditOrderForm() {
         formDataToSend.append('customer_name', formData.customer_name);
         formDataToSend.append('customer_phone', formData.customer_phone);
         formDataToSend.append('status', formData.status);
-        formDataToSend.append('total_amount', formData.total_amount || '');
-        formDataToSend.append('amount_received', formData.amount_received || '');
-        formDataToSend.append('advance_method', formData.advance_method);
+  formDataToSend.append('total_amount', formData.total_amount || '');
+  formDataToSend.append('advance_received', formData.advance_received || '');
+  formDataToSend.append('advance_method', formData.advance_method);
+  formDataToSend.append('remaining_received', formData.remaining_received || '');
+  formDataToSend.append('remaining_received_method', formData.remaining_received_method || '');
+  formDataToSend.append('remaining_received_date', formData.remaining_received_date || '');
         formDataToSend.append('due_date', formData.due_date || '');
         
         formData.items.forEach((item, index) => {
@@ -179,8 +196,11 @@ function EditOrderForm() {
           customer_name: formData.customer_name,
           customer_phone: formData.customer_phone,
           total_amount: formData.total_amount || '',
-          amount_received: formData.amount_received || '',
+          advance_received: formData.advance_received || '',
           advance_method: formData.advance_method,
+          remaining_received: formData.remaining_received || '',
+          remaining_received_method: formData.remaining_received_method || '',
+          remaining_received_date: formData.remaining_received_date || '',
           status: formData.status,
           due_date: formData.due_date || '',
           items: itemsForUpdate
@@ -313,12 +333,7 @@ function EditOrderForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col">
-                  <Label
-                    htmlFor="total_amount"
-                    className="text-sm font-medium text-white mb-2"
-                  >
-                    Total Amount
-                  </Label>
+                  <Label htmlFor="total_amount" className="text-sm font-medium text-white mb-2">Total Amount</Label>
                   <Input
                     type="number"
                     id="total_amount"
@@ -332,43 +347,76 @@ function EditOrderForm() {
                 </div>
 
                 <div className="flex flex-col">
-                  <Label
-                    htmlFor="amount_received"
-                    className="text-sm font-medium text-white mb-2"
-                  >
-                    Amount Received
-                  </Label>
+                  <Label htmlFor="advance_received" className="text-sm font-medium text-white mb-2">Advance Received</Label>
                   <Input
                     type="number"
-                    id="amount_received"
-                    name="amount_received"
+                    id="advance_received"
+                    name="advance_received"
                     onWheel={handleWheel}
-                    value={formData.amount_received || ''}
+                    value={formData.advance_received || ''}
                     onChange={handleChange}
                     className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Enter amount received"
+                    placeholder="Enter advance received"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col">
-                <Label
-                  htmlFor="advance_method"
-                  className="text-sm font-medium text-white mb-2"
-                >
-                  Advance Method
-                </Label>
-                <Select value={formData.advance_method} onValueChange={v => handleSelect('advance_method', v)}>
-                  <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white">
-                    <SelectValue placeholder="Select method" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    <SelectItem value="cash" className="text-white">Cash</SelectItem>
-                    <SelectItem value="credit_card" className="text-white">Credit Card</SelectItem>
-                    <SelectItem value="mobile_payment" className="text-white">Mobile Payment</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex flex-col">
+                  <Label htmlFor="advance_method" className="text-sm font-medium text-white mb-2">Advance Method</Label>
+                  <Select value={formData.advance_method} onValueChange={v => handleChange({ target: { name: 'advance_method', value: v } })}>
+                    <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white">
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="cash" className="text-white">Cash</SelectItem>
+                      <SelectItem value="card" className="text-white">Card</SelectItem>
+                      <SelectItem value="online" className="text-white">Online Payment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col">
+                  <Label htmlFor="remaining_received" className="text-sm font-medium text-white mb-2">Remaining Received</Label>
+                  <Input
+                    type="number"
+                    id="remaining_received"
+                    name="remaining_received"
+                    onWheel={handleWheel}
+                    value={formData.remaining_received || ''}
+                    onChange={handleChange}
+                    className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Enter remaining received"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <Label htmlFor="remaining_received_method" className="text-sm font-medium text-white mb-2">Remaining Received Method</Label>
+                  <Select value={formData.remaining_received_method} onValueChange={v => handleChange({ target: { name: 'remaining_received_method', value: v } })}>
+                    <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white">
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="cash" className="text-white">Cash</SelectItem>
+                      <SelectItem value="card" className="text-white">Card</SelectItem>
+                      <SelectItem value="onlinez" className="text-white">Online</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {formData.remaining_received_date && (
+                <div className="mt-4 flex flex-col">
+                  <Label htmlFor="remaining_received_date" className="text-sm font-medium text-white mb-2">Remaining Received Date</Label>
+                  <Input
+                    type="date"
+                    id="remaining_received_date"
+                    name="remaining_received_date"
+                    value={formData.remaining_received_date}
+                    readOnly
+                    className="bg-slate-700 border-slate-600 text-white opacity-80"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Auto-set when remaining payment captured.</p>
+                </div>
+              )}
 
               <h3 className="text-xl font-semibold mb-2 text-white">
                 Order Items

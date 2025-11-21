@@ -4,16 +4,24 @@ from django.db import models
 
 
 class Order(models.Model):
+    bill_no = models.CharField(max_length=10, null=True, blank=True)
     customer_name = models.CharField(max_length=255)
     customer_phone = models.CharField(max_length=15)
     received_date = models.DateField(auto_now_add=True)
     total_amount = models.FloatField(null=True, blank=True)
-    amount_received = models.FloatField(null=True, blank=True)
+    advance_received = models.FloatField(null=True, blank=True)
     advance_method = models.CharField(max_length=50, choices=[
         ('cash', 'Cash'),
-        ('credit_card', 'Credit Card'),
-        ('mobile_payment', 'Mobile Payment'),
+        ('card', 'Card'),
+        ('online', 'Online Payment'),
     ], default='cash')
+    remaining_received = models.FloatField(null=True, blank=True)
+    remaining_received_method = models.CharField(max_length=50, choices=[
+        ('cash', 'Cash'),
+        ('card', 'Card'),
+        ('online', 'Online Payment')
+    ], default='cash')
+    remaining_received_date = models.DateField(null=True,blank=True)
 
     status = models.CharField(max_length=50, choices=[
         ('pending', 'Pending'),

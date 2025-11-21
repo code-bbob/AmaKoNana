@@ -1143,6 +1143,7 @@ const handleNewProductVendorChange = (ids) => {
                                 <Input
                                   type="number"
                                   value={formData.amount_paid ?? ''}
+                                  required
                                   onChange={(e)=>setFormData(prev=>({...prev, amount_paid: e.target.value }))}
                                   className="bg-slate-800 border-slate-700 text-white w-32 font-mono"
                                   placeholder="0.00"
@@ -1267,7 +1268,7 @@ const handleNewProductVendorChange = (ids) => {
 
                             <div>
                               <Label className="text-slate-300 mb-1">Amount paid</Label>
-                              <Input type="number" value={formData.amount_paid} onChange={(e)=>setFormData(prev=>({...prev, amount_paid: e.target.value}))} className="bg-slate-800 border-slate-700 text-white" />
+                              <Input type="number" required value={formData.amount_paid} onChange={(e)=>setFormData(prev=>({...prev, amount_paid: e.target.value}))} className="bg-slate-800 border-slate-700 text-white" />
                             </div>
                             <div>
                               <Label className="text-slate-300 mb-1">Credited Amount</Label>

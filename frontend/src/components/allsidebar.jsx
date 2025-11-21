@@ -11,6 +11,7 @@ import {
   Container,
   Zap,
   Shield,
+  BookCopy,
   LogOut,
   BookUser,
   Menu,
@@ -95,6 +96,19 @@ export default function Sidebar() {
       ]
     },
     {
+      label: 'Expenses',
+      icon: TrendingDown,
+      mainPath: 'expenses/form',
+      items: [
+        { title: 'Add Expense', icon: TrendingDown, path: 'expenses/form' },
+        { title: 'Expenses', icon: TrendingDown, path: 'expenses' },
+        { title: 'Expenses Report', icon: TrendingDown, path: 'expenses-report', externalReport: true }
+  // ,{ title: 'Add Withdrawal', icon: TrendingDown, path: 'withdrawals/form' },
+  // { title: 'Withdrawals', icon: TrendingDown, path: 'withdrawals' },
+  // { title: 'Withdrawals Report', icon: TrendingDown, path: 'withdrawals-report', externalReport: true }
+      ]
+    },
+    {
       label: 'Staff',
       icon: Shield,
       mainPath: 'staff',
@@ -139,7 +153,14 @@ export default function Sidebar() {
         { title: 'Add Order', icon: ShoppingCart, path: 'orders/form' },
         { title: 'Orders', icon: ShoppingCart, path: 'orders' }
       ]
-    }
+    },
+    { label: 'Reports', icon: BookCopy, mainPath: 'income-expense', items: [
+      { title: 'I/E Report', icon: BookCopy, path: 'income-expense-report', externalReport: true},
+      { title: 'Purchase Report', icon: BookCopy, path: 'purchase-report', externalReport: true },
+      { title: 'Sales Report', icon: BookCopy, path: 'sales-report', externalReport: true },
+      { title: 'Expenses Report', icon: BookCopy, path: 'expenses-report', externalReport: true },
+      // { title: 'Withdrawals Report', icon: BookCopy, path: 'withdrawals-report', externalReport: true }
+    ] }
   ]
 
   const [openGroups, setOpenGroups] = useState(() => {
