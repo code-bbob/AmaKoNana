@@ -54,6 +54,7 @@ function EditOrderForm() {
         }
         
     setFormData({
+          bill_no: data.bill_no || "",
           customer_name: data.customer_name || "",
           customer_phone: data.customer_phone || "",
             branch: data.branch,
@@ -61,9 +62,9 @@ function EditOrderForm() {
       // UPDATED: advance & remaining payment fields
       advance_received: data.advance_received || "",
       advance_method: data.advance_method || "cash",
-      remaining_received: data.remaining_received || "",
+      remaining_received: data.remaining_received,
       remaining_received_method: data.remaining_received_method || "cash",
-      remaining_received_date: data.remaining_received_date || "",
+      remaining_received_date: data.remaining_received_date,
             status: data.status || "pending",
             due_date: formattedDueDate,
             items: (data.items || []).map(it => ({ 
@@ -158,16 +159,16 @@ function EditOrderForm() {
       if (hasNewImages || hasClearImages) {
         // Use FormData for image uploads/clears
         const formDataToSend = new FormData();
-        
+        formDataToSend.append('bill_no', formData.bill_no);
         formDataToSend.append('customer_name', formData.customer_name);
         formDataToSend.append('customer_phone', formData.customer_phone);
         formDataToSend.append('status', formData.status);
   formDataToSend.append('total_amount', formData.total_amount || '');
   formDataToSend.append('advance_received', formData.advance_received || '');
   formDataToSend.append('advance_method', formData.advance_method);
-  formDataToSend.append('remaining_received', formData.remaining_received || '');
+  formDataToSend.append('remaining_received', formData.remaining_received);
   formDataToSend.append('remaining_received_method', formData.remaining_received_method || '');
-  formDataToSend.append('remaining_received_date', formData.remaining_received_date || '');
+  formDataToSend.append('remaining_received_date', formData.remaining_received_date);
         formDataToSend.append('due_date', formData.due_date || '');
         
         formData.items.forEach((item, index) => {
@@ -193,14 +194,15 @@ function EditOrderForm() {
         });
         
         const payload = {
+          bill_no: formData.bill_no,
           customer_name: formData.customer_name,
           customer_phone: formData.customer_phone,
           total_amount: formData.total_amount || '',
           advance_received: formData.advance_received || '',
           advance_method: formData.advance_method,
-          remaining_received: formData.remaining_received || '',
+          remaining_received: formData.remaining_received,
           remaining_received_method: formData.remaining_received_method || '',
-          remaining_received_date: formData.remaining_received_date || '',
+          remaining_received_date: formData.remaining_received_date,
           status: formData.status,
           due_date: formData.due_date || '',
           items: itemsForUpdate
@@ -251,7 +253,24 @@ function EditOrderForm() {
                         </div>
             {error && <p className="text-red-400 mb-4">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex flex-col">
+                  <Label
+                    htmlFor="bill_no"
+                    className="text-sm font-medium text-white mb-2"
+                  >
+                    Bill No.
+                  </Label>
+                  <Input
+                    type="text"
+                    id="bill_no"
+                    name="bill_no"
+                    placeholder="Enter bill number"
+                    value={formData.bill_no}
+                    onChange={handleChange}
+                    className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                  />
+                </div>
                 <div className="flex flex-col">
                   <Label
                     htmlFor="customer_name"
