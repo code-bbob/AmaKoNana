@@ -902,6 +902,8 @@ class SalesReturnSerializer(serializers.ModelSerializer):
                 amount = amount_diff,
                 desc = f'Expense recorded for sales return id {sales_return.id} with bill no {sales_return.sales_transaction.bill_no}\nDetails: {desc}',
                 method = 'cash',
+                type = 'sales_return',
+                sales_return = sales_return
             )
 
         return sales_return
@@ -945,6 +947,11 @@ class SalesReturnSerializer(serializers.ModelSerializer):
         if dt:
             for d in dt:
                 d.delete()
+
+        expenses = Expenses.objects.filter(sales_return=instance)
+        if expenses:
+            for exp in expenses:
+                exp.delete()
 
         instance.delete()
         return instance

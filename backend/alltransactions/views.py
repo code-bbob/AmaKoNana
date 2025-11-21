@@ -1615,6 +1615,8 @@ class IncomeExpenseReportView(APIView):
         total_cash_amount = 0
         total_online_amount = 0
         total_card_amount = 0
+        total_income = 0
+        total_expense = 0
         if start_date:
             report_start_date = parse_date(start_date)
         else:
@@ -1625,12 +1627,20 @@ class IncomeExpenseReportView(APIView):
         else:
             report_end_date = timezone.now().date()
         # Sales
+        message = None
+        closing_cash = ClosingCash.objects.filter(enterprise=enterprise, date=report_start_date - timedelta(days=1))
+        closing_cash = closing_cash.order_by('-date', '-id')  # Get the latest closing cash before the report start date
+        if closing_cash.exists() == False:
+            closing_cash = ClosingCash.objects.filter(enterprise=enterprise,branch=branch, date__lte=report_start_date).order_by('-date').first()
+            if closing_cash:
+                required_date = closing_cash.date + timedelta(days=1)
+                message= f"Your closing cash for the previous date was not set. Now using the last closing cash of {closing_cash.date} to generate the report. The generated report will start from {required_date}."
+                report_start_date = required_date
+        else:
+            closing_cash = closing_cash.first()
         sales = SalesTransaction.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))
         if branch:
             sales = sales.filter(branch=branch)
-
-        closing_cash = ClosingCash.objects.filter(enterprise=enterprise, date__lte=report_start_date - timedelta(days=1))
-        closing_cash = closing_cash.order_by('-date', '-id')  # Get the latest closing cash before the report start date
         list1=[]
         for sale in sales:
             desc = ""
@@ -1651,6 +1661,7 @@ class IncomeExpenseReportView(APIView):
             total_cash_amount += sale.cash_amount or 0
             total_card_amount += sale.card_amount or 0
             total_online_amount += sale.online_amount or 0
+            total_income += sale.amount_paid or 0
 
         orders = Order.objects.filter(enterprise=enterprise, received_date__range=(report_start_date, report_end_date))
         if branch:
@@ -1667,9 +1678,6 @@ class IncomeExpenseReportView(APIView):
                 'description': order.description,
                 'method': order.advance_method,
                 'type': 'Order',
-                # 'cash_amount': order.cash_amount,
-                # 'cheque_amount': order.cheque_amount,
-                # 'transfer_amount': order.transfer_amount,
             })
             if order.advance_method == 'cash':
                 total_cash_amount += order.advance_received or 0
@@ -1677,6 +1685,7 @@ class IncomeExpenseReportView(APIView):
                 total_card_amount += order.advance_received or 0
             elif order.advance_method == 'online':
                 total_online_amount += order.advance_received or 0
+            total_income += order.advance_received or 0
 
         remaining_payment_orders = Order.objects.filter(enterprise=enterprise, remaining_received_date__range=(report_start_date, report_end_date))
         if branch:
@@ -1701,6 +1710,7 @@ class IncomeExpenseReportView(APIView):
                 total_card_amount += order.remaining_received or 0
             elif order.remaining_received_method == 'online':
                 total_online_amount += order.remaining_received or 0
+            total_income += order.remaining_received or 0
 
         dts = DebtorTransaction.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))
         if branch:
@@ -1713,7 +1723,7 @@ class IncomeExpenseReportView(APIView):
                 'id': dt.id,
                 'bill_no': 'Debtor Transaction',
                 'net_amount': dt.amount,
-                'description': f"Debtor Transaction for {dt.debtor.name} {dt.desc}:",
+                'description': f"Debtor Transaction for {dt.debtor.name}: {dt.desc}",
                 'method': dt.method,
             })
             if dt.method == 'cash':
@@ -1722,6 +1732,10 @@ class IncomeExpenseReportView(APIView):
                 total_card_amount += dt.amount or 0
             elif dt.method == 'online':
                 total_online_amount += dt.amount or 0
+            if dt.amount > 0:
+                total_income += dt.amount or 0
+            else:
+                total_expense += -dt.amount or 0
 
         expenses = Expenses.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))
         if branch:
@@ -1731,7 +1745,7 @@ class IncomeExpenseReportView(APIView):
                 'id': exp.id,
                 'bill_no': 'Expense',
                 'net_amount': -exp.amount,
-                'description': f"Expense: {exp.desc}",
+                'description': f"{exp.desc}",
                 'method': exp.method,
                 'type': 'Expense',
             })
@@ -1741,6 +1755,7 @@ class IncomeExpenseReportView(APIView):
                 total_card_amount -= exp.amount or 0
             elif exp.method == 'online':
                 total_online_amount -= exp.amount or 0
+            total_expense += exp.amount or 0
 
         withdrawals = Withdrawal.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))
         if branch:
@@ -1757,14 +1772,18 @@ class IncomeExpenseReportView(APIView):
             total_cash_amount -= wd.amount or 0
         
 
-        net_cash_in_hand = closing_cash.first().amount + total_cash_amount if closing_cash.exists() else total_cash_amount
+        net_cash_in_hand = (closing_cash.amount if closing_cash else 0) + total_cash_amount
 
         report = {
             'transactions' : list1,
             'total_cash_amount': total_cash_amount,
             'total_online_amount': total_online_amount,
             'total_card_amount': total_card_amount,
-            'previous_closing_cash': closing_cash.first().amount if closing_cash.exists() else 0,
+            'previous_closing_cash': closing_cash.amount if closing_cash else 0,
             'net_cash_in_hand': net_cash_in_hand,
+            'total_income': total_income,
+            'total_expense': total_expense,
         }
+        if message:
+            report['message'] = message
         return Response(report)

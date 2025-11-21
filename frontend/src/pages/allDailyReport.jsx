@@ -25,6 +25,7 @@ const AllIncomeExpenseReport = () => {
 	const [error, setError] = useState(null)
 	const [startDate, setStartDate] = useState("")
 	const [endDate, setEndDate] = useState("")
+    const [message, setMessage] = useState("")
 	const api = useAxios()
 	const navigate = useNavigate()
 
@@ -43,6 +44,7 @@ const AllIncomeExpenseReport = () => {
 			const queryString = new URLSearchParams(params).toString()
 			const response = await api.get(`alltransaction/income-expense-report/branch/${branchId}/?${queryString}`)
 			const transactions = decorateTransactions(response.data.transactions || [])
+            setMessage(response.data.message || "")
             let cash = response.data.total_cash_amount;
             let card = response.data.total_card_amount;
             let online = response.data.total_online_amount;
@@ -63,7 +65,9 @@ const AllIncomeExpenseReport = () => {
 				transactions,
 				net_cash_in_hand: response.data.net_cash_in_hand || cash,
 				previous_closing_cash: response.data.previous_closing_cash || 0,
-				totals: { cash, card, online, count: transactions.length }
+				totals: { cash, card, online, count: transactions.length },
+                total_income: response.data.total_income || 0,
+                total_expense: response.data.total_expense || 0,
 			})
 		} catch (err) {
 			setError("Failed to fetch income-expense report")
@@ -135,6 +139,7 @@ const AllIncomeExpenseReport = () => {
 				<CardHeader className="border-b border-slate-700 print:border-gray-200">
 					<CardTitle className="text-2xl lg:text-3xl font-bold text-white print:text-black">Income-Expense Report</CardTitle>
 					<p className="text-sm text-gray-400 print:text-gray-600">{format(new Date(), "MMMM d, yyyy")}</p>
+                    {message && <p className="mt-2 text-sm text-yellow-400 print:text-yellow-600">{message}</p>}
 				</CardHeader>
 				<CardContent className="pt-6">
 					<div className="mb-6 space-y-4 lg:space-y-0 lg:flex lg:flex-wrap lg:items-center lg:gap-4 print:hidden">
@@ -195,15 +200,18 @@ const AllIncomeExpenseReport = () => {
 					</Table>
 					<div className="mt-6 flex justify-end">
 						<div className="w-72 bg-slate-800 p-4 rounded-lg print:bg-gray-100">
-							<div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Transactions:</span><span className="text-white print:text-black">{data.totals.count}</span></div>
-							{/* <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Net Total:</span><span className="text-white print:text-black">{data.totals.net.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div> */}
-							<div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Cash Total:</span><span className="text-white print:text-black">{data.totals.cash.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
-							<div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Online Total:</span><span className="text-white print:text-black">{data.totals.online.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
-							<div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Card Total:</span><span className="text-white print:text-black">{data.totals.card.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+							{/* <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Transactions:</span><span className="text-white print:text-black">{data.totals.count}</span></div> */}
                             <div className="flex justify-between mb-2 border-t border-slate-600 pt-2"><span className="font-semibold text-white print:text-black">Last Closing Cash:</span><span className="text-white print:text-black">{(data.previous_closing_cash)?.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
-							<div className="flex justify-between mb-2 border-t border-slate-600 pt-2"><span className="font-semibold text-white print:text-black">Net Cash In Hand:</span><span className="text-white print:text-black">{data.net_cash_in_hand.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+							{/* <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Net Total:</span><span className="text-white print:text-black">{data.totals.net.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div> */}
+							<div className="flex justify-between mb-2 border-t border-slate-600 pt-2"></div><div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Cash Total:</span><span className="text-white print:text-black">{data.totals.cash.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+							<div className="flex justify-between mb-2 border-t border-slate-600 pt-2"><span className="font-semibold text-white print:text-black">Net Cash In Hand:</span><span className="text-green-500 font-bold print:text-black">{data.net_cash_in_hand.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+							<div className="flex justify-between mb-2 border-t border-slate-600 pt-2"></div><div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Online Total:</span><span className="text-white print:text-black">{data.totals.online.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+							<div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Card Total:</span><span className="text-white print:text-black">{data.totals.card.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+                            <div className="flex justify-between mb-2 border-t border-slate-600 pt-2"></div><div className="flex justify-between mb-2 border-t border-slate-600 pt-2"><span className="font-semibold text-white print:text-black">Total Income:</span><span className="text-white print:text-black">{data.total_income.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+                            <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Total Expense:</span><span className="text-white print:text-black">{data.total_expense.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
 						</div>
 					</div>
+                    
 					<div className="mt-8 text-center text-sm text-gray-400 print:text-gray-600"><p>This report is auto-generated and does not require a signature.</p></div>
 				</CardContent>
 			</Card>

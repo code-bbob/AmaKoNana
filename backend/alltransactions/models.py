@@ -275,6 +275,8 @@ class Expenses(models.Model):
     cashout_date = models.DateField(null=True)
     desc = models.CharField(max_length=1000,null=True,blank=True)
     person = models.ForeignKey('enterprise.Person', on_delete=models.SET_NULL, null=True, blank=True)
+    type = models.CharField(max_length=50, null=True, blank=True)
+    sales_return = models.ForeignKey('SalesReturn', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"Expense {self.pk} of {self.enterprise.name}"
