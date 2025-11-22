@@ -67,4 +67,5 @@ urlpatterns = [
 
     path('income-expense-report/', views.IncomeExpenseReportView.as_view(), name='incomeexpensereport'),
     path('income-expense-report/branch/<int:branch>/', views.IncomeExpenseReportView.as_view(), name='incomeexpensereport'),
+    path('closing-cash/', views.ClosingCashView.as_view(), name='closingcash'),
 ]

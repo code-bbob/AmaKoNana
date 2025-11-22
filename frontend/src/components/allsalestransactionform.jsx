@@ -116,45 +116,26 @@ function AllSalesTransactionForm() {
   });
   const [openDebtor, setOpenDebtor] = useState(false);
   const [payable, setPayable] = useState(0);
+  const [paymentToast, setPaymentToast] = useState("");
 
   // Settings dialog & master discount state
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [masterDiscount, setMasterDiscount] = useState(""); // percentage string 0-100
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
-  // User enters amount_paid; we derive writeoff = totalAmount - amount_paid (clamped).
-  // Payable for non-mixed/non-credit stays as totalAmount so UI shows original bill.
+  // Simplified writeoff: totalAmount - amount_paid (clamped at 0) for non-mixed/non-credit.
   useEffect(() => {
-    if (formData.method === 'mixed') return; // mixed handled elsewhere
-    if (formData.method === 'credit') {
-      setPayable(totalAmount);
-      setFormData(prev => ({ ...prev, writeoff: 0 }));
-      return;
-    }
-    const raw = parseFloat(formData.amount_paid);
-    if (isNaN(raw)) {
-      setPayable(totalAmount);
-      setFormData(prev => ({ ...prev, writeoff: 0 }));
-      return;
-    }
-    const safePaid = Math.min(Math.max(raw, 0), totalAmount);
-    const derivedWriteoff = Math.max(0, totalAmount - safePaid);
-    setPayable(totalAmount); // always show full payable before writeoff
-    setFormData(prev => ({ ...prev, writeoff: derivedWriteoff }));
+    if (formData.method === 'mixed' || formData.method === 'credit') return;
+    const paid = parseFloat(formData.amount_paid) || 0;
+    setFormData(prev => ({ ...prev, writeoff: Math.max(0, totalAmount - paid) }));
   }, [formData.amount_paid, formData.method, totalAmount]);
 
   const [change, setChange] = useState(0);
 
-  useEffect(() => {
-    //change payable when writeoff changes
-    if (formData.method === 'mixed' || formData.method === 'credit') return;
-    setPayable(parseFloat(formData.amount_paid));
-  }, [formData.writeoff, formData.method, formData.amount_paid]);
+  // Remove previous payable override; payable shown only for mixed & credit (internally).
     
 
   useEffect(() => {
-    // For non-mixed/non-credit: change is based on amount_received input against totalAmount.
-    // For mixed: change based on sum parts vs totalAmount. For credit: no change.
     if (formData.method === 'credit') { setChange('0.00'); return; }
     if (formData.method === 'mixed') {
       const sum = (parseFloat(formData.cash_amount)||0)+(parseFloat(formData.card_amount)||0)+(parseFloat(formData.online_amount)||0);
@@ -162,8 +143,9 @@ function AllSalesTransactionForm() {
       return;
     }
     const received = parseFloat(formData.amount_received) || 0;
-    setChange(Math.max(0, received - formData.amount_paid).toFixed(2));
-  }, [formData.amount_received, formData.cash_amount, formData.card_amount, formData.online_amount, formData.method, totalAmount]);
+    const paid = parseFloat(formData.amount_paid) || 0;
+    setChange(Math.max(0, received - paid).toFixed(2));
+  }, [formData.amount_received, formData.cash_amount, formData.card_amount, formData.online_amount, formData.method, totalAmount, formData.amount_paid]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -418,9 +400,9 @@ const handleNewProductVendorChange = (ids) => {
     e?.preventDefault();
     try {
       setSubLoading(true);
-      // Require amount_paid to be entered (non-empty) before submission
-      if (formData.amount_paid === null || formData.amount_paid === '') {
-        alert('Please enter the amount paid before submitting.');
+      // Validate amount paid (empty only) for non-mixed
+      if (formData.method !== 'mixed' && (formData.amount_paid === null || formData.amount_paid === '')) {
+        setPaymentToast('Please enter the amount paid before submitting.');
         setSubLoading(false);
         return;
       }
@@ -450,28 +432,11 @@ const handleNewProductVendorChange = (ids) => {
         };
       });
       // console.debug("formdata before submit:", formData);
-      // Mixed payment validation & calculations against payable (total - writeoff)
-      if (formData.method === 'mixed') {
-        const c = parseFloat(formData.cash_amount) || 0;
-        const o = parseFloat(formData.online_amount) || 0;
-        const d = parseFloat(formData.card_amount) || 0;
-        const sum = c + o + d;
-        if (Math.abs(sum - payable) > 0.01) {
-          // simple error alert and abort
-          alert(`Mixed payment breakdown (${sum.toFixed(2)}) must equal payable (${payable.toFixed(2)})`);
-          setSubLoading(false);
-          return;
-        }
-      }
       const originalTotal = totalAmount;
-      // Determine safe paid amount for payload
-      let safePaid;
-      if (formData.method === 'mixed') {
-        safePaid = payable; // payable already sum of breakdown
-      } else {
-        const enteredPaid = parseFloat(formData.amount_paid) || 0;
-        safePaid = Math.min(Math.max(enteredPaid, 0), originalTotal);
-      }
+      // Raw amount paid (no clamping); mixed sums its parts
+      const rawPaid = formData.method === 'mixed'
+        ? (parseFloat(formData.cash_amount)||0) + (parseFloat(formData.card_amount)||0) + (parseFloat(formData.online_amount)||0)
+        : (parseFloat(formData.amount_paid)||0);
   
       const payload = {
         ...formData,
@@ -481,7 +446,7 @@ const handleNewProductVendorChange = (ids) => {
         cash_amount: parseFloat(formData.cash_amount) || 0,
         card_amount: parseFloat(formData.card_amount) || 0,
         online_amount: parseFloat(formData.online_amount) || 0,
-        amount_paid: safePaid,
+        amount_paid: rawPaid,
         credited_amount: formData.credited_amount || 0
       };
       const response = await api.post(
@@ -562,7 +527,11 @@ const handleNewProductVendorChange = (ids) => {
     // Don't intercept typing inside inputs/textareas/selects or contenteditable
     const target = e.target;
     const tag = target?.tagName?.toLowerCase();
-    const isEditable = target?.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select';
+  const role = target?.getAttribute?.('role');
+  const isAriaCombo = role === 'combobox' || role === 'listbox' || role === 'option';
+  const hasPopup = target?.getAttribute?.('aria-haspopup') === 'listbox' || target?.getAttribute?.('aria-haspopup') === 'dialog';
+  const isEditable = target?.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select';
+  const isInteractive = isEditable || isAriaCombo || hasPopup;
 
     if (e.key === "Enter") {
       // Prevent immediate re-trigger from key repeat (which caused instant close/submit)
@@ -570,14 +539,20 @@ const handleNewProductVendorChange = (ids) => {
         e.preventDefault();
         return;
       }
-      // If dialog is open, Enter should confirm & submit
-      if (showPaymentDialog) {
+      // If payment dialog open and focus is inside an interactive element, let native form submit handle or selection proceed
+      if (showPaymentDialog && isInteractive) {
+        return; // allow form submission by browser
+      }
+      // If payment dialog open but not focused on interactive element, trigger submit
+      if (showPaymentDialog && !isInteractive) {
         e.preventDefault();
         handleSubmit();
         return;
       }
-      // If focus is inside an input-like element, let the element handle Enter normally
-      if (isEditable) return;
+      // If focus is currently on an interactive element in main form (e.g., product combobox, method select trigger), do not open payment dialog; allow its default behavior.
+      if (!showPaymentDialog && isInteractive) {
+        return;
+      }
       // If no current barcode word, open payment dialog instead of submitting directly
       if (currentWord.trim().length === 0){
         e.preventDefault();
@@ -711,11 +686,9 @@ const handleNewProductVendorChange = (ids) => {
     const cash = parseFloat(formData.cash_amount) || 0;
     const card = parseFloat(formData.card_amount) || 0;
     const online = parseFloat(formData.online_amount) || 0;
-    let sum = cash + card + online;
-    if (sum > totalAmount) sum = totalAmount; // clamp
+    const sum = cash + card + online; // raw sum
     setPayable(sum);
-    const derivedWriteoff = Math.max(0, totalAmount - sum);
-    setFormData(prev => ({ ...prev, writeoff: derivedWriteoff, amount_paid: sum }));
+    setFormData(prev => ({ ...prev, writeoff: Math.max(0, totalAmount - sum), amount_paid: sum }));
   }, [formData.cash_amount, formData.card_amount, formData.online_amount, formData.method, totalAmount]);
 
   // No separate global discount; totalAmount derived above
@@ -1131,14 +1104,14 @@ const handleNewProductVendorChange = (ids) => {
                       <div className="flex justify-between text-slate-300 text-sm"><span>Subtotal</span><span className="font-mono">{subtotal.toFixed(2)}</span></div>
                       <div className="flex justify-between text-slate-300 text-sm"><span>Discount</span><span className="font-mono">{totalDiscount.toFixed(2)}</span></div>
                       <div className="flex justify-between text-slate-300 text-sm"><span>Write-off</span><span className="font-mono">{(parseFloat(formData.writeoff)||0).toFixed(2)}</span></div>
-                      <div className="flex justify-between text-white text-base font-semibold"><span>Payable</span><span className="font-mono">{payable.toFixed(2)}</span></div>
+                      <div className="flex justify-between text-white text-base font-semibold"><span>Total</span><span className="font-mono">{totalAmount.toFixed(2)}</span></div>
                     </div>
                   </div>
                   {/* Right: payment */}
-                  <div className="w-1/2 flex flex-col">
+          <div className="w-1/2 flex flex-col">
                     <div className="px-6 py-3">
                       <h3 className="text-lg font-medium mb-4">Payment</h3>
-                      <div className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmit}>
                         <div>
 
                               <div className="flex justify-between mb-1">
@@ -1158,9 +1131,12 @@ const handleNewProductVendorChange = (ids) => {
                               <div className="flex justify-between my-3">
                                 Write-off: <span className="font-mono">{(parseFloat(formData.writeoff)||0).toFixed(2)}</span>
                               </div>
-                              <div className="flex justify-between mb-1">
-                                Payable: <span className="font-mono">{payable.toFixed(2)}</span>
-                              </div>
+                              {paymentToast && (
+                                <div className="mt-2 bg-yellow-600/20 border border-yellow-600 text-yellow-200 text-sm px-3 py-2 rounded flex justify-between items-center">
+                                  <span>{paymentToast}</span>
+                                  <button type="button" onClick={()=>setPaymentToast('')} className="text-xs underline">dismiss</button>
+                                </div>
+                              )}
                         </div>
                         <div>
                           <Label className="text-slate-300 mb-1">Method</Label>
@@ -1271,19 +1247,28 @@ const handleNewProductVendorChange = (ids) => {
                               </Popover>
                             </div>
                             <div className="flex gap-5">
-
-                            <div>
-                              <Label className="text-slate-300 mb-1">Amount paid</Label>
-                              <Input type="number" required value={formData.amount_paid} onChange={(e)=>setFormData(prev=>({...prev, amount_paid: e.target.value}))} className="bg-slate-800 border-slate-700 text-white" />
+                              <div>
+                                <Label className="text-slate-300 mb-1">Amount paid</Label>
+                                <Input type="number" required value={formData.amount_paid} onChange={(e)=>setFormData(prev=>({...prev, amount_paid: e.target.value}))} className="bg-slate-800 border-slate-700 text-white" />
+                              </div>
+                              <div>
+                                <Label className="text-slate-300 mb-1">Credited Amount</Label>
+                                <Input type="number" value={formData.credited_amount} readOnly className="bg-slate-800 border-slate-700 text-white" />
+                              </div>
                             </div>
-                            <div>
-                              <Label className="text-slate-300 mb-1">Credited Amount</Label>
-                              <Input type="number" value={formData.credited_amount} readOnly className="bg-slate-800 border-slate-700 text-white" />
-                            </div>
-                            </div>
+                            {paymentToast && (
+                              <div className="mt-2 bg-yellow-600/20 border border-yellow-600 text-yellow-200 text-sm px-3 py-2 rounded flex justify-between items-center">
+                                <span>{paymentToast}</span>
+                                <button type="button" onClick={()=>setPaymentToast('')} className="text-xs underline">dismiss</button>
+                              </div>
+                            )}
                           </div>
                         )}
-                      </div>
+                        <div className="flex justify-end pt-2">
+                          {/* Hidden submit to allow Enter key inside inputs to submit */}
+                          <button type="submit" className="hidden" aria-hidden="true"></button>
+                        </div>
+                      </form>
                     </div>
                   </div>
                 </div>
@@ -1293,7 +1278,7 @@ const handleNewProductVendorChange = (ids) => {
                   <div className="text-xs text-slate-400">Press Enter to confirm • Esc to cancel</div>
                   <div className="flex gap-3">
                     <Button type="button" variant="outline" className="bg-slate-800 border-slate-700 text-white" onClick={()=>setShowPaymentDialog(false)}>Cancel</Button>
-                    <Button type="button" className="bg-green-600 hover:bg-green-700 text-white" disabled={subLoading || formData.amount_paid === null || formData.amount_paid === ''} onClick={handleSubmit}>Confirm & Submit</Button>
+                    <Button type="submit" form="" className="bg-green-600 hover:bg-green-700 text-white" disabled={subLoading || (formData.method !== 'mixed' && (formData.amount_paid === null || formData.amount_paid === ''))}>Confirm & Submit</Button>
                   </div>
                 </div>
               </DialogContent>

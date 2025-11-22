@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Printer, Download, ChevronDown, Calendar, ArrowLeft } from "lucide-react"
+import { Printer, Download, ChevronDown, Calendar, ArrowLeft, CheckCircle } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import useAxios from "@/utils/useAxios"
 import { useNavigate, useParams } from "react-router-dom"
@@ -26,12 +27,24 @@ const AllIncomeExpenseReport = () => {
 	const [startDate, setStartDate] = useState("")
 	const [endDate, setEndDate] = useState("")
     const [message, setMessage] = useState("")
+	const [role, setRole] = useState('')
+	const [confirmOpen, setConfirmOpen] = useState(false)
 	const api = useAxios()
 	const navigate = useNavigate()
 
 	useEffect(() => {
 		fetchIncomeExpenseData()
+		fetchRole()
 	}, [])
+
+	const fetchRole = async () => {
+		try {
+			const r = await api.get('enterprise/role/')
+			setRole(r.data)
+		} catch (e) {
+			// silently fail; button will not render
+		}
+	}
 
 	const decorateTransactions = (txns) => {
 		const todayStr = format(new Date(), "yyyy-MM-dd")
@@ -84,7 +97,23 @@ const AllIncomeExpenseReport = () => {
 		fetchIncomeExpenseData(params)
 	}
 
+	const [approveStatus, setApproveStatus] = useState(null)
+
 	const handlePrint = () => window.print()
+
+	const handleApprove = async () => {
+		if (!data) return
+		setApproveStatus('Saving...')
+		try {
+			await api.post('alltransaction/closing-cash/', { branch: parseInt(branchId, 10), amount: data.net_cash_in_hand, date: format(new Date(), 'yyyy-MM-dd') })
+			setApproveStatus('Approved')
+			fetchIncomeExpenseData()
+		} catch (e) {
+			setApproveStatus('Failed')
+		}
+		setConfirmOpen(false)
+		setTimeout(()=> setApproveStatus(null), 4000)
+	}
 
 	const handleDownloadCSV = () => {
 		if (!data || !data.transactions.length) return
@@ -131,18 +160,26 @@ const AllIncomeExpenseReport = () => {
 	if (!data) return null
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 lg:px-8 print:bg-white print:p-0">
+		<div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-3 sm:p-4 lg:px-8 print:bg-white print:p-0">
 			<Button onClick={() => navigate('/')} variant="outline" className="w-full lg:w-auto px-5 mb-4 text-black border-white print:hidden hover:bg-gray-700 hover:text-white">
 				<ArrowLeft className="mr-2 h-4 w-3" /> Back to Dashboard
 			</Button>
 			<Card className="bg-gradient-to-b from-slate-800 to-slate-900 border-none shadow-lg print:shadow-none print:bg-white">
-				<CardHeader className="border-b border-slate-700 print:border-gray-200">
+				<CardHeader className="border-b border-slate-700 print:border-gray-200 relative">
 					<CardTitle className="text-2xl lg:text-3xl font-bold text-white print:text-black">Income-Expense Report</CardTitle>
-					<p className="text-sm text-gray-400 print:text-gray-600">{format(new Date(), "MMMM d, yyyy")}</p>
+                    <p className="text-sm text-gray-400 print:text-gray-600">{format(new Date(), "MMMM d, yyyy")}</p>
+					{/* Approve Button (Admin only) */}
+					{role === 'Admin' && (
+						<div className=" flex items-center space-x-2 print:hidden">
+							<Button onClick={() => setConfirmOpen(true)} disabled={approveStatus === 'Approved'} variant="outline" className="bg-emerald-600 hover:bg-emerald-700 text-white border-none disabled:opacity-50">
+								<CheckCircle className="mr-2 h-4 w-4" /> {approveStatus ? approveStatus : 'Approve'}
+							</Button>
+						</div>
+					)}
                     {message && <p className="mt-2 text-sm text-yellow-400 print:text-yellow-600">{message}</p>}
 				</CardHeader>
-				<CardContent className="pt-6">
-					<div className="mb-6 space-y-4 lg:space-y-0 lg:flex lg:flex-wrap lg:items-center lg:gap-4 print:hidden">
+				<CardContent className="pt-4 sm:pt-6">
+					<div className="mb-6 space-y-3 sm:space-y-4 lg:space-y-0 lg:flex lg:flex-wrap lg:items-center lg:gap-4 print:hidden">
 						<form onSubmit={handleDateFilter} className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
 							<div className="flex items-center space-x-2">
 								<Label htmlFor="startDate" className="text-white whitespace-nowrap">Start:</Label>
@@ -173,7 +210,8 @@ const AllIncomeExpenseReport = () => {
 							</DropdownMenu>
 						</div>
 					</div>
-					<Table>
+					<div className="overflow-x-auto rounded-md border border-slate-700 print:border-gray-300">
+					<Table className="min-w-[640px]">
 						<TableHeader>
 							<TableRow>
 								<TableHead className="w-[120px] text-white print:text-black">Date</TableHead>
@@ -198,8 +236,9 @@ const AllIncomeExpenseReport = () => {
 							))}
 						</TableBody>
 					</Table>
-					<div className="mt-6 flex justify-end">
-						<div className="w-72 bg-slate-800 p-4 rounded-lg print:bg-gray-100">
+					</div>
+					<div className="mt-6 grid gap-4 sm:grid-cols-2 lg:flex lg:justify-end">
+						<div className="w-full sm:w-64 bg-slate-800 p-4 rounded-lg print:bg-gray-100">
 							{/* <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Transactions:</span><span className="text-white print:text-black">{data.totals.count}</span></div> */}
                             <div className="flex justify-between mb-2 border-t border-slate-600 pt-2"><span className="font-semibold text-white print:text-black">Last Closing Cash:</span><span className="text-white print:text-black">{(data.previous_closing_cash)?.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
 							{/* <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Net Total:</span><span className="text-white print:text-black">{data.totals.net.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div> */}
@@ -209,12 +248,28 @@ const AllIncomeExpenseReport = () => {
 							<div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Card Total:</span><span className="text-white print:text-black">{data.totals.card.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
                             <div className="flex justify-between mb-2 border-t border-slate-600 pt-2"></div><div className="flex justify-between mb-2 border-t border-slate-600 pt-2"><span className="font-semibold text-white print:text-black">Total Income:</span><span className="text-white print:text-black">{data.total_income.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
                             <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Total Expense:</span><span className="text-white print:text-black">{data.total_expense.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+							</div>
 						</div>
-					</div>
                     
 					<div className="mt-8 text-center text-sm text-gray-400 print:text-gray-600"><p>This report is auto-generated and does not require a signature.</p></div>
 				</CardContent>
 			</Card>
+
+			{/* Confirmation Dialog */}
+			<Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Confirm Closing Cash</DialogTitle>
+						<DialogDescription>
+							Are you sure you want to verify and store today's closing cash of {data?.net_cash_in_hand?.toLocaleString('en-US',{style:'currency',currency:'NPR'})}? This action records the amount for today.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter className="flex justify-end space-x-3">
+						<Button variant="outline" onClick={() => setConfirmOpen(false)} className="border-slate-600 text-black hover:bg-slate-700">Cancel</Button>
+						<Button onClick={handleApprove} className="bg-emerald-600 hover:bg-emerald-700 text-white">Confirm</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	)
 }

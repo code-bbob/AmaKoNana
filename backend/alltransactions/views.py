@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from datetime import timedelta
 from rest_framework.response import Response
-from .serializers import PurchaseTransactionSerializer,PurchaseReturnSerializer,SalesTransactionSerializer,SalesReturnSerializer,VendorSerializer,VendorTransactionSerializer,StaffTransactionSerializer,StaffSerializer, ExpensesSerializer, WithdrawalSerializer
+from .serializers import PurchaseTransactionSerializer,PurchaseReturnSerializer,SalesTransactionSerializer,SalesReturnSerializer,VendorSerializer,VendorTransactionSerializer,StaffTransactionSerializer,StaffSerializer, ExpensesSerializer, WithdrawalSerializer, ClosingCashSerializer
+from enterprise.models import Branch
 from rest_framework.views import APIView
 from rest_framework import status
 from .models import PurchaseTransaction,SalesTransaction,Vendor,VendorTransactions,SalesReturn,Purchase,Sales,PurchaseReturn,StaffTransactions,Staff, Expenses
@@ -1787,3 +1788,53 @@ class IncomeExpenseReportView(APIView):
         if message:
             report['message'] = message
         return Response(report)
+
+
+class ClosingCashView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """Create or update today's closing cash for a branch.
+
+        Request body expects: { "branch": <branch_id>, "amount": <float> }
+        Enterprise is inferred from the authenticated user. Date auto-populates.
+        If a ClosingCash already exists for today for the branch+enterprise it will be updated.
+        Returns the serialized ClosingCash object.
+        """
+        enterprise = request.user.person.enterprise
+        branch_id = request.data.get('branch')
+        amount = request.data.get('amount')
+        if branch_id is None or amount is None:
+            return Response({"detail": "branch and amount are required"}, status=status.HTTP_400_BAD_REQUEST)
+        branch_obj = Branch.objects.filter(id=branch_id, enterprise=enterprise).first()
+        if not branch_obj:
+            return Response({"detail": "Branch not found"}, status=status.HTTP_404_NOT_FOUND)
+        today = timezone.now().date()
+        closing_cash = ClosingCash.objects.filter(enterprise=enterprise, branch=branch_obj, date=today).first()
+        if closing_cash:
+            closing_cash.amount = amount
+            closing_cash.save()
+            serializer = ClosingCashSerializer(closing_cash)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        # Do not pass date; model auto_populates via auto_now_add.
+        serializer = ClosingCashSerializer(data={
+            'enterprise': enterprise.id,
+            'branch': branch_obj.id,
+            'amount': amount,
+            'date': today,  # explicitly provide date as requested
+        })
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        """Optional helper: fetch today's closing cash for a branch (branch query param)."""
+        enterprise = request.user.person.enterprise
+        branch_id = request.GET.get('branch')
+        today = timezone.now().date()
+        qs = ClosingCash.objects.filter(enterprise=enterprise, date=today)
+        if branch_id:
+            qs = qs.filter(branch_id=branch_id)
+        serializer = ClosingCashSerializer(qs, many=True)
+        return Response(serializer.data)
