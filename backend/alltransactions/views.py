@@ -1629,7 +1629,7 @@ class IncomeExpenseReportView(APIView):
             report_end_date = timezone.now().date()
         # Sales
         message = None
-        closing_cash = ClosingCash.objects.filter(enterprise=enterprise, date=report_start_date - timedelta(days=1))
+        closing_cash = ClosingCash.objects.filter(enterprise=enterprise, branch=branch,date=report_start_date - timedelta(days=1))
         closing_cash = closing_cash.order_by('-date', '-id')  # Get the latest closing cash before the report start date
         if closing_cash.exists() == False:
             closing_cash = ClosingCash.objects.filter(enterprise=enterprise,branch=branch, date__lte=report_start_date).order_by('-date').first()
@@ -1639,7 +1639,7 @@ class IncomeExpenseReportView(APIView):
                 report_start_date = required_date
         else:
             closing_cash = closing_cash.first()
-        sales = SalesTransaction.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))
+        sales = SalesTransaction.objects.filter(enterprise=enterprise,branch=branch, date__range=(report_start_date, report_end_date))
         if branch:
             sales = sales.filter(branch=branch)
         list1=[]
