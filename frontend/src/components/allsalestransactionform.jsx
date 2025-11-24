@@ -1278,7 +1278,7 @@ const handleNewProductVendorChange = (ids) => {
                   <div className="text-xs text-slate-400">Press Enter to confirm • Esc to cancel</div>
                   <div className="flex gap-3">
                     <Button type="button" variant="outline" className="bg-slate-800 border-slate-700 text-white" onClick={()=>setShowPaymentDialog(false)}>Cancel</Button>
-                    <Button type="submit" form="" className="bg-green-600 hover:bg-green-700 text-white" disabled={subLoading || (formData.method !== 'mixed' && (formData.amount_paid === null || formData.amount_paid === ''))}>Confirm & Submit</Button>
+                    <Button type="submit" onClick={handleSubmit} className="bg-green-600 hover:bg-green-700 text-white" disabled={subLoading || (formData.method !== 'mixed' && (formData.amount_paid === null || formData.amount_paid === ''))}>Confirm & Submit</Button>
                   </div>
                 </div>
               </DialogContent>

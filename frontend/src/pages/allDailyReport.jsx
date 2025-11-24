@@ -46,18 +46,13 @@ const AllIncomeExpenseReport = () => {
 		}
 	}
 
-	const decorateTransactions = (txns) => {
-		const todayStr = format(new Date(), "yyyy-MM-dd")
-		return txns.map(t => ({ ...t, date: t.date || todayStr }))
-	}
-
 	const fetchIncomeExpenseData = async (params = {}) => {
 		setLoading(true)
 		try {
 			const queryString = new URLSearchParams(params).toString()
 			const response = await api.get(`alltransaction/income-expense-report/branch/${branchId}/?${queryString}`)
-			const transactions = decorateTransactions(response.data.transactions || [])
-            setMessage(response.data.message || "")
+			const transactions = response.data.transactions || [];
+            setMessage(response.data.message || "");
             let cash = response.data.total_cash_amount;
             let card = response.data.total_card_amount;
             let online = response.data.total_online_amount;

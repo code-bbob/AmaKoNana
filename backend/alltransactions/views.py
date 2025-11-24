@@ -1658,6 +1658,7 @@ class IncomeExpenseReportView(APIView):
                 'card_amount': sale.card_amount,
                 'online_amount': sale.online_amount,
                 'type': 'Sale',
+                'date': sale.date
             })
             total_cash_amount += sale.cash_amount or 0
             total_card_amount += sale.card_amount or 0
@@ -1679,6 +1680,7 @@ class IncomeExpenseReportView(APIView):
                 'description': order.description,
                 'method': order.advance_method,
                 'type': 'Order',
+                'date': order.received_date
             })
             if order.advance_method == 'cash':
                 total_cash_amount += order.advance_received or 0
@@ -1704,6 +1706,7 @@ class IncomeExpenseReportView(APIView):
                 'description': order.description,
                 'method': order.remaining_received_method,
                 'type': 'Order',
+                'date': order.remaining_received_date
             })
             if order.remaining_received_method == 'cash':
                 total_cash_amount += order.remaining_received or 0
@@ -1726,6 +1729,8 @@ class IncomeExpenseReportView(APIView):
                 'net_amount': dt.amount,
                 'description': f"Debtor Transaction for {dt.debtor.name}: {dt.desc}",
                 'method': dt.method,
+                'date': dt.date,
+                'type': 'Debtor Transaction',
             })
             if dt.method == 'cash':
                 total_cash_amount += dt.amount or 0
@@ -1749,6 +1754,7 @@ class IncomeExpenseReportView(APIView):
                 'description': f"{exp.desc}",
                 'method': exp.method,
                 'type': 'Expense',
+                'date': exp.date
             })
             if exp.method == 'cash':
                 total_cash_amount -= exp.amount or 0
