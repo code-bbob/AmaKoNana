@@ -435,10 +435,10 @@ const handleNewProductVendorChange = (ids) => {
       const originalTotal = totalAmount;
       // Raw amount paid (no clamping); mixed sums its parts
       const rawPaid = formData.method === 'mixed'
-        ? (parseFloat(formData.cash_amount)||0) + (parseFloat(formData.card_amount)||0) + (parseFloat(formData.online_amount)||0)
-        : (parseFloat(formData.amount_paid)||0);
-  
-      const payload = {
+      ? (parseFloat(formData.cash_amount)||0) + (parseFloat(formData.card_amount)||0) + (parseFloat(formData.online_amount)||0)
+      : (parseFloat(formData.amount_paid)||0);
+      
+      let payload = {
         ...formData,
         sales: preparedSales,
         subtotal: subtotal,
@@ -449,6 +449,15 @@ const handleNewProductVendorChange = (ids) => {
         amount_paid: rawPaid,
         credited_amount: formData.credited_amount || 0
       };
+      if (formData.method== 'cash'){
+        payload.cash_amount=payload.amount_paid;
+      }
+      else if (formData.method == 'online'){
+        payload.online_amount=payload.amount_paid;
+      }
+      else if (formData.method == 'card'){
+        payload.card_amount = payload.amount_paid;
+      }
       const response = await api.post(
         "alltransaction/salestransaction/",
         payload
