@@ -39,18 +39,23 @@ function OrdersPage(){
   const [activeStatus, setActiveStatus] = useState('pending')
 
   // Build base URL considering active filters; backend expects query params
+  // Build URL. IMPORTANT: We intentionally do NOT include the current localSearchTerm
+  // unless it is explicitly passed in overrides. This prevents the search input from
+  // triggering automatic re-fetches on every keystroke (because changing localSearchTerm
+  // would otherwise change this callback reference and re-run effects).
   const buildBaseUrl = useCallback((overrides = {}) => {
     const params = new URLSearchParams()
     const statusVal = overrides.status ?? activeStatus
     if (statusVal) params.append('status', statusVal)
-    const searchVal = overrides.search ?? localSearchTerm
+    // Only append search when explicitly provided (e.g., on form submit)
+    const searchVal = overrides.search
     if (searchVal) params.append('search', searchVal)
     const sd = overrides.startDate ?? startDate
     const ed = overrides.endDate ?? endDate
     if (sd) params.append('start_date', sd)
     if (ed) params.append('end_date', ed)
     return `order/branch/${branchId}/?${params.toString()}`
-  }, [branchId, activeStatus, localSearchTerm, startDate, endDate])
+  }, [branchId, activeStatus, startDate, endDate])
 
   async function fetchPaginatedData(url) {
     setLoading(true)
@@ -291,8 +296,9 @@ function OrdersPage(){
                   Edit
                 </Button>
                 
-                      {order.amount_received && <span className="font-medium">Received: RS. {order.amount_received?.toLocaleString()}</span>}
                       {order.total_amount && <span className="font-bold text-green-400">Total: RS. {order.total_amount?.toLocaleString()}</span>}
+                      {order.advance_received && <span className="font-medium">Received: RS. {order.advance_received?.toLocaleString()}</span>}
+                      {order.advance_received && <span className="font-medium text-red-400">Remaining: RS. {(order.total_amount - order.advance_received)?.toLocaleString()}</span>}
                     </div>
                   </CardContent>
                 </div>

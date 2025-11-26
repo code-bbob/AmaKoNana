@@ -22,7 +22,25 @@ class OrderView(APIView):
             order = Order.objects.get(id=pk, enterprise = request.user.person.enterprise)
             serializer=OrderSerializer(order)
             return Response(serializer.data)
+        
+        start_date = request.GET.get('start_date', None)
+        end_date = request.GET.get('end_date', None)
+        search = request.GET.get('search', None)
         orders = Order.objects.filter(enterprise=request.user.person.enterprise, branch=branch)
+        if start_date and end_date:
+            orders = Order.objects.filter(enterprise=request.user.person.enterprise, branch=branch, due_date__range=[start_date, end_date])
+        elif start_date:
+            orders = Order.objects.filter(enterprise=request.user.person.enterprise, branch=branch, due_date__gte=start_date)
+        elif end_date:
+            orders = Order.objects.filter(enterprise=request.user.person.enterprise, branch=branch, due_date__lte=end_date)
+        if search:
+            orders_cname = orders.filter(customer_name__icontains=search)
+            orders_cphone = orders.filter(customer_phone__icontains=search)
+            orders_items = OrderItem.objects.filter(order__in=orders, item__icontains=search)
+            orders_bills = orders.filter(bill_number__icontains=search)
+            orders = orders_cname | orders_cphone | orders_bills | Order.objects.filter(id__in=orders_items.values_list('order_id', flat=True))
+
+        
         branch = request.user.person.branch
         if branch:
             orders = orders.filter(branch=branch)
