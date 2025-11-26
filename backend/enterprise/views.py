@@ -63,6 +63,29 @@ class BranchStaffView(APIView):
             return Response(serializer.errors)
         else:
             return Response("You are not authorized to view this page")
+    
+    def patch(self, request,id):
+        user = request.user
+        enterprise = user.person.enterprise
+        if user.person.role == 'Admin':
+            staff = Staff.objects.get(id=id)
+            serializer = StaffSerializer(staff, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors)
+        else:
+            return Response("You are not authorized to view this page")
+    
+    def delete(self, request,id):
+        user = request.user
+        enterprise = user.person.enterprise
+        if user.person.role == 'Admin':
+            staff = Staff.objects.get(id=id)
+            staff.delete()
+            return Response(status=204)
+        else:
+            return Response("You are not authorized to view this page")
 
 
 class UserBranchView(APIView):

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search, ArrowLeft, BookUser } from 'lucide-react'
+import { Search, ArrowLeft, BookUser, Trash2, Pencil } from 'lucide-react'
 import useAxios from '../utils/useAxios'
 import { useParams } from 'react-router-dom'
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Plus } from 'lucide-react'
+import { Checkbox } from "@/components/ui/checkbox"
 
 
 
@@ -40,6 +41,11 @@ export default function StaffPage() {
   const [newStaffDue, setNewStaffDue] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [role, setRole] = useState('')
+  const [selectedIds, setSelectedIds] = useState([])
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [editForm, setEditForm] = useState({ id: null, name: '' })
 
   useEffect(() => {
     console.log(role)
@@ -87,8 +93,10 @@ export default function StaffPage() {
       console.log('New Staff Added:', response.data)
       setIsSubmitting(true)
       setStaffs([...staffs, response.data])
+      setFilteredStaffs((prev)=>[...prev, response.data])
       setNewStaffName('')
       setNewStaffDue('')
+      setIsDialogOpen(false)
       setIsDialogOpen(false)
     }
     catch (error) {
@@ -96,6 +104,47 @@ export default function StaffPage() {
     }
     finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
+  }
+
+  const openEdit = (item, e) => {
+    e?.stopPropagation?.()
+    setEditForm({ id: item.id, name: item.name || '' })
+    setIsEditDialogOpen(true)
+  }
+
+  const handleDeleteSelected = async () => {
+    setIsDeleteDialogOpen(false)
+    try {
+      await Promise.all(selectedIds.map((id) => api.delete(`enterprise/staffbranch/${id}/`)))
+      const remaining = staffs.filter((x) => !selectedIds.includes(x.id))
+      setStaffs(remaining)
+      setFilteredStaffs((prev)=>prev.filter((x)=>!selectedIds.includes(x.id)))
+      setSelectedIds([])
+    } catch (err) {
+      console.error('Failed to delete staff:', err)
+    }
+  }
+
+  const handleUpdate = async (e) => {
+    e?.preventDefault?.()
+    if (!editForm.id) return
+    const payload = { name: (editForm.name||'').trim() }
+    try {
+      setIsSaving(true)
+      const r = await api.patch(`enterprise/staffbranch/${editForm.id}/`, payload)
+      const updated = r.data || { id: editForm.id, ...payload }
+      setStaffs((prev)=> prev.map((x)=> x.id === editForm.id ? { ...x, ...updated } : x))
+      setFilteredStaffs((prev)=> prev.map((x)=> x.id === editForm.id ? { ...x, ...updated } : x))
+      setIsEditDialogOpen(false)
+    } catch (err) {
+      console.error('Failed to update staff:', err)
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -153,14 +202,25 @@ export default function StaffPage() {
               <ArrowLeft className="mr-2 h-4 w-3" />
               Back to Dashboard
             </Button>
+            <Button
+              onClick={() => setIsDeleteDialogOpen(true)}
+              variant="destructive"
+              className="w-full sm:w-auto px-5"
+              disabled={selectedIds.length === 0}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Selected
+            </Button>
           </div>
         </motion.div>
 
         <Card className="bg-gradient-to-b from-slate-800 to-slate-900 border-none shadow-lg">
           <CardContent className="p-0">
             <div className="grid grid-cols-12 gap-4 p-4 text-sm font-medium text-slate-300 border-b border-slate-700">
-              <div className="col-span-6 md:col-span-9">Staff</div>
-              <div className="col-span-6 md:col-span-3 text-right">Due Amount</div>
+              <div className="col-span-1"></div>
+              <div className="col-span-7 md:col-span-7">Staff</div>
+              <div className="col-span-3 md:col-span-3 text-right">Due Amount</div>
+              <div className="col-span-1 md:col-span-1 text-right">Edit</div>
             </div>
             {filteredStaffs?.map((staff) => (
               <motion.div
@@ -171,13 +231,25 @@ export default function StaffPage() {
                 onClick={() => navigate(`/staff/branch/${branchId}/statement/${staff.id}`)}
                 className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-800 transition-colors duration-200"
               >
-                <div className="col-span-6 md:col-span-9 flex items-center">
+                <div className="col-span-1 flex items-center justify-center" onClick={(e)=>e.stopPropagation()}>
+                  <Checkbox
+                    checked={selectedIds.includes(staff.id)}
+                    onCheckedChange={() => toggleSelect(staff.id)}
+                    className="border-gray-400"
+                  />
+                </div>
+                <div className="col-span-7 md:col-span-7 flex items-center">
                   <BookUser className="h-5 w-5 text-purple-400 mr-2 flex-shrink-0" />
                   <span className="text-white truncate">{staff.name}</span>
                 </div>
                 
-                <div className="col-span-6 md:col-span-3 text-right text-white flex items-center justify-end gap-3">
-                  <span>{staff.due ? `RS. ${staff?.due.toLocaleString()}` : 'N/A'}</span>
+                <div className="col-span-3 md:col-span-3 text-right text-white flex items-center justify-end gap-3">
+                  <span>{staff.due ? `RS. ${Number(staff?.due).toLocaleString()}` : 'N/A'}</span>
+                </div>
+                <div className="col-span-1 md:col-span-1 flex justify-end" onClick={(e)=>e.stopPropagation()}>
+                  <Button size="icon" variant="outline" className="h-7 w-7 bg-slate-700 border-slate-600 text-white hover:bg-slate-600" onClick={(e) => openEdit(staff, e)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                 </div>
                 
               </motion.div>
@@ -241,6 +313,57 @@ export default function StaffPage() {
                 Add Staff
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
+            <DialogHeader>
+              <DialogTitle>Delete selected staff?</DialogTitle>
+              <DialogDescription className="text-slate-400">
+                This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={handleDeleteSelected} className="bg-red-600 hover:bg-red-700 text-white">
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit dialog (name only) */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
+            <DialogHeader>
+              <DialogTitle>Edit Staff</DialogTitle>
+              <DialogDescription className="text-slate-400">
+                Update the staff name.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUpdate}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editStaffName" className="text-right">
+                    Name
+                  </Label>
+                  <Input
+                    id="editStaffName"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
+                    className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                    placeholder="Enter staff's name"
+                    required
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={isSaving} className="bg-purple-600 hover:bg-purple-700 text-white">
+                  {isSaving ? 'Saving...' : 'Update'}
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
     </div>
