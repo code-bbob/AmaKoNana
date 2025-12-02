@@ -633,9 +633,7 @@ class SalesReportView(APIView):
             end_date = parse_date(end_date)
             sales = sales.filter(sales_transaction__date__lte=end_date)
         
-        sales = sales.order_by('sales_transaction__method')
-
-        sales = sales.order_by('sales_transaction__date') 
+        sales = sales.order_by('sales_transaction__date','sales_transaction__method','id') 
         if not search and not start_date and not end_date:
             sales = sales.filter(sales_transaction__date = timezone.now().date())
 
@@ -1780,8 +1778,17 @@ class IncomeExpenseReportView(APIView):
             })
             total_cash_amount -= wd.amount or 0
         
-
+        sort_order = {
+            "cash" : 1,
+            "card" : 2,
+            "online" : 3,
+            "N/A" : 4,
+        }
         net_cash_in_hand = (closing_cash.amount if closing_cash else 0) + total_cash_amount
+        list1.sort(key=lambda x: (
+            x["date"],              # 1st: date (ascending)
+            sort_order[x["method"]]        # 2nd: type priority
+        ))
 
         report = {
             'transactions' : list1,
