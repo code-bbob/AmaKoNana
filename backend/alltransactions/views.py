@@ -1783,7 +1783,8 @@ class IncomeExpenseReportView(APIView):
             "card" : 2,
             "online" : 3,
             "mixed" : 4,
-            "N/A" : 5,
+            "credit" : 5,
+            "N/A" : 6,
         }
         net_cash_in_hand = (closing_cash.amount if closing_cash else 0) + total_cash_amount
         list1.sort(key=lambda x: (
