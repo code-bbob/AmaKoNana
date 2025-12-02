@@ -24,6 +24,13 @@ const AllSalesReport = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const api = useAxios()
   const navigate = useNavigate()
+  const methodColor = {
+    cash: "text-green-400",
+    online: "text-blue-400",
+    card: "text-purple-400",
+    mixed: "text-yellow-400",
+    default: "text-slate-200",
+  }
 
   useEffect(() => {
     fetchSalesData()
@@ -74,10 +81,6 @@ const AllSalesReport = () => {
   let csvContent = "Date,Product,Quantity,Unit Price,Line Subtotal,Discount,Net Total\n"
   
     // Convert each sale into a CSV row
-    data.sales.forEach((item) => {
-      const row = `${item.date},${item.product},${item.quantity},${item.unit_price},${item.line_subtotal ?? ''},${item.discount ?? ''},${item.total_price}`
-      csvContent += row + "\n"
-    })
   
     // Add summary row
     csvContent += `\nTotal Sales: ,,,${data.total_sales}\n`
@@ -108,7 +111,7 @@ const AllSalesReport = () => {
   const headers = [["Date", "Product", "Qty", "Unit Price", "Subtotal", "Discount", "Net Total"]]
   
     // Table Data
-    const tableData = data.sales.map((item) => [
+    const tableData = (data.sales).map((item) => [
       item.date,
       item.product,
       item.quantity,
@@ -148,6 +151,7 @@ const AllSalesReport = () => {
       </div>
     )
   if (!data) return null
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 lg:px-8 print:bg-white print:p-0">
@@ -256,12 +260,12 @@ const AllSalesReport = () => {
                     <TableCell className="font-medium text-white print:text-black">{item.date}</TableCell>
                     <TableCell className="font-medium text-white print:text-black">{item.product}</TableCell>
                     <TableCell className="text-white print:text-black">{item.quantity}</TableCell>
-                    <TableCell className="text-white print:text-black">{item.method}</TableCell>
+                    <TableCell className={`print:text-black ${methodColor[item.method] ?? methodColor.default}`}>{item.method}</TableCell>
                     <TableCell className="text-right text-white print:text-black">{item.bill_no}</TableCell>
                     <TableCell className="text-right text-white print:text-black">{lineSubtotal && item.quantity ? (item.unit_price).toLocaleString("en-US", { style: "currency", currency: "NPR" }) : ''}</TableCell>
                     <TableCell className="text-right text-white print:text-black">{lineSubtotal.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
                     <TableCell className="text-right text-white print:text-black">{discount.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
-                    <TableCell className="text-right text-white print:text-black">{item.total_price.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
+                    <TableCell className={`text-right print:text-black ${methodColor[item.method] ?? methodColor.default}`}>{item.total_price.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
                   </TableRow>
                 )
               })}

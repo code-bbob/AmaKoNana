@@ -632,6 +632,8 @@ class SalesReportView(APIView):
         elif end_date and not start_date:
             end_date = parse_date(end_date)
             sales = sales.filter(sales_transaction__date__lte=end_date)
+        
+        sales = sales.order_by('sales_transaction__method')
 
         sales = sales.order_by('sales_transaction__date','id') 
         if not search and not start_date and not end_date:

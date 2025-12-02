@@ -31,6 +31,13 @@ const AllIncomeExpenseReport = () => {
 	const [confirmOpen, setConfirmOpen] = useState(false)
 	const api = useAxios()
 	const navigate = useNavigate()
+	const methodColor = {
+		cash: "text-green-400",
+		online: "text-blue-400",
+		card: "text-purple-400",
+		mixed: "text-yellow-400",
+		default: "text-slate-200",
+	}
 
 	useEffect(() => {
 		fetchIncomeExpenseData()
@@ -223,10 +230,9 @@ const AllIncomeExpenseReport = () => {
 									<TableCell className="font-medium text-white print:text-black">{t.date}</TableCell>
 									<TableCell className="text-white print:text-black">{t.bill_no}</TableCell>
 									<TableCell className="text-white print:text-black">{t.type || 'N/A'}</TableCell>
-									<TableCell className="text-white print:text-black">{t.method}</TableCell>
+									<TableCell className={`print:text-black ${methodColor[t.method] ?? methodColor.default}`}>{t.method}</TableCell>
 									<TableCell className="text-white print:text-black whitespace-pre-wrap">{t.description}</TableCell>
-									{/* <TableCell className="text-right text-white print:text-black">{(t.net_amount || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell> */}
-                                    <TableCell className={parseFloat(t.net_amount)>=0?t.method==='cash'?'text-right text-green-400 font-semibold print:text-black':'text-right text-blue-400 font-semibold print:text-black':'text-right text-red-400 font-semibold print:text-black'}>{(t.net_amount || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
+									<TableCell className={`text-right font-semibold print:text-black ${methodColor[t.method] ?? methodColor.default}`}>{(t.net_amount || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
 								</TableRow>
 							))}
 						</TableBody>

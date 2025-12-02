@@ -129,3 +129,79 @@ class IncentiveProductView(APIView):
         serializer = IncentiveProductSerializer(incentive_product)
         serializer.delete(incentive_product)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class OrderReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, branch=None, *args, **kwargs):
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        search = request.GET.get('search')
+        status_filter = request.GET.get('status')
+
+        orders = Order.objects.filter(enterprise=request.user.person.enterprise, branch=branch)
+
+        # Date filtering (by due_date if provided else received_date)
+        if start_date and end_date:
+            orders = orders.filter(due_date__range=[start_date, end_date])
+        elif start_date:
+            orders = orders.filter(due_date__gte=start_date)
+        elif end_date:
+            orders = orders.filter(due_date__lte=end_date)
+
+        if search:
+            orders_name = orders.filter(customer_name__icontains=search)
+            orders_phone = orders.filter(customer_phone__icontains=search)
+            orders_bill = orders.filter(bill_no__icontains=search)
+            orders_items = OrderItem.objects.filter(order__in=orders, item__icontains=search)
+            orders = (orders_name | orders_phone | orders_bill | orders.filter(id__in=orders_items.values_list('order_id', flat=True))).distinct()
+
+        if status_filter:
+            orders = orders.filter(status=status_filter)
+
+        orders = orders.order_by('due_date', 'received_date')
+
+        serializer = OrderSerializer(orders, many=True)
+        serialized = serializer.data
+
+        total_amount = 0.0
+        total_advance = 0.0
+        total_remaining = 0.0
+        outstanding_total = 0.0
+
+        enriched = []
+        for o in orders:
+            adv = o.advance_received or 0.0
+            rem = o.remaining_received or 0.0
+            total = o.total_amount or 0.0
+            net_received = adv + rem
+            outstanding = max(total - net_received, 0.0)
+            total_amount += total
+            total_advance += adv
+            total_remaining += rem
+            outstanding_total += outstanding
+        
+        # Pair computed fields with serialized dicts
+        for base in serialized:
+            adv = base.get('advance_received') or 0.0
+            rem = base.get('remaining_received') or 0.0
+            total = base.get('total_amount') or 0.0
+            net_received = adv + rem
+            outstanding = max(total - net_received, 0.0)
+            base['net_received'] = net_received
+            base['outstanding'] = outstanding
+            enriched.append(base)
+
+        data = {
+            'orders': enriched,
+            'totals': {
+                'count': len(enriched),
+                'total_amount': total_amount,
+                'total_advance': total_advance,
+                'total_remaining': total_remaining,
+                'net_received': total_advance + total_remaining,
+                'total_outstanding': outstanding_total,
+            }
+        }
+        return Response(data, status=status.HTTP_200_OK)

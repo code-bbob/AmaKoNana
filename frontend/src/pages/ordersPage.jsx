@@ -257,12 +257,13 @@ function OrdersPage(){
                   <CardHeader className="border-b border-slate-700/70">
                     <CardTitle className="text-lg lg:text-xl font-medium text-white justify-between items-start lg:items-center">
                         <div className="flex text-xs  md:text-sm justify-between">
+                          <p className='text-lg text-purple-500'>Bill : {order.bill_no}</p>
                         <p>Due : {order.due_date}</p>
                         <p>Branch: {order.branch_name}</p>
                         </div>
                       <div className='flex justify-between'>
-                        <p className='text-xs text-gray-400'>Customer Name: {order.customer_name}</p>
-                        <p className='text-xs hidden md:block text-gray-400'>Phone: {order.customer_phone}</p>
+                        <p className='text-md text-purple-500 text-gray-400'>{order.customer_name}</p>
+                        <p className='text-md text-blue-600 hidden md:block text-gray-400'>{order.customer_phone}</p>
                       <p className=" lg:mt-0 text-xs lg:text-sm text-gray-300">{format(new Date(order.received_date), 'dd MMM yyyy')}</p>
                       </div>
                     </CardTitle>

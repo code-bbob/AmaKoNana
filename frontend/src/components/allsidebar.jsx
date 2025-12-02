@@ -151,7 +151,8 @@ export default function Sidebar() {
       mainPath: 'orders/form',
       items: [
         { title: 'Add Order', icon: ShoppingCart, path: 'orders/form' },
-        { title: 'Orders', icon: ShoppingCart, path: 'orders' }
+        { title: 'Orders', icon: ShoppingCart, path: 'orders' },
+        { title: 'Order Report', icon: BookCopy, path: 'order-report', externalReport: true }
       ]
     },
     { label: 'Reports', icon: BookCopy, mainPath: 'income-expense-report', items: [
@@ -159,6 +160,7 @@ export default function Sidebar() {
       { title: 'Purchase Report', icon: BookCopy, path: 'purchase-report', externalReport: true },
       { title: 'Sales Report', icon: BookCopy, path: 'sales-report', externalReport: true },
       { title: 'Expenses Report', icon: BookCopy, path: 'expenses-report', externalReport: true },
+      { title: 'Order Report', icon: BookCopy, path: 'order-report', externalReport: true },
       // { title: 'Withdrawals Report', icon: BookCopy, path: 'withdrawals-report', externalReport: true }
     ] }
   ]
