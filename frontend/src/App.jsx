@@ -57,7 +57,8 @@ import EditOrderForm from "./components/editOrderForm";
 import OrderDetail from "./components/orderDetail";
 import OrdersPage from "./pages/ordersPage";
 import ProductIncentivesPage from "./pages/productIncentivesPage";
-import OrderReportPage from "./pages/allOrderReport";
+import OrderOverviewPage from "./pages/allOrderOverview";
+import OrderReport from "./pages/orderReport";
 
 function App() {
   const { isAuthenticated } = useSelector((state) => state.root);
@@ -146,7 +147,8 @@ function App() {
           <Route path="orders/form/branch/:branchId" element={<OrderForm />} />
           <Route path="orders/branch/:branchId/editform/:orderId" element={<EditOrderForm />} />
           <Route path="orders/branch/:branchId/detail/:orderId" element={<OrderDetail />} />
-          <Route path="order-report/branch/:branchId" element={<OrderReportPage />} />
+          <Route path="order-overview/branch/:branchId" element={<OrderOverviewPage />} />
+          <Route path="order-report/branch/:branchId" element={<OrderReport />} />
         </Route>
       </Route>
     </Routes>

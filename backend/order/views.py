@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
 from allinventory.models import IncentiveProduct
+from django.utils import timezone
 from allinventory.serializers import IncentiveProductSerializer
 # Create your views here.
 
@@ -131,7 +132,7 @@ class IncentiveProductView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class OrderReportView(APIView):
+class OrderOverviewView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, branch=None, *args, **kwargs):
@@ -205,3 +206,90 @@ class OrderReportView(APIView):
             }
         }
         return Response(data, status=status.HTTP_200_OK)
+
+class OrderReportVie(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, branch=None, *args, **kwargs):
+        # Similar to OrderOverviewView but tailored for report generation
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        if start_date and end_date:
+            report_start_date = start_date
+            report_end_date = end_date
+        elif start_date and not end_date:
+            report_start_date = start_date
+            report_end_date = timezone.now().date() 
+        elif not start_date and end_date:
+            report_start_date = '2000-01-01'  # Arbitrary early date
+            report_end_date = end_date
+        else:
+            report_start_date = timezone.now().date()
+            report_end_date = timezone.now().date()
+        enterprise = request.user.person.enterprise
+        list = []
+        total_cash_amount = 0
+        total_card_amount = 0
+        total_online_amount = 0
+        total_income = 0
+        orders = Order.objects.filter(enterprise=enterprise, received_date__range=(report_start_date, report_end_date))
+        if branch:
+            orders = orders.filter(branch=branch)
+        for order in orders:
+            desc = "Order's Advanced Payment for: "
+            for o in order.items.all():
+                desc += f"{o.item}), \n "
+            order.description = desc.rstrip(", ")
+            list.append({
+                'id': order.id,
+                'bill_no': order.bill_no,
+                'net_amount': order.advance_received,
+                'description': order.description,
+                'method': order.advance_method,
+                'type': 'Order',
+                'date': order.received_date
+            })
+            if order.advance_method == 'cash':
+                total_cash_amount += order.advance_received or 0
+            elif order.advance_method == 'card':
+                total_card_amount += order.advance_received or 0
+            elif order.advance_method == 'online':
+                total_online_amount += order.advance_received or 0
+            total_income += order.advance_received or 0
+
+        remaining_payment_orders = Order.objects.filter(enterprise=enterprise, remaining_received_date__range=(report_start_date, report_end_date))
+        if branch:
+            remaining_payment_orders = remaining_payment_orders.filter(branch=branch)
+
+        for order in remaining_payment_orders:
+            desc = "Order's Remaining Payment for: "
+            for o in order.items.all():
+                desc += f"{o.item}), \n "
+            order.description = desc.rstrip(", ")
+            list.append({
+                'id': order.id,
+                'bill_no': order.bill_no,
+                'net_amount': order.remaining_received,
+                'description': order.description,
+                'method': order.remaining_received_method,
+                'type': 'Order',
+                'date': order.remaining_received_date
+            })
+            if order.remaining_received_method == 'cash':
+                total_cash_amount += order.remaining_received or 0
+            elif order.remaining_received_method == 'card':
+                total_card_amount += order.remaining_received or 0
+            elif order.remaining_received_method == 'online':
+                total_online_amount += order.remaining_received or 0
+            total_income += order.remaining_received or 0
+
+        report = {
+            'transactions' : list,
+            'total_cash_amount': total_cash_amount,
+            'total_online_amount': total_online_amount,
+            'total_card_amount': total_card_amount,
+            'total_income': total_income,
+        }
+        return Response(report)
+
+ 

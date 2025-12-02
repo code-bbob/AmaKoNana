@@ -152,7 +152,8 @@ export default function Sidebar() {
       items: [
         { title: 'Add Order', icon: ShoppingCart, path: 'orders/form' },
         { title: 'Orders', icon: ShoppingCart, path: 'orders' },
-        { title: 'Order Report', icon: BookCopy, path: 'order-report', externalReport: true }
+        { title: 'Order Report', icon: BookCopy, path: 'order-report', externalReport: true },
+        { title: 'Order Overview', icon: ShoppingCart, path: 'order-overview', externalReport: true}
       ]
     },
     { label: 'Reports', icon: BookCopy, mainPath: 'income-expense-report', items: [

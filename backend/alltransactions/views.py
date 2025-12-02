@@ -635,7 +635,7 @@ class SalesReportView(APIView):
         
         sales = sales.order_by('sales_transaction__method')
 
-        sales = sales.order_by('sales_transaction__date','id') 
+        sales = sales.order_by('sales_transaction__date') 
         if not search and not start_date and not end_date:
             sales = sales.filter(sales_transaction__date = timezone.now().date())
 

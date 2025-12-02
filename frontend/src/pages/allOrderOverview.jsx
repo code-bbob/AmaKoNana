@@ -14,9 +14,9 @@ import { useNavigate, useParams } from "react-router-dom"
 import jsPDF from "jspdf"
 import "jspdf-autotable"
 
-// Order Report Page similar to Income-Expense report, showing advance & remaining received
+// Order Overview Page similar to Income-Expense Overview, showing advance & remaining received
 
-const OrderReportPage = () => {
+const OrderOverviewPage = () => {
   const { branchId } = useParams()
   const api = useAxios()
   const navigate = useNavigate()
@@ -37,17 +37,17 @@ const OrderReportPage = () => {
   }
 
   useEffect(() => {
-    fetchReport()
+    fetchOverview()
   }, [])
 
-  const fetchReport = async (params = {}) => {
+  const fetchOverview = async (params = {}) => {
     setLoading(true)
     try {
       const qs = new URLSearchParams(params).toString()
-      const resp = await api.get(`order/report/branch/${branchId}/?${qs}`)
+      const resp = await api.get(`order/overview/branch/${branchId}/?${qs}`)
       setData(resp.data)
     } catch (e) {
-      setError("Failed to fetch order report")
+      setError("Failed to fetch order Overview")
     } finally {
       setLoading(false)
     }
@@ -60,7 +60,7 @@ const OrderReportPage = () => {
     if (endDate) params.end_date = endDate
     if (searchTerm) params.search = searchTerm
     if (statusFilter) params.status = statusFilter
-    fetchReport(params)
+    fetchOverview(params)
   }
 
   const handlePrint = () => window.print()
@@ -76,7 +76,7 @@ const OrderReportPage = () => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'Order_Report.csv'
+    a.download = 'Order_Overview.csv'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -85,7 +85,7 @@ const OrderReportPage = () => {
   const handleDownloadPDF = () => {
     if (!data || !data.orders.length) return
     const doc = new jsPDF()
-    doc.text("Order Report", 14, 10)
+    doc.text("Order Overview", 14, 10)
     const head = [["Due Date","Bill","Customer","Phone","Status","Total","Advance","Remaining","Net","Outstanding"]]
     const body = data.orders.map(o => [
       o.due_date || '',
@@ -105,7 +105,7 @@ const OrderReportPage = () => {
     body.push(["","","","","Net Received", data.totals.net_received])
     body.push(["","","","","Outstanding", data.totals.total_outstanding])
     doc.autoTable({ head, body, startY: 20 })
-    doc.save('Order_Report.pdf')
+    doc.save('Order_Overview.pdf')
   }
 
   if (loading) return <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">Loading...</div>
@@ -119,7 +119,7 @@ const OrderReportPage = () => {
       </Button>
       <Card className="bg-gradient-to-b from-slate-800 to-slate-900 border-none shadow-lg print:shadow-none print:bg-white">
         <CardHeader className="border-b border-slate-700 print:border-gray-200">
-          <CardTitle className="text-2xl lg:text-3xl font-bold text-white print:text-black">Order Report</CardTitle>
+          <CardTitle className="text-2xl lg:text-3xl font-bold text-white print:text-black">Order Overview</CardTitle>
           <p className="text-sm text-gray-400 print:text-gray-600">{format(new Date(), 'MMMM d, yyyy')}</p>
         </CardHeader>
         <CardContent className="pt-6">
@@ -175,7 +175,7 @@ const OrderReportPage = () => {
                   <TableHead className="text-white print:text-black">Status</TableHead>
                   <TableHead className="text-right text-white print:text-black">Total</TableHead>
                   <TableHead className="text-right text-white print:text-black">Advance</TableHead>
-                  <TableHead className="text-right text-white print:text-black">Remaining</TableHead>
+            <TableHead className="text-right text-white print:text-black">Completion</TableHead>
                   <TableHead className="text-right text-white print:text-black">Net Received</TableHead>
                   <TableHead className="text-right text-white print:text-black">Outstanding</TableHead>
                 </TableRow>
@@ -195,7 +195,7 @@ const OrderReportPage = () => {
                       <TableCell className="text-right text-white print:text-black">{(o.total_amount || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
                       <TableCell className={`text-right font-semibold print:text-black ${advColor}`}>{(o.advance_received || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
                       <TableCell className={`text-right font-semibold print:text-black ${remColor}`}>{(o.remaining_received || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
-                      <TableCell className={`text-right font-semibold print:text-black`}>{(o.net_received || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
+                      <TableCell className={`text-right text-white font-semibold print:text-black`}>{(o.net_received || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
                       <TableCell className={`text-right font-semibold print:text-black ${outstandingColor}`}>{(o.outstanding || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
                     </TableRow>
                   )
@@ -209,14 +209,14 @@ const OrderReportPage = () => {
               <div className="flex justify-between"><span className="font-semibold text-white print:text-black">Orders:</span><span className="text-white print:text-black">{data.totals.count}</span></div>
               <div className="flex justify-between"><span className="font-semibold text-white print:text-black">Total Amount:</span><span className="text-white print:text-black">{data.totals.total_amount.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
               <div className="flex justify-between"><span className="font-semibold text-white print:text-black">Advance Total:</span><span className="text-green-400 font-bold print:text-black">{data.totals.total_advance.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
-              <div className="flex justify-between"><span className="font-semibold text-white print:text-black">Remaining Total:</span><span className="text-blue-400 font-bold print:text-black">{data.totals.total_remaining.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+              <div className="flex justify-between"><span className="font-semibold text-white print:text-black">Completion Total:</span><span className="text-green-600 font-bold print:text-black">{data.totals.total_remaining.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
               <div className="flex justify-between"><span className="font-semibold text-white print:text-black">Net Received:</span><span className="text-purple-400 font-bold print:text-black">{data.totals.net_received.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
               <div className="flex justify-between"><span className="font-semibold text-white print:text-black">Outstanding:</span><span className="text-red-400 font-bold print:text-black">{data.totals.total_outstanding.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
             </div>
           </div>
 
           <div className="mt-8 text-center text-sm text-gray-400 print:text-gray-600">
-            <p>This report is auto-generated and does not require a signature.</p>
+            <p>This Overview is auto-generated and does not require a signature.</p>
           </div>
         </CardContent>
       </Card>
@@ -224,4 +224,4 @@ const OrderReportPage = () => {
   )
 }
 
-export default OrderReportPage
+export default OrderOverviewPage
