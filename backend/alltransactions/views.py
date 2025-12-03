@@ -1613,9 +1613,12 @@ class IncomeExpenseReportView(APIView):
         enterprise = request.user.person.enterprise
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
-        total_cash_amount = 0
-        total_online_amount = 0
-        total_card_amount = 0
+        total_cash_income = 0
+        total_online_income = 0
+        total_card_income = 0
+        total_cash_expense = 0
+        total_online_expense = 0
+        total_card_expense = 0
         total_income = 0
         total_expense = 0
         if start_date:
@@ -1660,9 +1663,9 @@ class IncomeExpenseReportView(APIView):
                 'type': 'Sale',
                 'date': sale.date
             })
-            total_cash_amount += sale.cash_amount or 0
-            total_card_amount += sale.card_amount or 0
-            total_online_amount += sale.online_amount or 0
+            total_cash_income += sale.cash_amount or 0
+            total_card_income += sale.card_amount or 0
+            total_online_income += sale.online_amount or 0
             total_income += sale.amount_paid or 0
 
         orders = Order.objects.filter(enterprise=enterprise, received_date__range=(report_start_date, report_end_date))
@@ -1683,11 +1686,11 @@ class IncomeExpenseReportView(APIView):
                 'date': order.received_date
             })
             if order.advance_method == 'cash':
-                total_cash_amount += order.advance_received or 0
+                total_cash_income += order.advance_received or 0
             elif order.advance_method == 'card':
-                total_card_amount += order.advance_received or 0
+                total_card_income += order.advance_received or 0
             elif order.advance_method == 'online':
-                total_online_amount += order.advance_received or 0
+                total_online_income += order.advance_received or 0
             total_income += order.advance_received or 0
 
         remaining_payment_orders = Order.objects.filter(enterprise=enterprise, remaining_received_date__range=(report_start_date, report_end_date))
@@ -1709,11 +1712,11 @@ class IncomeExpenseReportView(APIView):
                 'date': order.remaining_received_date
             })
             if order.remaining_received_method == 'cash':
-                total_cash_amount += order.remaining_received or 0
+                total_cash_income += order.remaining_received or 0
             elif order.remaining_received_method == 'card':
-                total_card_amount += order.remaining_received or 0
+                total_card_income += order.remaining_received or 0
             elif order.remaining_received_method == 'online':
-                total_online_amount += order.remaining_received or 0
+                total_online_income += order.remaining_received or 0
             total_income += order.remaining_received or 0
 
         dts = DebtorTransaction.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))
@@ -1733,11 +1736,20 @@ class IncomeExpenseReportView(APIView):
                 'type': 'Debtor Transaction',
             })
             if dt.method == 'cash':
-                total_cash_amount += dt.amount or 0
+                if dt.amount > 0:
+                    total_cash_income += dt.amount or 0
+                else:
+                    total_cash_expense += -dt.amount or 0
             elif dt.method == 'card':
-                total_card_amount += dt.amount or 0
+                if dt.amount > 0:
+                    total_card_income += dt.amount or 0
+                else:
+                    total_card_expense += -dt.amount or 0
             elif dt.method == 'online':
-                total_online_amount += dt.amount or 0
+                if dt.amount > 0:
+                    total_online_income += dt.amount or 0
+                else:
+                    total_online_expense += -dt.amount or 0
             if dt.amount > 0:
                 total_income += dt.amount or 0
             else:
@@ -1757,11 +1769,11 @@ class IncomeExpenseReportView(APIView):
                 'date': exp.date
             })
             if exp.method == 'cash':
-                total_cash_amount -= exp.amount or 0
+                total_cash_expense += exp.amount or 0
             elif exp.method == 'card':
-                total_card_amount -= exp.amount or 0
+                total_card_expense += exp.amount or 0
             elif exp.method == 'online':
-                total_online_amount -= exp.amount or 0
+                total_online_expense += exp.amount or 0
             total_expense += exp.amount or 0
 
         withdrawals = Withdrawal.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))
@@ -1794,9 +1806,12 @@ class IncomeExpenseReportView(APIView):
 
         report = {
             'transactions' : list1,
-            'total_cash_amount': total_cash_amount,
-            'total_online_amount': total_online_amount,
-            'total_card_amount': total_card_amount,
+            'total_cash_income': total_cash_income,
+            'total_cash_expense': total_cash_expense,
+            'total_online_income': total_online_income,
+            'total_online_expense': total_online_expense,
+            'total_card_income': total_card_income,
+            'total_card_expense': total_card_expense,
             'previous_closing_cash': closing_cash.amount if closing_cash else 0,
             'net_cash_in_hand': net_cash_in_hand,
             'total_income': total_income,
