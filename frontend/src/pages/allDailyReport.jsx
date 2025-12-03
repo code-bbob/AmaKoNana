@@ -60,9 +60,12 @@ const AllIncomeExpenseReport = () => {
 			const response = await api.get(`alltransaction/income-expense-report/branch/${branchId}/?${queryString}`)
 			const transactions = response.data.transactions || [];
             setMessage(response.data.message || "");
-            let cash = response.data.total_cash_amount;
-            let card = response.data.total_card_amount;
-            let online = response.data.total_online_amount;
+            let cash = response.data.total_cash_income;
+            let card = response.data.total_card_income;
+            let online = response.data.total_online_income;
+			let cash_expense = response.data.total_cash_expense;
+			let card_expense = response.data.total_card_expense;
+			let online_expense = response.data.total_online_expense;
 			// Summaries
 			// let cash = 0, cheque = 0, transfer = 0, net = 0
 			// transactions.forEach(t => {
@@ -80,7 +83,7 @@ const AllIncomeExpenseReport = () => {
 				transactions,
 				net_cash_in_hand: response.data.net_cash_in_hand || cash,
 				previous_closing_cash: response.data.previous_closing_cash || 0,
-				totals: { cash, card, online, count: transactions.length },
+				totals: { cash, card, online, cash_expense, card_expense, online_expense, count: transactions.length },
                 total_income: response.data.total_income || 0,
                 total_expense: response.data.total_expense || 0,
 			})
@@ -243,10 +246,14 @@ const AllIncomeExpenseReport = () => {
 							{/* <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Transactions:</span><span className="text-white print:text-black">{data.totals.count}</span></div> */}
                             <div className="flex justify-between mb-2 border-t border-slate-600 pt-2"><span className="font-semibold text-white print:text-black">Last Closing Cash:</span><span className="text-white print:text-black">{(data.previous_closing_cash)?.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
 							{/* <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Net Total:</span><span className="text-white print:text-black">{data.totals.net.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div> */}
-							<div className="flex justify-between mb-2 border-t border-slate-600 pt-2"></div><div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Net Cash Change:</span><span className="text-white print:text-black">{data.totals.cash.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
 							<div className="flex justify-between mb-2 border-t border-slate-600 pt-2"><span className="font-semibold text-white print:text-black">Net Cash In Hand:</span><span className="text-green-500 font-bold print:text-black">{data.net_cash_in_hand.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
-							<div className="flex justify-between mb-2 border-t border-slate-600 pt-2"></div><div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Online Total:</span><span className="text-white print:text-black">{data.totals.online.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
-							<div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Card Total:</span><span className="text-white print:text-black">{data.totals.card.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+							<div className="flex justify-between mb-2 border-t border-slate-600 pt-2"></div><div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Total Cash Income :</span><span className="text-white print:text-black">{data.totals.cash.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+							<div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Total Cash Expense:</span><span className="text-white print:text-black">{data.totals.cash_expense.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+
+							<div className="flex justify-between mb-2 border-t border-slate-600 pt-2"></div><div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Total Online Income:</span><span className="text-white print:text-black">{data.totals.online.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+							<div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Total Online Expense:</span><span className="text-white print:text-black">{data.totals.online_expense.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+							<div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Total Card Income:</span><span className="text-white print:text-black">{data.totals.card.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+							<div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Total Card Expense:</span><span className="text-white print:text-black">{data.totals.card_expense.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
                             <div className="flex justify-between mb-2 border-t border-slate-600 pt-2"></div><div className="flex justify-between mb-2 border-t border-slate-600 pt-2"><span className="font-semibold text-white print:text-black">Total Income:</span><span className="text-white print:text-black">{data.total_income.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
                             <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Total Expense:</span><span className="text-white print:text-black">{data.total_expense.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
 							</div>
