@@ -229,10 +229,10 @@ const AllIncomeExpenseReport = () => {
 								<TableRow key={i}>
 									<TableCell className="font-medium text-white print:text-black">{t.date}</TableCell>
 									<TableCell className="text-white print:text-black">{t.bill_no}</TableCell>
-									<TableCell className="text-white print:text-black">{t.type || 'N/A'}</TableCell>
-									<TableCell className={`print:text-black ${methodColor[t.method] ?? methodColor.default}`}>{t.method}</TableCell>
+									<TableCell className={`print:text-black ${t.type === 'Expense' ? 'text-red-400' : methodColor[t.method] ?? methodColor.default}`}>{t.type || 'N/A'}</TableCell>
+									<TableCell className={`print:text-black ${t.type === 'Expense' ? 'text-red-400' : methodColor[t.method] ?? methodColor.default}`}>{t.method}</TableCell>
 									<TableCell className="text-white print:text-black whitespace-pre-wrap">{t.description}</TableCell>
-									<TableCell className={`text-right font-semibold print:text-black ${methodColor[t.method] ?? methodColor.default}`}>{(t.net_amount || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
+									<TableCell className={`text-right font-semibold print:text-black ${t.type === 'Expense' ? 'text-red-400' : methodColor[t.method] ?? methodColor.default}`}>{(t.net_amount || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
 								</TableRow>
 							))}
 						</TableBody>
