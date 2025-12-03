@@ -274,7 +274,7 @@ class IncentiveProductView(APIView):
 
         incentive_products = incentive_products.order_by('name')
         paginator = PageNumberPagination()
-        paginator.page_size = 10
+        paginator.page_size = 1000 # Fix this later
         paginated = paginator.paginate_queryset(incentive_products, request)
         serializer = IncentiveProductSerializer(paginated, many=True)
         return paginator.get_paginated_response(serializer.data)
