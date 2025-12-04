@@ -416,7 +416,7 @@ function EditOrderForm() {
                     <SelectContent className="bg-slate-800 border-slate-700">
                       <SelectItem value="cash" className="text-white">Cash</SelectItem>
                       <SelectItem value="card" className="text-white">Card</SelectItem>
-                      <SelectItem value="onlinez" className="text-white">Online</SelectItem>
+                      <SelectItem value="online" className="text-white">Online</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
