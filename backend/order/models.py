@@ -19,7 +19,7 @@ class Order(models.Model):
     remaining_received_method = models.CharField(max_length=50, choices=[
         ('cash', 'Cash'),
         ('card', 'Card'),
-        ('online', 'Online Payment')
+        ('online', 'Online')
     ], default='cash')
     remaining_received_date = models.DateField(null=True,blank=True)
 
