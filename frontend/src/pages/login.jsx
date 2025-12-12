@@ -45,6 +45,10 @@ const Login = () => {
         // Redirect to branch selection instead of dashboard
         navigate('/select-branch');
       }
+      else {
+        setError(data.detail || 'Invalid email or password');
+        setIsLoading(false);
+      }
     } catch (err) {
       setError('Invalid email or password');
       setIsLoading(false)
