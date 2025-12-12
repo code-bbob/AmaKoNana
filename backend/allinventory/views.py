@@ -222,6 +222,9 @@ class ManufactureView(APIView):
 
 
     def post(self, request, format=None):
+        role = request.user.person.role
+        if role != "Admin":
+            return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
         request.data['enterprise'] = request.user.person.enterprise.id
         serializer = ManufactureSerializer(data=request.data)
         if serializer.is_valid():
@@ -230,6 +233,9 @@ class ManufactureView(APIView):
         return Response(serializer.errors)
 
     def patch(self, request, pk, format=None):
+        role = request.user.person.role
+        if role != "Admin":
+            return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
         try:
             manufacture = Manufacture.objects.get(id=pk)
         except Manufacture.DoesNotExist:
@@ -242,6 +248,9 @@ class ManufactureView(APIView):
         return Response(serializer.errors)
 
     def delete(self, request, pk, format=None):
+        role = request.user.person.role
+        if role != "Admin":
+            return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
         try:
             manufacture = Manufacture.objects.get(id=pk)
             serializer = ManufactureSerializer(manufacture)

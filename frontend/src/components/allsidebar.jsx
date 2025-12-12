@@ -28,15 +28,31 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Link, useNavigate, useLocation } from "react-router-dom"
 import { useBranchManagement } from "../hooks/useBranchManagement"
+import useAxios from "@/utils/useAxios"
 
 export default function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
   const [isChangingBranch, setIsChangingBranch] = useState(false)
+  const [role, setRole] = useState('')
+  const api = useAxios()
   
   // Use branch management hook
   const { navigateWithBranch, currentBranch, clearBranch } = useBranchManagement()
+
+  useEffect(() => {
+    fetchRole()
+  }, [])
+
+  const fetchRole = async () => {
+    try {
+      const r = await api.get('enterprise/role/')
+      setRole(r.data)
+    } catch (e) {
+      // silently fail
+    }
+  }
 
   const toggleSidebar = () => setIsOpen(!isOpen)
 
@@ -70,7 +86,7 @@ export default function Sidebar() {
       mainPath: 'inventory',
       items: [
         { title: 'Inventory', icon: Container, path: 'inventory' },
-        { title: 'Manufacture', icon: Zap, path: 'manufacture' }
+        { title: 'Manufacture', icon: Zap, path: 'manufacture', adminOnly: true }
       ]
     },
     {
@@ -358,7 +374,7 @@ export default function Sidebar() {
                             transition={{ duration: 0.2 }}
                             className="flex flex-col bg-slate-800/40"
                           >
-                            {group.items.map(item => {
+                            {group.items.filter(item => !item.adminOnly || role === 'Admin').map(item => {
                               const isExternalReport = item.externalReport
                               // Determine active state by comparing current pathname core segment
                               let active = false
