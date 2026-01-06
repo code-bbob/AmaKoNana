@@ -1643,6 +1643,7 @@ class IncomeExpenseReportView(APIView):
         else:
             closing_cash = closing_cash.first()
         sales = SalesTransaction.objects.filter(enterprise=enterprise,branch=branch, date__range=(report_start_date, report_end_date))
+        sales = sales.exclude(method='transfer')
         if branch:
             sales = sales.filter(branch=branch)
         list1=[]
