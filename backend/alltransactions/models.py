@@ -21,7 +21,7 @@ class PurchaseTransaction(models.Model):
     bill_no = models.CharField(max_length=20)
     total_amount = models.FloatField(null=True,blank=True)
     date = models.DateField()
-    method = models.CharField(max_length=20,choices=(('cash','Cash'),('credit','Credit'),('cheque','Cheque'),('transfer','Transfer')),default='credit')
+    method = models.CharField(max_length=20,choices=(('cash','Cash'),('credit','Credit'),('cheque','Cheque'),('transfer','transfer')),default='credit')
     cheque_number = models.CharField(max_length=10,null=True,blank=True)
     cashout_date = models.DateField(null=True)
     person = models.ForeignKey('enterprise.Person', on_delete=models.SET_NULL, null=True, blank=True)
@@ -92,7 +92,7 @@ class SalesTransaction(models.Model):
     bill_no = models.IntegerField()
     branch = models.ForeignKey(Branch,related_name='sales_transaction',on_delete=models.CASCADE, null=True, blank=True)
     subtotal = models.FloatField(null=True,blank=True)
-    method = models.CharField(max_length=20,choices=(('cash','cash'),('online','online'),('card','card'),('credit','credit'),('mixed','mixed')),default='cash')
+    method = models.CharField(max_length=20,choices=(('cash','cash'),('online','online'),('card','card'),('credit','credit'),('mixed','mixed'),('transfer','transfer')),default='cash')
     cash_amount = models.FloatField(null=True,blank=True,default=0)
     online_amount = models.FloatField(null=True,blank=True,default=0)
     card_amount = models.FloatField(null=True,blank=True,default=0)
@@ -200,6 +200,7 @@ class StaffTransactions(models.Model):
     branch = models.ForeignKey('enterprise.Branch', on_delete=models.CASCADE, null=True, blank=True)
     desc = models.CharField(max_length=255)
     staff_type = models.CharField(max_length=20,choices=(('incentive','Incentive'),('salary','Salary')),default='payment')
+    transaction_type = models.CharField(max_length=20,choices=(('Salary Credited','Salary Credited'),('Payment','Payment')),default='Payment')
     
     def __str__(self):
         return f"Staff Transaction {self.pk} of {self.staff.name}"
