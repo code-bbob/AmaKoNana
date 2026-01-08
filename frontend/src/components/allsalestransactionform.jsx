@@ -773,7 +773,7 @@ const handleNewProductVendorChange = (ids) => {
                   >
                     <span>Customer's Phone Number</span>{" "}
                     {customerName && (
-                      <span className="text-blue-400">Hi, {customerName}</span>
+                      <span className="text-blue-400">Hi, {customerName} Ji</span>
                     )}
                     {customerTotal && (
                       <span className="text-green-400">Rs. {customerTotal}</span>
