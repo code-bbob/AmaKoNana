@@ -23,6 +23,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "@/components/allsidebar";
 import { Dialog, DialogTrigger,DialogContent,DialogHeader,DialogDescription,DialogTitle,DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function StaffTransactionEditForm() {
   const api = useAxios();
@@ -33,8 +34,9 @@ function StaffTransactionEditForm() {
     date: "",
     staff: "",
     amount: "",
-  desc: "",
-  staff_type: "",
+    desc: "",
+    staff_type: "",
+    transaction_type: "Payment",
   });
   const [staffMembers, setStaffMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -81,6 +83,7 @@ function StaffTransactionEditForm() {
           amount: transactionResponse.data.amount,
           desc: transactionResponse.data.desc,
           staff_type: transactionResponse.data.staff_type || "",
+          transaction_type: transactionResponse.data.transaction_type || "Payment",
         });
         const details = transactionResponse.data.staff_transaction_details || [];
         setEntries(details.map(d => ({
@@ -212,7 +215,7 @@ function StaffTransactionEditForm() {
             </h2>
             {error && <p className="text-red-400 mb-4">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="flex flex-col">
                   <Label htmlFor="date" className="text-sm font-medium text-white mb-2">
                     Date
@@ -273,6 +276,20 @@ function StaffTransactionEditForm() {
                       </Command>
                     </PopoverContent>
                   </Popover>
+                </div>
+                <div className="flex flex-col">
+                  <Label htmlFor="transaction_type" className="text-sm font-medium text-white mb-2">
+                    Transaction Type
+                  </Label>
+                  <Select value={formData.transaction_type} onValueChange={(value) => handleChange({ target: { name: "transaction_type", value } })}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500">
+                      <SelectValue placeholder="Transaction Type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600 text-white">
+                      <SelectItem value="Payment">Payment</SelectItem>
+                      <SelectItem value="Salary Credited">Salary Credited</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

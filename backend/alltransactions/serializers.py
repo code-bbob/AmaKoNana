@@ -996,9 +996,16 @@ class StaffTransactionSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         
         transaction_details = validated_data.pop('staff_transaction_details', None)
+        transaction_type = validated_data.get('transaction_type', 'Payment')
+        amount = validated_data.get('amount', 0)
+        
+        # Auto-negate amount if transaction_type is 'Payment'
+        if transaction_type == 'Payment':
+            validated_data['amount'] = -abs(amount)
+        
         transaction = StaffTransactions.objects.create(**validated_data)
         staff = transaction.staff
-        staff.due = (staff.due - transaction.amount) if staff.due is not None else -transaction.amount
+        staff.due = (staff.due + transaction.amount) if staff.due is not None else +transaction.amount
         staff.save()
 
         if transaction_details:
@@ -1010,6 +1017,14 @@ class StaffTransactionSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         old_staff = instance.staff
         old_amount = instance.amount or 0
+        transaction_type = validated_data.get('transaction_type', instance.transaction_type)
+        new_amount = validated_data.get('amount', instance.amount or 0)
+
+        # Auto-negate amount if transaction_type is 'Payment'
+        if transaction_type == 'Payment':
+            validated_data['amount'] = -abs(new_amount)
+        else:
+            validated_data['amount'] = abs(new_amount)
 
         # Pull out nested details if provided
         details_data = validated_data.pop('staff_transaction_details', None)
@@ -1029,15 +1044,15 @@ class StaffTransactionSerializer(serializers.ModelSerializer):
 
         # Adjust staff due based on any amount and/or staff change
         new_staff = instance.staff
-        new_amount = instance.amount or 0
+        final_amount = instance.amount or 0
         if old_staff == new_staff:
             # Reverse old, apply new
-            new_staff.due = (new_staff.due or 0) - new_amount + old_amount
+            new_staff.due = (new_staff.due or 0) + final_amount - old_amount
             new_staff.save()
         else:
             # Give back to old, charge new
-            old_staff.due = (old_staff.due or 0) + old_amount
-            new_staff.due = (new_staff.due or 0) - new_amount
+            old_staff.due = (old_staff.due or 0) - old_amount
+            new_staff.due = (new_staff.due or 0) + final_amount
             old_staff.save()
             new_staff.save()
 

@@ -45,6 +45,7 @@ function StaffTransactionForm() {
     desc: "",
     branch: branchId,
     staff_type: "salary",
+    transaction_type: "Payment",
   });
   const [staffMembers, setStaffMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,10 +108,70 @@ function StaffTransactionForm() {
     setOpenStaff(false);
   };
 
+  // Validation helper
+  const isFormValid = () => {
+    if (!formData.date?.trim()) return false;
+    if (!formData.staff?.trim()) return false;
+    if (!formData.amount || parseFloat(formData.amount) <= 0) return false;
+    if (!formData.desc?.trim()) return false;
+    if (!formData.staff_type?.trim()) return false;
+    if (!formData.transaction_type?.trim()) return false;
+    
+    if (formData.staff_type === "incentive") {
+      const hasValidEntry = entries.some(
+        (e) => e.product && e.quantity && e.rate && 
+               parseFloat(e.quantity) > 0 && parseFloat(e.rate) > 0
+      );
+      if (!hasValidEntry) return false;
+    }
+    
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate all required fields
+    if (!formData.date.trim()) {
+      setError("Date is required");
+      return;
+    }
+    if (!formData.staff.trim()) {
+      setError("Staff member is required");
+      return;
+    }
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      setError("Amount is required and must be greater than 0");
+      return;
+    }
+    if (!formData.desc.trim()) {
+      setError("Description is required");
+      return;
+    }
+    if (!formData.staff_type.trim()) {
+      setError("Staff Type is required");
+      return;
+    }
+    if (!formData.transaction_type.trim()) {
+      setError("Transaction Type is required");
+      return;
+    }
+    
+    // For incentive type, validate that at least one entry has all fields filled
+    if (formData.staff_type === "incentive") {
+      const hasValidEntry = entries.some(
+        (e) => e.product && e.quantity && e.rate && 
+               parseFloat(e.quantity) > 0 && parseFloat(e.rate) > 0
+      );
+      if (!hasValidEntry) {
+        setError("At least one complete incentive entry (product, quantity, rate) is required");
+        return;
+      }
+    }
+    
     try {
       setSubLoading(true);
+      setError(null);
       // Build payload, including incentive details when applicable
       const payload = { ...formData };
       if (formData.staff_type === "incentive") {
@@ -198,10 +259,10 @@ function StaffTransactionForm() {
             </h2>
             {error && <p className="text-red-400 mb-4">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="flex flex-col">
                   <Label htmlFor="date" className="text-sm font-medium text-white mb-2">
-                    Date
+                    Date <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     type="date"
@@ -215,7 +276,7 @@ function StaffTransactionForm() {
                 </div>
                 <div className="flex flex-col">
                   <Label htmlFor="staff" className="text-sm font-medium text-white mb-2">
-                    Staff
+                    Staff <span className="text-red-500">*</span>
                   </Label>
                   <Popover open={openStaff} onOpenChange={setOpenStaff}>
                     <PopoverTrigger asChild>
@@ -262,7 +323,7 @@ function StaffTransactionForm() {
                 </div>
                 <div className="flex flex-col">
                   <Label htmlFor="staff_type" className="text-sm font-medium text-white mb-2">
-                    Type
+                    Type <span className="text-red-500">*</span>
                   </Label>
                   <Select value={formData.staff_type} onValueChange={(value) => handleChange({ target: { name: "staff_type", value } })}>
                     <SelectTrigger className=" bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500">
@@ -274,10 +335,24 @@ function StaffTransactionForm() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="flex flex-col">
+                  <Label htmlFor="transaction_type" className="text-sm font-medium text-white mb-2">
+                    Transaction Type <span className="text-red-500">*</span>
+                  </Label>
+                  <Select value={formData.transaction_type} onValueChange={(value) => handleChange({ target: { name: "transaction_type", value } })}>
+                    <SelectTrigger className=" bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500">
+                      <SelectValue placeholder="Transaction Type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600 text-white">
+                      <SelectItem value="Payment">Payment</SelectItem>
+                      <SelectItem value="Salary Credited">Salary Credited</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="flex flex-col">
                 <Label htmlFor="desc" className="text-sm font-medium text-white mb-2">
-                  Description
+                  Description <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="text"
@@ -287,7 +362,7 @@ function StaffTransactionForm() {
                   onChange={handleChange}
                   className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
                   placeholder="Enter description"
-
+                  required
                 />
               </div>
 
@@ -433,7 +508,7 @@ function StaffTransactionForm() {
               )}
               <div className="flex flex-col">
                 <Label htmlFor="amount" className="text-sm font-medium text-white mb-2">
-                  Amount
+                  Amount <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="number"
@@ -448,10 +523,10 @@ function StaffTransactionForm() {
               </div>
               <Button
                 type="submit"
-                disabled={subLoading}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                disabled={subLoading || !isFormValid()}
+                className="w-full bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-600 disabled:cursor-not-allowed"
               >
-                Submit Staff Transaction
+                {subLoading ? "Submitting..." : "Submit Staff Transaction"}
               </Button>
             </form>
           </div>

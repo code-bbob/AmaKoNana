@@ -90,7 +90,7 @@ const StaffStatementPage = () => {
     return transactions.map((transaction) => {
       const amt = Number(transaction.amount) || 0;
       // Positive amounts are payments to staff (reduce payable to staff); negative increase due
-      running -= amt;
+      running += amt;
       return { ...transaction, due: running };
     });
   };
@@ -287,10 +287,10 @@ const StaffStatementPage = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-red-400" />
+                  <CreditCard className="h-5 w-5 text-green-400" />
                   <div>
                     <p className="text-sm text-gray-400 print:text-gray-600">Current Due</p>
-                    <p className="text-lg text-red-400 print:text-red-600">NPR {Number(computedCurrentDue).toLocaleString()}</p>
+                    <p className="text-lg text-green-400 print:text-green-600">NPR {Number(computedCurrentDue).toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -405,23 +405,25 @@ const StaffStatementPage = () => {
                   <span className="font-semibold text-white print:text-black">{data.staff_transactions.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400 print:text-gray-600">Total Debit Amount:</span>
+                  <span className="text-gray-400 print:text-gray-600">Total Credited Amount:</span>
+                  <span className="font-semibold text-green-400 print:text-green-600">
+
+                    NPR {data.staff_transactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
+                    
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 print:text-gray-600">Total Paid Amount:</span>
                   <span className="font-semibold text-red-400 print:text-red-600">
                     NPR {Math.abs(
                       data.staff_transactions.filter((t) => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)
                     ).toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400 print:text-gray-600">Total Paid Amount:</span>
-                  <span className="font-semibold text-green-400 print:text-green-600">
-                    NPR {data.staff_transactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
-                  </span>
-                </div>
                 <hr className="border-slate-600 print:border-gray-300" />
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-lg font-semibold text-white print:text-black">Current Due:</span>
-                  <span className="text-xl font-bold text-red-400 print:text-red-600">NPR {Number(computedCurrentDue).toLocaleString()}</span>
+                  <span className="text-xl font-bold text-green-400 print:text-green-400">NPR {Number(computedCurrentDue).toLocaleString()}</span>
                 </div>
               </div>
             </div>
