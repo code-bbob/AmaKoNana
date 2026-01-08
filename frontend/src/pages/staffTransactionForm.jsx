@@ -262,7 +262,7 @@ function StaffTransactionForm() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="flex flex-col">
                   <Label htmlFor="date" className="text-sm font-medium text-white mb-2">
-                    Date <span className="text-red-500">*</span>
+                    Date
                   </Label>
                   <Input
                     type="date"
@@ -276,7 +276,7 @@ function StaffTransactionForm() {
                 </div>
                 <div className="flex flex-col">
                   <Label htmlFor="staff" className="text-sm font-medium text-white mb-2">
-                    Staff <span className="text-red-500">*</span>
+                    Staff
                   </Label>
                   <Popover open={openStaff} onOpenChange={setOpenStaff}>
                     <PopoverTrigger asChild>
@@ -323,7 +323,7 @@ function StaffTransactionForm() {
                 </div>
                 <div className="flex flex-col">
                   <Label htmlFor="staff_type" className="text-sm font-medium text-white mb-2">
-                    Type <span className="text-red-500">*</span>
+                    Type
                   </Label>
                   <Select value={formData.staff_type} onValueChange={(value) => handleChange({ target: { name: "staff_type", value } })}>
                     <SelectTrigger className=" bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500">
@@ -337,7 +337,7 @@ function StaffTransactionForm() {
                 </div>
                 <div className="flex flex-col">
                   <Label htmlFor="transaction_type" className="text-sm font-medium text-white mb-2">
-                    Transaction Type <span className="text-red-500">*</span>
+                    Transaction Type
                   </Label>
                   <Select value={formData.transaction_type} onValueChange={(value) => handleChange({ target: { name: "transaction_type", value } })}>
                     <SelectTrigger className=" bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500">
@@ -352,7 +352,7 @@ function StaffTransactionForm() {
               </div>
               <div className="flex flex-col">
                 <Label htmlFor="desc" className="text-sm font-medium text-white mb-2">
-                  Description <span className="text-red-500">*</span>
+                  Description
                 </Label>
                 <Input
                   type="text"
@@ -508,7 +508,7 @@ function StaffTransactionForm() {
               )}
               <div className="flex flex-col">
                 <Label htmlFor="amount" className="text-sm font-medium text-white mb-2">
-                  Amount <span className="text-red-500">*</span>
+                  Amount
                 </Label>
                 <Input
                   type="number"
