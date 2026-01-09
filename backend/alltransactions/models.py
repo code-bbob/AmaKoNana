@@ -207,7 +207,7 @@ class StaffTransactions(models.Model):
     
     @transaction.atomic
     def delete(self, *args, **kwargs):
-        self.staff.due = self.staff.due + self.amount
+        self.staff.due = self.staff.due - self.amount
         self.staff.save() 
         super().delete(*args, **kwargs)
 
