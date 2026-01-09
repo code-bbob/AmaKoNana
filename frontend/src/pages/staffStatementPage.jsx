@@ -99,6 +99,25 @@ const StaffStatementPage = () => {
     return amount > 0 ? "text-green-400" : "text-red-400";
   };
 
+  const formatDescriptionWithDetails = (tx) => {
+    if (!tx.staff_transaction_details || tx.staff_transaction_details.length === 0) {
+      return tx.desc || "No description";
+    }
+
+    const details = tx.staff_transaction_details;
+    const detailLines = details.map((detail) => {
+      const productName = detail.product_name || "Unknown";
+      const rate = detail.rate || 0;
+      const quantity = detail.quantity || 0;
+      // Handle both direct values and nested objects with source/parsedValue
+      const total = detail.total?.parsedValue || detail.total || 0;
+      return `${productName}: ${rate} × ${quantity} = Rs. ${total}`;
+    });
+
+    const baseDesc = tx.desc ? `${tx.desc}\n` : "";
+    return `${baseDesc}Items:\n${detailLines.join("\n")}`;
+  };
+
   const handleDownloadCSV = () => {
     if (!data || !transactionsWithBalance.length) return;
 
@@ -117,7 +136,7 @@ const StaffStatementPage = () => {
       const amt = `${sign}NPR ${Math.abs(tx.amount).toFixed(2)}`;
       const row = [
         tx.date,
-        tx.desc || "N/A",
+        formatDescriptionWithDetails(tx),
         amt,
         `NPR ${Number(tx.due).toFixed(2)}`,
       ];
@@ -169,7 +188,7 @@ const StaffStatementPage = () => {
     const headers = [["Date", "Description", "Amount", "Due Balance"]];
     const tableData = transactionsWithBalance.map((tx) => [
       tx.date,
-      tx.desc || "N/A",
+      formatDescriptionWithDetails(tx),
       `${tx.amount > 0 ? "" : "-"}NPR ${Math.abs(tx.amount).toLocaleString()}`,
       `NPR ${Number(tx.due).toLocaleString()}`,
     ]);
@@ -384,7 +403,7 @@ const StaffStatementPage = () => {
                     <TableCell className="font-medium text-white print:text-black">
                       {format(new Date(tx.date), "MMM dd, yyyy")}
                     </TableCell>
-                    <TableCell className="text-white print:text-black max-w-xs">{tx.desc || "No description"}</TableCell>
+                    <TableCell className="text-white print:text-black max-w-xs whitespace-pre-wrap">{formatDescriptionWithDetails(tx)}</TableCell>
                     <TableCell className={`text-right font-semibold ${getTransactionTypeColor(tx.amount)} print:text-black`}>
                       {tx.amount > 0 ? "" : "-"}NPR {Math.abs(tx.amount).toLocaleString()}
                     </TableCell>
