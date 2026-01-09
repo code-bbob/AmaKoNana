@@ -1213,7 +1213,7 @@ class StaffStatementView(APIView):
                 staff_id=staffId,
                 date__lt=start_date
             ).aggregate(total=Sum('amount'))['total'] or 0
-            previous_due = -float(prev_sum)
+            previous_due = float(prev_sum)
             staff_data['previous_due'] = previous_due
         sts = StaffTransactionSerializer(staff_transactions, many=True).data
         return Response({'staff_data': staff_data, 'staff_transactions': sts})
