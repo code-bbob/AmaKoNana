@@ -266,7 +266,7 @@ export default function StaffTransactions() {
                 <CardContent className="pt-4">
                   <div className="mb-4 last:mb-0 p-3 lg:p-4 bg-slate-800 rounded-lg hover:bg-slate-750 transition-colors duration-300">
                     <div className="flex flex-col gap-2">
-                      <span className='text-white'>{transaction.desc}</span>
+                      <span className='text-blue-400'>{transaction.desc}</span>
                       {Array.isArray(transaction.staff_transaction_details) && transaction.staff_transaction_details.length > 0 && (
                         <div className="text-slate-300 text-sm space-y-1">
                           {transaction.staff_transaction_details.map((d) => (

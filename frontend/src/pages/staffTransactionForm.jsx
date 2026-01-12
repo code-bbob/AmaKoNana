@@ -370,9 +370,9 @@ function StaffTransactionForm() {
                 <div className="space-y-4">
                   {entries.map((entry, idx) => (
                     <div key={idx} className="bg-slate-700 text-white p-4 rounded-md shadow mb-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                         {/* Product combobox */}
-                        <div className="flex flex-col">
+                        <div className="flex flex-col col-span-2">
                           <Label className="text-sm font-medium text-white mb-2">Product</Label>
                           <Popover open={openProduct[idx]} onOpenChange={(o) => setOpenProduct((prev) => {
                             const copy = [...prev];
@@ -477,6 +477,14 @@ function StaffTransactionForm() {
                             className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
                             placeholder="0"
                           />
+                        </div>
+
+                        {/* Total (non-editable) */}
+                        <div>
+                          <Label className="text-sm font-medium text-white mb-2 block">Total</Label>
+                          <div className="bg-slate-600 border border-slate-500 rounded px-3 py-2 text-white text-sm">
+                            {(parseFloat(entry.quantity) || 0) * (parseFloat(entry.rate) || 0)}
+                          </div>
                         </div>
                       </div>
 

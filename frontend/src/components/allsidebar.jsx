@@ -36,6 +36,7 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isChangingBranch, setIsChangingBranch] = useState(false)
   const [role, setRole] = useState('')
+  const [userName, setUserName] = useState('')
   const api = useAxios()
   
   // Use branch management hook
@@ -43,12 +44,22 @@ export default function Sidebar() {
 
   useEffect(() => {
     fetchRole()
+    fetchUserInfo()
   }, [])
 
   const fetchRole = async () => {
     try {
       const r = await api.get('enterprise/role/')
       setRole(r.data)
+    } catch (e) {
+      // silently fail
+    }
+  }
+
+  const fetchUserInfo = async () => {
+    try {
+      const r = await api.get('userauth/info/')
+      setUserName(r.data.userinfo.name || r.data.user_name || '')
     } catch (e) {
       // silently fail
     }
@@ -261,7 +272,7 @@ export default function Sidebar() {
           >
             <div className="relative p-6 pt-16 lg:pt-6">
               <div
-                className="text-2xl font-bold text-center mb-4 text-white cursor-pointer tracking-wide"
+                className="text-2xl font-bold text-center text-white cursor-pointer tracking-wide"
                 onClick={() => {
                   navigate(`/branch/${currentBranch.id}`)
                   setIsOpen(false)
@@ -269,6 +280,11 @@ export default function Sidebar() {
               >
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-fuchsia-300 to-pink-300 drop-shadow-sm">Aama Ko Nana</span>
               </div>
+              {userName && (
+                <div className="text-center mb-4 text-sm text-slate-300">
+                  Welcome, <span className="font-semibold">{userName}</span>
+                </div>
+              )}
               {/* Centered Expand / Collapse All control */}
               <div className="flex justify-center mb-3">
                 <div className="flex items-center text-[10px] font-medium uppercase tracking-wide rounded-full overflow-hidden border border-slate-600/60 bg-slate-800/70 backdrop-blur-sm shadow-inner shadow-slate-900/50">
