@@ -258,7 +258,7 @@ function OrdersPage(){
                     <CardTitle className="text-lg lg:text-xl font-medium text-white justify-between items-start lg:items-center">
                         <div className="flex text-xs  md:text-sm justify-between">
                           <p className='text-lg text-purple-500'>Bill : {order.bill_no}</p>
-                        <p>Due : {order.due_date}</p>
+                        <p>Delivery Date : {order.due_date}</p>
                         <p>Branch: {order.branch_name}</p>
                         </div>
                       <div className='flex justify-between'>

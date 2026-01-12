@@ -179,7 +179,7 @@ function OrderDetail() {
                     <Calendar className="w-5 h-5 text-purple-300" />
                   </div>
                   <div>
-                    <p className="text-sm text-slate-400">Due Date</p>
+                    <p className="text-sm text-slate-400">Delivery Date</p>
                     <p className="text-white font-medium">
                       {orderData.due_date ? format(new Date(orderData.due_date), 'dd MMM yyyy') : 'Not set'}
                     </p>

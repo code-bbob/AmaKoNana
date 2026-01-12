@@ -316,7 +316,7 @@ function EditOrderForm() {
                     htmlFor="due_date"
                     className="text-sm font-medium text-white mb-2"
                   >
-                    Due Date
+                    Delivery Date
                   </Label>
                   <Input
                     type="date"
