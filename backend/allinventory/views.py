@@ -183,9 +183,9 @@ class MergeProductBrandView(APIView):
         products = Product.objects.filter(branch_id=mergebranch,brand__name__iexact=brand.name)
         print("THERESASDSAD ",products) 
         for product in Product.objects.filter(branch_id=mergebranch,brand__name__iexact=brand.name):
-            print(product)
+            # print(product)
             if Product.objects.filter(branch_id=selfbranch, brand=brand, name__iexact=product.name).exists():
-                print("HERE")
+                # print("HERE")
                 continue
             p = Product.objects.create(name=product.name,enterprise=product.enterprise,branch_id=selfbranch,cost_price=product.cost_price,selling_price=product.selling_price,brand_id=brand.id,uid = product.uid, print_pattern=product.print_pattern)
             print("CREATED",p)

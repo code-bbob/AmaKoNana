@@ -76,7 +76,11 @@ const OrderReport = () => {
     if (!data || !data.transactions.length) return
     let csv = "Date,Bill No,Type,Method,Description,Net Amount\n"
     data.transactions.forEach(t => {
-      csv += `${t.date},${t.bill_no || ''},${t.type || 'Order'},${t.method || ''},"${(t.description || '').replace(/\n/g,' ')}",${t.net_amount || 0}\n`
+      let method = t.method || '';
+      if (method === 'mixed') {
+        method = 'mixed (see description)';
+      }
+      csv += `${t.date},${t.bill_no || ''},${t.type || 'Order'},${method},"${(t.description || '').replace(/\n/g,' ')}",${t.net_amount || 0}\n`
     })
     csv += `\nCash Total,,${data.totals.cash}\nOnline Total,,${data.totals.online}\nCard Total,,${data.totals.card}\nNet Total,,${data.totals.net}\nCount,,${data.totals.count}\n`
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
@@ -170,16 +174,19 @@ const OrderReport = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.transactions.map((t,i)=>(
+                {data.transactions.map((t,i)=>{
+                  const displayMethod = t.method === 'mixed' ? 'Mixed*' : t.method;
+                  return (
                   <TableRow key={i}>
                     <TableCell className="font-medium text-white print:text-black">{t.date}</TableCell>
                     <TableCell className="text-white print:text-black">{t.bill_no}</TableCell>
                     <TableCell className="text-white print:text-black">{t.type || 'Order'}</TableCell>
-                    <TableCell className={`print:text-black ${methodColor[t.method] ?? methodColor.default}`}>{t.method}</TableCell>
+                    <TableCell className={`print:text-black ${methodColor[t.method] ?? methodColor.default}`}>{displayMethod}</TableCell>
                     <TableCell className="text-white print:text-black whitespace-pre-wrap">{t.description}</TableCell>
                     <TableCell className={`text-right font-semibold print:text-black ${methodColor[t.method] ?? methodColor.default}`}>{(t.net_amount || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
                   </TableRow>
-                ))}
+                )})
+                }
               </TableBody>
             </Table>
           </div>
@@ -192,7 +199,10 @@ const OrderReport = () => {
             </div>
           </div>
 
-          <div className="mt-8 text-center text-sm text-gray-400 print:text-gray-600"><p>This report is auto-generated and does not require a signature.</p></div>
+          <div className="mt-8 text-center text-sm text-gray-400 print:text-gray-600">
+            <p>This report is auto-generated and does not require a signature.</p>
+            <p className="mt-1 text-xs">* Mixed payments are split between Cash, Online, and Card - totals reflect the breakdown.</p>
+          </div>
         </CardContent>
       </Card>
     </div>

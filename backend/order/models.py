@@ -14,13 +14,21 @@ class Order(models.Model):
         ('cash', 'Cash'),
         ('card', 'Card'),
         ('online', 'Online Payment'),
+        ('mixed', 'Mixed'),
     ], default='cash')
+    cash_advance = models.FloatField(null=True, blank=True, default=0)
+    online_advance = models.FloatField(null=True, blank=True, default=0)
+    card_advance = models.FloatField(null=True, blank=True, default=0)
     remaining_received = models.FloatField(null=True, blank=True)
     remaining_received_method = models.CharField(max_length=50, choices=[
         ('cash', 'Cash'),
         ('card', 'Card'),
-        ('online', 'Online')
+        ('online', 'Online'),
+        ('mixed', 'Mixed'),
     ], default='cash')
+    cash_remaining = models.FloatField(null=True, blank=True, default=0)
+    online_remaining = models.FloatField(null=True, blank=True, default=0)
+    card_remaining = models.FloatField(null=True, blank=True, default=0)
     remaining_received_date = models.DateField(null=True,blank=True)
 
     status = models.CharField(max_length=50, choices=[

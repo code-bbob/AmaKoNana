@@ -1692,6 +1692,10 @@ class IncomeExpenseReportView(APIView):
                 total_card_income += order.advance_received or 0
             elif order.advance_method == 'online':
                 total_online_income += order.advance_received or 0
+            elif order.advance_method == 'mixed':
+                total_cash_income += order.cash_advance or 0
+                total_card_income += order.card_advance or 0
+                total_online_income += order.online_advance or 0
             total_income += order.advance_received or 0
 
         remaining_payment_orders = Order.objects.filter(enterprise=enterprise, remaining_received_date__range=(report_start_date, report_end_date))
@@ -1718,6 +1722,10 @@ class IncomeExpenseReportView(APIView):
                 total_card_income += order.remaining_received or 0
             elif order.remaining_received_method == 'online':
                 total_online_income += order.remaining_received or 0
+            elif order.remaining_received_method == 'mixed':
+                total_cash_income += order.cash_remaining or 0
+                total_card_income += order.card_remaining or 0
+                total_online_income += order.online_remaining or 0
             total_income += order.remaining_received or 0
 
         dts = DebtorTransaction.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))

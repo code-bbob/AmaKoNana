@@ -69,7 +69,15 @@ const OrderOverviewPage = () => {
     if (!data || !data.orders.length) return
     let csv = "Due Date,Bill No,Customer,Phone,Status,Total,Advance,Adv Method,Remaining,Rem Method,Net Received,Outstanding\n"
     data.orders.forEach(o => {
-      csv += `${o.due_date || ''},${o.bill_no || ''},"${o.customer_name}",${o.customer_phone || ''},${o.status || ''},${o.total_amount || 0},${o.advance_received || 0},${o.advance_method || ''},${o.remaining_received || 0},${o.remaining_received_method || ''},${o.net_received || 0},${o.outstanding || 0}\n`
+      let advMethod = o.advance_method || '';
+      if (advMethod === 'mixed') {
+        advMethod = `mixed (C:${o.cash_advance||0} O:${o.online_advance||0} Cd:${o.card_advance||0})`;
+      }
+      let remMethod = o.remaining_received_method || '';
+      if (remMethod === 'mixed') {
+        remMethod = `mixed (C:${o.cash_remaining||0} O:${o.online_remaining||0} Cd:${o.card_remaining||0})`;
+      }
+      csv += `${o.due_date || ''},${o.bill_no || ''},"${o.customer_name}",${o.customer_phone || ''},${o.status || ''},${o.total_amount || 0},${o.advance_received || 0},${advMethod},${o.remaining_received || 0},${remMethod},${o.net_received || 0},${o.outstanding || 0}\n`
     })
     csv += `\nTotal Orders,,${data.totals.count}\nTotal Amount,,${data.totals.total_amount}\nTotal Advance,,${data.totals.total_advance}\nTotal Remaining,,${data.totals.total_remaining}\nNet Received,,${data.totals.net_received}\nTotal Outstanding,,${data.totals.total_outstanding}\n`
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
@@ -185,6 +193,15 @@ const OrderOverviewPage = () => {
                   const advColor = methodColor[o.advance_method] || methodColor.default
                   const remColor = methodColor[o.remaining_received_method] || methodColor.default
                   const outstandingColor = o.outstanding > 0 ? 'text-red-400' : 'text-green-400'
+                  
+                  const advDisplay = o.advance_method === 'mixed' 
+                    ? `Mixed (C:${(o.cash_advance||0).toFixed(0)} O:${(o.online_advance||0).toFixed(0)} Cd:${(o.card_advance||0).toFixed(0)})`
+                    : (o.advance_received || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'});
+                  
+                  const remDisplay = o.remaining_received_method === 'mixed'
+                    ? `Mixed (C:${(o.cash_remaining||0).toFixed(0)} O:${(o.online_remaining||0).toFixed(0)} Cd:${(o.card_remaining||0).toFixed(0)})`
+                    : (o.remaining_received || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'});
+                  
                   return (
                     <TableRow key={idx}>
                       <TableCell className="font-medium text-white print:text-black">{o.due_date || ''}</TableCell>
@@ -193,8 +210,8 @@ const OrderOverviewPage = () => {
                       <TableCell className="text-white print:text-black">{o.customer_phone}</TableCell>
                       <TableCell className="text-white print:text-black">{o.status}</TableCell>
                       <TableCell className="text-right text-white print:text-black">{(o.total_amount || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
-                      <TableCell className={`text-right font-semibold print:text-black ${advColor}`}>{(o.advance_received || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
-                      <TableCell className={`text-right font-semibold print:text-black ${remColor}`}>{(o.remaining_received || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
+                      <TableCell className={`text-right font-semibold print:text-black ${o.advance_method === 'mixed' ? 'text-xs' : advColor}`}>{advDisplay}</TableCell>
+                      <TableCell className={`text-right font-semibold print:text-black ${o.remaining_received_method === 'mixed' ? 'text-xs' : remColor}`}>{remDisplay}</TableCell>
                       <TableCell className={`text-right text-white font-semibold print:text-black`}>{(o.net_received || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
                       <TableCell className={`text-right font-semibold print:text-black ${outstandingColor}`}>{(o.outstanding || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
                     </TableRow>

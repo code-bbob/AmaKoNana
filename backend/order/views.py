@@ -255,6 +255,10 @@ class OrderReportVie(APIView):
                 total_card_amount += order.advance_received or 0
             elif order.advance_method == 'online':
                 total_online_amount += order.advance_received or 0
+            elif order.advance_method == 'mixed':
+                total_cash_amount += order.cash_advance or 0
+                total_card_amount += order.card_advance or 0
+                total_online_amount += order.online_advance or 0
             total_income += order.advance_received or 0
 
         remaining_payment_orders = Order.objects.filter(enterprise=enterprise, remaining_received_date__range=(report_start_date, report_end_date))
@@ -281,6 +285,10 @@ class OrderReportVie(APIView):
                 total_card_amount += order.remaining_received or 0
             elif order.remaining_received_method == 'online':
                 total_online_amount += order.remaining_received or 0
+            elif order.remaining_received_method == 'mixed':
+                total_cash_amount += order.cash_remaining or 0
+                total_card_amount += order.card_remaining or 0
+                total_online_amount += order.online_remaining or 0
             total_income += order.remaining_received or 0
 
         report = {

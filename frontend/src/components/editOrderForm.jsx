@@ -62,8 +62,14 @@ function EditOrderForm() {
       // UPDATED: advance & remaining payment fields
       advance_received: data.advance_received || "",
       advance_method: data.advance_method || "cash",
+      cash_advance: data.cash_advance || "",
+      online_advance: data.online_advance || "",
+      card_advance: data.card_advance || "",
       remaining_received: data.remaining_received,
       remaining_received_method: data.remaining_received_method || "cash",
+      cash_remaining: data.cash_remaining || "",
+      online_remaining: data.online_remaining || "",
+      card_remaining: data.card_remaining || "",
       remaining_received_date: data.remaining_received_date,
             status: data.status || "pending",
             due_date: formattedDueDate,
@@ -166,8 +172,18 @@ function EditOrderForm() {
   formDataToSend.append('total_amount', formData.total_amount || '');
   formDataToSend.append('advance_received', formData.advance_received || '');
   formDataToSend.append('advance_method', formData.advance_method);
+  if (formData.advance_method === 'mixed') {
+    formDataToSend.append('cash_advance', formData.cash_advance || 0);
+    formDataToSend.append('online_advance', formData.online_advance || 0);
+    formDataToSend.append('card_advance', formData.card_advance || 0);
+  }
   formDataToSend.append('remaining_received', formData.remaining_received);
   formDataToSend.append('remaining_received_method', formData.remaining_received_method || '');
+  if (formData.remaining_received_method === 'mixed') {
+    formDataToSend.append('cash_remaining', formData.cash_remaining || 0);
+    formDataToSend.append('online_remaining', formData.online_remaining || 0);
+    formDataToSend.append('card_remaining', formData.card_remaining || 0);
+  }
   formDataToSend.append('remaining_received_date', formData.remaining_received_date);
         formDataToSend.append('due_date', formData.due_date || '');
         
@@ -207,6 +223,18 @@ function EditOrderForm() {
           due_date: formData.due_date || '',
           items: itemsForUpdate
         };
+        
+        if (formData.advance_method === 'mixed') {
+          payload.cash_advance = parseFloat(formData.cash_advance) || 0;
+          payload.online_advance = parseFloat(formData.online_advance) || 0;
+          payload.card_advance = parseFloat(formData.card_advance) || 0;
+        }
+        
+        if (formData.remaining_received_method === 'mixed') {
+          payload.cash_remaining = parseFloat(formData.cash_remaining) || 0;
+          payload.online_remaining = parseFloat(formData.online_remaining) || 0;
+          payload.card_remaining = parseFloat(formData.card_remaining) || 0;
+        }
         
         await api.patch(`order/${orderId}/`, payload);
       }
@@ -391,6 +419,7 @@ function EditOrderForm() {
                       <SelectItem value="cash" className="text-white">Cash</SelectItem>
                       <SelectItem value="card" className="text-white">Card</SelectItem>
                       <SelectItem value="online" className="text-white">Online Payment</SelectItem>
+                      <SelectItem value="mixed" className="text-white">Mixed</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -417,10 +446,117 @@ function EditOrderForm() {
                       <SelectItem value="cash" className="text-white">Cash</SelectItem>
                       <SelectItem value="card" className="text-white">Card</SelectItem>
                       <SelectItem value="online" className="text-white">Online</SelectItem>
+                      <SelectItem value="mixed" className="text-white">Mixed</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+
+              {formData.advance_method === 'mixed' && (
+                <div className="bg-slate-700 p-4 rounded-md">
+                  <h4 className="text-sm font-semibold text-white mb-3">Split Advance Payment</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex flex-col">
+                      <Label htmlFor="cash_advance" className="text-sm font-medium text-white mb-2">Cash</Label>
+                      <Input
+                        type="number"
+                        id="cash_advance"
+                        name="cash_advance"
+                        onWheel={handleWheel}
+                        value={formData.cash_advance || ''}
+                        onChange={handleChange}
+                        className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <Label htmlFor="online_advance" className="text-sm font-medium text-white mb-2">Online</Label>
+                      <Input
+                        type="number"
+                        id="online_advance"
+                        name="online_advance"
+                        onWheel={handleWheel}
+                        value={formData.online_advance || ''}
+                        onChange={handleChange}
+                        className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <Label htmlFor="card_advance" className="text-sm font-medium text-white mb-2">Card</Label>
+                      <Input
+                        type="number"
+                        id="card_advance"
+                        name="card_advance"
+                        onWheel={handleWheel}
+                        value={formData.card_advance || ''}
+                        onChange={handleChange}
+                        className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3 flex justify-between text-sm text-slate-300">
+                    <span>Total Split:</span>
+                    <span className="font-mono">
+                      {((parseFloat(formData.cash_advance)||0) + (parseFloat(formData.online_advance)||0) + (parseFloat(formData.card_advance)||0)).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {formData.remaining_received_method === 'mixed' && (
+                <div className="bg-slate-700 p-4 rounded-md">
+                  <h4 className="text-sm font-semibold text-white mb-3">Split Remaining Payment</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex flex-col">
+                      <Label htmlFor="cash_remaining" className="text-sm font-medium text-white mb-2">Cash</Label>
+                      <Input
+                        type="number"
+                        id="cash_remaining"
+                        name="cash_remaining"
+                        onWheel={handleWheel}
+                        value={formData.cash_remaining || ''}
+                        onChange={handleChange}
+                        className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <Label htmlFor="online_remaining" className="text-sm font-medium text-white mb-2">Online</Label>
+                      <Input
+                        type="number"
+                        id="online_remaining"
+                        name="online_remaining"
+                        onWheel={handleWheel}
+                        value={formData.online_remaining || ''}
+                        onChange={handleChange}
+                        className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <Label htmlFor="card_remaining" className="text-sm font-medium text-white mb-2">Card</Label>
+                      <Input
+                        type="number"
+                        id="card_remaining"
+                        name="card_remaining"
+                        onWheel={handleWheel}
+                        value={formData.card_remaining || ''}
+                        onChange={handleChange}
+                        className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3 flex justify-between text-sm text-slate-300">
+                    <span>Total Split:</span>
+                    <span className="font-mono">
+                      {((parseFloat(formData.cash_remaining)||0) + (parseFloat(formData.online_remaining)||0) + (parseFloat(formData.card_remaining)||0)).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {formData.remaining_received_date && (
                 <div className="mt-4 flex flex-col">
