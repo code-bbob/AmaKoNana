@@ -1621,6 +1621,7 @@ class IncomeExpenseReportView(APIView):
         total_card_expense = 0
         total_income = 0
         total_expense = 0
+        total_withdrawal = 0
         if start_date:
             report_start_date = parse_date(start_date)
         else:
@@ -1796,8 +1797,9 @@ class IncomeExpenseReportView(APIView):
                 'description': f"Withdrawal by {wd.person.user.name if wd.person else 'Unknown'}",
                 'method': 'N/A',
                 'type': 'Withdrawal',
+                'date': wd.date
             })
-            total_cash_amount -= wd.amount or 0
+            total_withdrawal += wd.amount or 0
         
         sort_order = {
             "cash" : 1,
@@ -1807,7 +1809,7 @@ class IncomeExpenseReportView(APIView):
             "credit" : 5,
             "N/A" : 6,
         }
-        net_cash_in_hand = (closing_cash.amount if closing_cash else 0) + total_cash_income - total_cash_expense
+        net_cash_in_hand = (closing_cash.amount if closing_cash else 0) + total_cash_income - total_cash_expense - total_withdrawal
         list1.sort(key=lambda x: (
             x["date"],              # 1st: date (ascending)
             sort_order[x["method"]]        # 2nd: type priority
@@ -1825,6 +1827,7 @@ class IncomeExpenseReportView(APIView):
             'net_cash_in_hand': net_cash_in_hand,
             'total_income': total_income,
             'total_expense': total_expense,
+            'total_withdrawal': total_withdrawal,
         }
         if message:
             report['message'] = message

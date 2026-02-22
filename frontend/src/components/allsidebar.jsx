@@ -129,10 +129,8 @@ export default function Sidebar() {
       items: [
         { title: 'Add Expense', icon: TrendingDown, path: 'expenses/form' },
         { title: 'Expenses', icon: TrendingDown, path: 'expenses' },
-        { title: 'Expenses Report', icon: TrendingDown, path: 'expenses-report', externalReport: true }
-  // ,{ title: 'Add Withdrawal', icon: TrendingDown, path: 'withdrawals/form' },
-  // { title: 'Withdrawals', icon: TrendingDown, path: 'withdrawals' },
-  // { title: 'Withdrawals Report', icon: TrendingDown, path: 'withdrawals-report', externalReport: true }
+        { title: 'Expenses Report', icon: TrendingDown, path: 'expenses-report', externalReport: true },
+        { title: 'Withdrawals Report', icon: TrendingDown, path: 'withdrawals-report', externalReport: true }
       ]
     },
     {
@@ -189,7 +187,7 @@ export default function Sidebar() {
       { title: 'Sales Report', icon: BookCopy, path: 'sales-report', externalReport: true },
       { title: 'Expenses Report', icon: BookCopy, path: 'expenses-report', externalReport: true },
       { title: 'Order Report', icon: BookCopy, path: 'order-report', externalReport: true },
-      // { title: 'Withdrawals Report', icon: BookCopy, path: 'withdrawals-report', externalReport: true }
+      { title: 'Withdrawals Report', icon: BookCopy, path: 'withdrawals-report', externalReport: true }
     ] }
   ]
 

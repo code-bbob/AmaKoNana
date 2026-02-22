@@ -86,6 +86,7 @@ const AllIncomeExpenseReport = () => {
 				totals: { cash, card, online, cash_expense, card_expense, online_expense, count: transactions.length },
                 total_income: response.data.total_income || 0,
                 total_expense: response.data.total_expense || 0,
+				total_withdrawal: response.data.total_withdrawal || 0,
 			})
 		} catch (err) {
 			setError("Failed to fetch income-expense report")
@@ -232,10 +233,10 @@ const AllIncomeExpenseReport = () => {
 								<TableRow key={i}>
 									<TableCell className="font-medium text-white print:text-black">{t.date}</TableCell>
 									<TableCell className="text-white print:text-black">{t.bill_no}</TableCell>
-									<TableCell className={`print:text-black ${t.type === 'Expense' ? 'text-red-400' : methodColor[t.method] ?? methodColor.default}`}>{t.type || 'N/A'}</TableCell>
-									<TableCell className={`print:text-black ${t.type === 'Expense' ? 'text-red-400' : methodColor[t.method] ?? methodColor.default}`}>{t.method}</TableCell>
+									<TableCell className={`print:text-black ${t.type === 'Expense' ? 'text-red-400' : t.type === 'Withdrawal' ? 'text-yellow-400' : methodColor[t.method] ?? methodColor.default}`}>{t.type || 'N/A'}</TableCell>
+									<TableCell className={`print:text-black ${t.type === 'Expense' ? 'text-red-400' : t.type === 'Withdrawal' ? 'text-yellow-400' : methodColor[t.method] ?? methodColor.default}`}>{t.method}</TableCell>
 									<TableCell className="text-white print:text-black whitespace-pre-wrap">{t.description}</TableCell>
-									<TableCell className={`text-right font-semibold print:text-black ${t.type === 'Expense' ? 'text-red-400' : methodColor[t.method] ?? methodColor.default}`}>{(t.net_amount || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
+									<TableCell className={`text-right font-semibold print:text-black ${t.type === 'Expense' ? 'text-red-400' : t.type === 'Withdrawal' ? 'text-yellow-400' : methodColor[t.method] ?? methodColor.default}`}>{(t.net_amount || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
 								</TableRow>
 							))}
 						</TableBody>
@@ -256,6 +257,7 @@ const AllIncomeExpenseReport = () => {
 							{/* <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Total Card Expense:</span><span className="text-white print:text-black">{data.totals.card_expense.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div> */}
                             <div className="flex justify-between mb-2 border-t border-slate-600 pt-2"></div><div className="flex justify-between mb-2 border-t border-slate-600 pt-2"><span className="font-semibold text-white print:text-black">Total Income:</span><span className="text-white print:text-black">{data.total_income.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
                             <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Total Expense:</span><span className="text-white print:text-black">{data.total_expense.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+							<div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Total Withdrawal:</span><span className="text-white print:text-black">{data.total_withdrawal.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
 							</div>
 						</div>
                     

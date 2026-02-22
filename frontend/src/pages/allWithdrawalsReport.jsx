@@ -60,9 +60,9 @@ const AllWithdrawalsReport = () => {
 
   const handleDownloadCSV = () => {
     if (!data || !data.items.length) return;
-    let csv = "Date,Amount\n";
-    data.items.forEach(item => { csv += `${item.date},${item.amount}` + "\n"; });
-    csv += `\nTotal Withdrawals: ,${data.total_withdrawals}\nTransactions: ,${data.count}\n`;
+    let csv = "Date,Person,Amount\n";
+    data.items.forEach(item => { csv += `${item.date},"${(item.person_name||'').replace(/"/g,'\"')}",${item.amount}` + "\n"; });
+    csv += `\nTotal Withdrawals: ,,${data.total_withdrawals}\nTransactions: ,,${data.count}\n`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -77,10 +77,10 @@ const AllWithdrawalsReport = () => {
     if (!data || !data.items.length) return;
     const doc = new jsPDF();
     doc.text("Withdrawals Report", 14, 10);
-    const headers = [["Date","Amount"]];
-    const tableData = data.items.map(item => [item.date, item.amount]);
-    tableData.push(["Total", data.total_withdrawals]);
-    tableData.push(["Transactions", data.count]);
+    const headers = [["Date","Person","Amount"]];
+    const tableData = data.items.map(item => [item.date, item.person_name || '', item.amount]);
+    tableData.push(["","Total", data.total_withdrawals]);
+    tableData.push(["","Transactions", data.count]);
     doc.autoTable({ head: headers, body: tableData, startY: 20 });
     doc.save("Withdrawals_Report.pdf");
   };

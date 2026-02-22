@@ -17,6 +17,7 @@ export default function AllExpenseForm() {
   const [error, setError] = useState(null);
   const [subLoading, setSubLoading] = useState(false);
   const [formData, setFormData] = useState({
+    type: "expense",
     date: new Date().toISOString().split("T")[0],
     branch: branchId,
     amount: "",
@@ -35,17 +36,38 @@ export default function AllExpenseForm() {
     setFormData({ ...formData, method: value });
   };
 
+  const handleTypeChange = (value) => {
+    setFormData({ ...formData, type: value });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setSubLoading(true);
       const submissionData = { ...formData };
-      // Normalize empty cheque fields when not cheque
-      if (submissionData.method !== 'cheque') {
-        submissionData.cheque_number = null;
-        submissionData.cashout_date = null;
+      
+      // Determine the endpoint based on type
+      let endpoint;
+      if (formData.type === "withdrawal") {
+        endpoint = `alltransaction/withdrawals/`;
+        // Remove fields not needed for withdrawal
+        delete submissionData.method;
+        delete submissionData.cheque_number;
+        delete submissionData.cashout_date;
+        delete submissionData.desc;
+      } else {
+        endpoint = "alltransaction/expenses/";
+        // Normalize empty cheque fields when not cheque
+        if (submissionData.method !== 'cheque') {
+          submissionData.cheque_number = null;
+          submissionData.cashout_date = null;
+        }
       }
-      await api.post("alltransaction/expenses/", submissionData);
+      
+      // Remove type field from submission data
+      delete submissionData.type;
+      
+      await api.post(endpoint, submissionData);
       navigate(`/expenses/branch/${branchId}`);
     } catch (err) {
       console.error("Error posting expense:", err);
@@ -69,11 +91,25 @@ export default function AllExpenseForm() {
             <h2 className="text-2xl lg:text-3xl font-bold mb-6 text-white">Add Expense</h2>
             {error && <p className="text-red-400 mb-4">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="flex flex-col">
+                <Label htmlFor="type" className="text-sm font-medium text-white mb-2">Type</Label>
+                <Select onValueChange={handleTypeChange} value={formData.type}>
+                  <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    <SelectItem value="expense" className="text-white">Expense</SelectItem>
+                    <SelectItem value="withdrawal" className="text-white">Withdrawal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col">
                   <Label htmlFor="date" className="text-sm font-medium text-white mb-2">Date</Label>
                   <Input type="date" id="date" name="date" value={formData.date} onChange={handleChange} className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500" required />
                 </div>
+              {formData.type === "expense" && (
               <div className="flex flex-col">
                 <Label htmlFor="method" className="text-sm font-medium text-white mb-2">Payment Method</Label>
                 <Select onValueChange={handleMethodChange} value={formData.method}>
@@ -87,6 +123,7 @@ export default function AllExpenseForm() {
                   </SelectContent>
                 </Select>
               </div>
+              )}
               </div>
 
                 <div className="flex flex-col">
@@ -94,7 +131,7 @@ export default function AllExpenseForm() {
                   <Input type="number" id="amount" name="amount" value={formData.amount} onChange={handleChange} className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500" required />
                 </div>
 
-              {formData.method === "cheque" && (
+              {formData.type === "expense" && formData.method === "cheque" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex flex-col">
                     <Label htmlFor="cheque_number" className="text-sm font-medium text-white mb-2">Cheque Number</Label>
@@ -107,10 +144,12 @@ export default function AllExpenseForm() {
                 </div>
               )}
 
+              {formData.type === "expense" && (
               <div className="flex flex-col">
                 <Label htmlFor="desc" className="text-sm font-medium text-white mb-2">Description</Label>
                 <Input type="text" id="desc" name="desc" value={formData.desc} onChange={handleChange} placeholder="What is this expense for?" className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500" />
               </div>
+              )}
 
               <Button type="submit" disabled={subLoading} className="w-full bg-green-600 hover:bg-green-700 text-white">Submit Expense</Button>
             </form>
