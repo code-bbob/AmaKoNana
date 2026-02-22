@@ -63,7 +63,7 @@ export default function EditAllWithdrawal() {
       setSubLoading(true);
       const payload = { ...formData };
       const res = await api.patch(`alltransaction/withdrawals/${withdrawalId}/`, payload);
-      navigate(`/withdrawals/branch/${branchId}`);
+      navigate(`/expenses/branch/${branchId}`);
     } catch (err) {
       console.error(err);
       setError("Failed to update withdrawal");
@@ -76,7 +76,7 @@ export default function EditAllWithdrawal() {
     if (!window.confirm("Delete this withdrawal?")) return;
     try {
       await api.delete(`alltransaction/withdrawals/${withdrawalId}/`);
-      navigate(`/withdrawals/branch/${branchId}`);
+      navigate(`/expenses/branch/${branchId}`);
     } catch (err) {
       setError("Failed to delete withdrawal");
     }

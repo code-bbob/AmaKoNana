@@ -1319,10 +1319,14 @@ class ExpensesView(APIView):
                 return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
             serializer = ExpensesSerializer(expense)
             return Response(serializer.data)
+        
+        # Fetch both expenses and withdrawals
         expenses = Expenses.objects.filter(enterprise=enterprise)
+        withdrawals = Withdrawal.objects.filter(enterprise=enterprise)
 
         if branch:
             expenses = expenses.filter(branch=branch)
+            withdrawals = withdrawals.filter(branch=branch)
 
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
@@ -1330,6 +1334,11 @@ class ExpensesView(APIView):
 
         if search:
             expenses = expenses.filter(Q(desc__icontains=search) | Q(method__icontains=search))
+            if search.isdigit():
+                withdrawals = withdrawals.filter(amount=float(search))
+            else:
+                # If search is not numeric, exclude all withdrawals from results
+                withdrawals = withdrawals.none()
 
         if start_date and end_date:
             start_date = parse_date(start_date)
@@ -1337,26 +1346,67 @@ class ExpensesView(APIView):
 
     
         if start_date and end_date:
-            expenses = expenses.filter(
-                date__range=(start_date, end_date)
-            )
+            expenses = expenses.filter(date__range=(start_date, end_date))
+            withdrawals = withdrawals.filter(date__range=(start_date, end_date))
         elif start_date and not end_date:
-            expenses = expenses.filter(
-                date__gte=start_date
-            )
+            expenses = expenses.filter(date__gte=start_date)
+            withdrawals = withdrawals.filter(date__gte=start_date)
         elif not start_date and end_date:
-            expenses = expenses.filter(
-                date__lte=end_date
-            )
+            expenses = expenses.filter(date__lte=end_date)
+            withdrawals = withdrawals.filter(date__lte=end_date)
 
-        expenses = expenses.order_by('-date','-id')
+        # Combine expenses and withdrawals into a single list
+        expenses_data = []
+        for exp in expenses:
+            expenses_data.append({
+                'id': exp.id,
+                'date': exp.date,
+                'amount': exp.amount,
+                'method': exp.method,
+                'desc': exp.desc,
+                'person_name': exp.person.user.name if exp.person else None,
+                'type': 'Expense'
+            })
+        
+        for wit in withdrawals:
+            expenses_data.append({
+                'id': wit.id,
+                'date': wit.date,
+                'amount': wit.amount,
+                'method': 'N/A',  # Withdrawals don't have method
+                'desc': 'Withdrawal',
+                'person_name': wit.person.user.name if wit.person else None,
+                'type': 'Withdrawal'
+            })
+        
+        # Sort combined list by date (descending) and id
+        expenses_data.sort(key=lambda x: (x['date'], x['id']), reverse=True)
 
-        # Paginate to mirror purchase list behavior
+        # Paginate combined results
         paginator = PageNumberPagination()
         paginator.page_size = 5
-        page = paginator.paginate_queryset(expenses, request)
-        serializer = ExpensesSerializer(page, many=True)
-        return paginator.get_paginated_response(serializer.data)
+        # Manual pagination for combined list
+        page_number = request.GET.get('page', 1)
+        try:
+            page_number = int(page_number)
+        except ValueError:
+            page_number = 1
+        
+        start_idx = (page_number - 1) * paginator.page_size
+        end_idx = start_idx + paginator.page_size
+        page_data = expenses_data[start_idx:end_idx]
+        
+        total_count = len(expenses_data)
+        total_pages = (total_count + paginator.page_size - 1) // paginator.page_size
+        
+        return Response({
+            'count': total_count,
+            'next': f"?page={page_number + 1}" if page_number < total_pages else None,
+            'previous': f"?page={page_number - 1}" if page_number > 1 else None,
+            'results': page_data,
+            'total_pages': total_pages,
+            'page': page_number
+        })
     
 
     def post(self,request):

@@ -128,7 +128,7 @@ export default function AllExpensesPage() {
           transition={{ duration: 0.5 }}
           className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6"
         >
-          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-4 lg:mb-0">Expenses</h1>
+          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-4 lg:mb-0">Expenses & Withdrawals</h1>
           <Button onClick={() => navigate('/')} variant="outline" className="w-full lg:w-auto px-5 text-black border-white hover:bg-gray-700 hover:text-white">
             <ArrowLeft className="mr-2 h-4 w-3" />
             Back to Dashboard
@@ -162,10 +162,21 @@ export default function AllExpensesPage() {
         <div className="space-y-6">
           {rows.length > 0 ? (
             rows.map((exp) => (
-              <Card key={`${exp.id}-${exp.date}`} onClick={() => navigate(`/expenses/branch/${branchId}/edit/${exp.id}`)} className="bg-gradient-to-b from-slate-800 to-slate-900 border-none shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <Card key={`${exp.id}-${exp.date}-${exp.type}`} onClick={() => {
+                if (exp.type === 'Expense') {
+                  navigate(`/expenses/branch/${branchId}/edit/${exp.id}`)
+                }
+                else {
+                  navigate(`/withdrawals/branch/${branchId}/edit/${exp.id}`)
+                }
+                // Withdrawals are not editable, so no navigation
+              }} className={`bg-gradient-to-b from-slate-800 to-slate-900 border-none shadow-lg hover:shadow-xl cursor-pointer transition-shadow duration-300`}>
                 <CardHeader className="border-b border-slate-700">
                   <CardTitle className="text-lg lg:text-xl font-medium text-white flex flex-col lg:flex-row justify-between items-start lg:items-center">
                     <div>
+                      <p className={`text-sm font-semibold ${exp.type === 'Withdrawal' ? 'text-yellow-400' : 'text-red-400'}`}>
+                        {exp.type === 'Withdrawal' ? 'WITHDRAWAL' : 'EXPENSE'}
+                      </p>
                       <p className='text-sm text-gray-400'>Method: {exp.method}</p>
                     </div>
                     <span className="mt-2 lg:mt-0 text-sm lg:text-base">{format(new Date(exp.date), 'dd MMM yyyy')}</span>
@@ -175,7 +186,7 @@ export default function AllExpensesPage() {
                   <div className="mb-2 p-3 lg:p-4 bg-slate-800 rounded-lg">
                     <div className="text-white font-medium">{exp.desc || 'No description'}</div>
                     <div className="flex justify-between items-center text-sm text-slate-300 mt-2">
-                      <span className='font-bold text-green-400 text-l'>Amount: RS. {exp.amount?.toLocaleString()}</span>
+                      <span className={`font-bold text-l ${exp.type === 'Withdrawal' ? 'text-yellow-400' : 'text-green-400'}`}>Amount: RS. {exp.amount?.toLocaleString()}</span>
                       <span className="text-white">Posted by {exp?.person_name || '—'}</span>
                     </div>
                     <div className="mt-3 flex justify-end">
@@ -185,7 +196,7 @@ export default function AllExpensesPage() {
               </Card>
             ))
           ) : (
-            <div className="text-center text-white">No expenses found.</div>
+            <div className="text-center text-white">No expenses or withdrawals found.</div>
           )}
         </div>
 
