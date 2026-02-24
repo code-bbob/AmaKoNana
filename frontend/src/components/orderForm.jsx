@@ -98,6 +98,23 @@ function OrderForm() {
       // Check if any items have images
       const hasImages = formData.items.some(item => item.image);
       
+      // Calculate advance fields based on payment method
+      let cashAdvance = 0;
+      let onlineAdvance = 0;
+      let cardAdvance = 0;
+      
+      if (formData.advance_method === 'cash') {
+        cashAdvance = parseFloat(formData.advance_received) || 0;
+      } else if (formData.advance_method === 'online') {
+        onlineAdvance = parseFloat(formData.advance_received) || 0;
+      } else if (formData.advance_method === 'card') {
+        cardAdvance = parseFloat(formData.advance_received) || 0;
+      } else if (formData.advance_method === 'mixed') {
+        cashAdvance = parseFloat(formData.cash_advance) || 0;
+        onlineAdvance = parseFloat(formData.online_advance) || 0;
+        cardAdvance = parseFloat(formData.card_advance) || 0;
+      }
+      
       if (hasImages) {
         // Use FormData if images are being uploaded
         const formDataToSend = new FormData();
@@ -110,11 +127,9 @@ function OrderForm() {
         formDataToSend.append('total_amount', formData.total_amount);
         formDataToSend.append('advance_received', formData.advance_received);
         formDataToSend.append('advance_method', formData.advance_method);
-        if (formData.advance_method === 'mixed') {
-          formDataToSend.append('cash_advance', formData.cash_advance || 0);
-          formDataToSend.append('online_advance', formData.online_advance || 0);
-          formDataToSend.append('card_advance', formData.card_advance || 0);
-        }
+        formDataToSend.append('cash_advance', cashAdvance);
+        formDataToSend.append('online_advance', onlineAdvance);
+        formDataToSend.append('card_advance', cardAdvance);
         formDataToSend.append('due_date', formData.due_date);
         formDataToSend.append('branch', branchId);
         
@@ -133,12 +148,13 @@ function OrderForm() {
         });
       } else {
         // Regular JSON submission if no images
-        const payload = { ...formData, branch: branchId };
-        if (formData.advance_method === 'mixed') {
-          payload.cash_advance = parseFloat(formData.cash_advance) || 0;
-          payload.online_advance = parseFloat(formData.online_advance) || 0;
-          payload.card_advance = parseFloat(formData.card_advance) || 0;
-        }
+        const payload = { 
+          ...formData, 
+          branch: branchId,
+          cash_advance: cashAdvance,
+          online_advance: onlineAdvance,
+          card_advance: cardAdvance
+        };
         await api.post(`order/branch/${branchId}/`, payload);
       }
       

@@ -159,6 +159,40 @@ function EditOrderForm() {
     setSubmitting(true);
     setError(null);
     try {
+      // Calculate advance fields based on payment method
+      let cashAdvance = 0;
+      let onlineAdvance = 0;
+      let cardAdvance = 0;
+      
+      if (formData.advance_method === 'cash') {
+        cashAdvance = parseFloat(formData.advance_received) || 0;
+      } else if (formData.advance_method === 'online') {
+        onlineAdvance = parseFloat(formData.advance_received) || 0;
+      } else if (formData.advance_method === 'card') {
+        cardAdvance = parseFloat(formData.advance_received) || 0;
+      } else if (formData.advance_method === 'mixed') {
+        cashAdvance = parseFloat(formData.cash_advance) || 0;
+        onlineAdvance = parseFloat(formData.online_advance) || 0;
+        cardAdvance = parseFloat(formData.card_advance) || 0;
+      }
+      
+      // Calculate remaining fields based on payment method
+      let cashRemaining = 0;
+      let onlineRemaining = 0;
+      let cardRemaining = 0;
+      
+      if (formData.remaining_received_method === 'cash') {
+        cashRemaining = parseFloat(formData.remaining_received) || 0;
+      } else if (formData.remaining_received_method === 'online') {
+        onlineRemaining = parseFloat(formData.remaining_received) || 0;
+      } else if (formData.remaining_received_method === 'card') {
+        cardRemaining = parseFloat(formData.remaining_received) || 0;
+      } else if (formData.remaining_received_method === 'mixed') {
+        cashRemaining = parseFloat(formData.cash_remaining) || 0;
+        onlineRemaining = parseFloat(formData.online_remaining) || 0;
+        cardRemaining = parseFloat(formData.card_remaining) || 0;
+      }
+      
       const hasNewImages = formData.items.some(item => item.image);
       const hasClearImages = formData.items.some(item => item.clearImage);
       
@@ -172,18 +206,14 @@ function EditOrderForm() {
   formDataToSend.append('total_amount', formData.total_amount || '');
   formDataToSend.append('advance_received', formData.advance_received || '');
   formDataToSend.append('advance_method', formData.advance_method);
-  if (formData.advance_method === 'mixed') {
-    formDataToSend.append('cash_advance', formData.cash_advance || 0);
-    formDataToSend.append('online_advance', formData.online_advance || 0);
-    formDataToSend.append('card_advance', formData.card_advance || 0);
-  }
+  formDataToSend.append('cash_advance', cashAdvance);
+  formDataToSend.append('online_advance', onlineAdvance);
+  formDataToSend.append('card_advance', cardAdvance);
   formDataToSend.append('remaining_received', formData.remaining_received);
   formDataToSend.append('remaining_received_method', formData.remaining_received_method || '');
-  if (formData.remaining_received_method === 'mixed') {
-    formDataToSend.append('cash_remaining', formData.cash_remaining || 0);
-    formDataToSend.append('online_remaining', formData.online_remaining || 0);
-    formDataToSend.append('card_remaining', formData.card_remaining || 0);
-  }
+  formDataToSend.append('cash_remaining', cashRemaining);
+  formDataToSend.append('online_remaining', onlineRemaining);
+  formDataToSend.append('card_remaining', cardRemaining);
   formDataToSend.append('remaining_received_date', formData.remaining_received_date);
         formDataToSend.append('due_date', formData.due_date || '');
         
@@ -216,25 +246,19 @@ function EditOrderForm() {
           total_amount: formData.total_amount || '',
           advance_received: formData.advance_received || '',
           advance_method: formData.advance_method,
+          cash_advance: cashAdvance,
+          online_advance: onlineAdvance,
+          card_advance: cardAdvance,
           remaining_received: formData.remaining_received,
           remaining_received_method: formData.remaining_received_method || '',
+          cash_remaining: cashRemaining,
+          online_remaining: onlineRemaining,
+          card_remaining: cardRemaining,
           remaining_received_date: formData.remaining_received_date,
           status: formData.status,
           due_date: formData.due_date || '',
           items: itemsForUpdate
         };
-        
-        if (formData.advance_method === 'mixed') {
-          payload.cash_advance = parseFloat(formData.cash_advance) || 0;
-          payload.online_advance = parseFloat(formData.online_advance) || 0;
-          payload.card_advance = parseFloat(formData.card_advance) || 0;
-        }
-        
-        if (formData.remaining_received_method === 'mixed') {
-          payload.cash_remaining = parseFloat(formData.cash_remaining) || 0;
-          payload.online_remaining = parseFloat(formData.online_remaining) || 0;
-          payload.card_remaining = parseFloat(formData.card_remaining) || 0;
-        }
         
         await api.patch(`order/${orderId}/`, payload);
       }
