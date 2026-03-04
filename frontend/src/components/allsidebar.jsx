@@ -97,7 +97,7 @@ export default function Sidebar() {
       mainPath: 'inventory',
       items: [
         { title: 'Inventory', icon: Container, path: 'inventory' },
-        { title: 'Manufacture', icon: Zap, path: 'manufacture', adminOnly: true }
+        { title: 'Manufacture', icon: Zap, path: 'manufacture'}
       ]
     },
     {
@@ -159,6 +159,15 @@ export default function Sidebar() {
       items: [
         { title: 'Debtors', icon: BookUser, path: 'debtors' },
         { title: 'Debtor Transactions', icon: BookUser, path: 'debtor-transactions' }
+      ]
+    },
+    {
+      label: 'NCM',
+      icon: BookCopy,
+      mainPath: 'ncm/statement',
+      items: [
+        { title: 'NCM Statement', icon: BookCopy, path: 'ncm/statement' },
+        { title: 'NCM Transactions', icon: BookCopy, path: 'ncm-transactions' }
       ]
     },
     {
