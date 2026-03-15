@@ -22,7 +22,8 @@ from .serializers import DebtorSerializer, DebtorTransactionSerializer
 import json
 from alltransactions.models import StaffTransactionDetail,Withdrawal, ClosingCash
 from order.models import Order
-
+from .models import NCM, NCMTransaction
+from .serializers import NCMSerializer, NCMTransactionSerializer
 
 
 # Create your views here.
@@ -182,7 +183,8 @@ class SalesTransactionView(APIView):
             product_transactions = transactions.filter(sales__product__name__istartswith = search)
             customer_transactions = transactions.filter(name__icontains = search)
             phone_transactions = transactions.filter(phone_number__icontains = search)
-            transactions = product_transactions.union(customer_transactions,phone_transactions)
+            bill_transactions = transactions.filter(bill_no__iexact = search)
+            transactions = product_transactions.union(customer_transactions,phone_transactions,bill_transactions)
         
         if start_date and end_date:
             start_date = parse_date(start_date)
@@ -1061,6 +1063,98 @@ class DebtorTransactionView(APIView):
             return Response("Debtor Transaction not found", status=status.HTTP_404_NOT_FOUND)
         debtor_transaction.delete()
         return Response("Deleted", status=status.HTTP_204_NO_CONTENT)
+
+
+class NCMTransactionView(APIView):
+    """CRUD API for NCMTransaction objects.
+
+    Behaves almost identically to :class:`DebtorTransactionView` but does not
+    require a related debtor; instead transactions are linked to the singleton
+    *NCM* record for the enterprise.  The frontend will use this for the
+    "NCM Transactions" submenu.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, ncm_pk=None, pk=None, branch=None):
+        enterprise = request.user.person.enterprise
+        ncm_transactions = NCMTransaction.objects.filter(enterprise=enterprise)
+
+        query = request.GET.get('search')
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        if branch:
+            ncm_transactions = ncm_transactions.filter(branch=branch)
+
+        if pk:
+            ncm_transactions = NCMTransaction.objects.filter(id=pk, enterprise=enterprise).first()
+            serializer = NCMTransactionSerializer(ncm_transactions)
+            return Response(serializer.data)
+
+        # optionally restrict to specific ncm record (should be only one)
+        if ncm_pk:
+            ncm_transactions = ncm_transactions.filter(ncm=ncm_pk)
+
+        if query:
+            # allow searching by description or branch name just like debtors
+            ncm_transactions = ncm_transactions.filter(
+                Q(desc__icontains=query) | Q(branch__name__icontains=query)
+            )
+
+        if start_date and end_date:
+            start_date = parse_date(start_date)
+            end_date = parse_date(end_date)
+
+        if start_date and end_date:
+            ncm_transactions = ncm_transactions.filter(
+                date__range=(start_date, end_date)
+            )
+
+        ncm_transactions = ncm_transactions.order_by('-date','-id')
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 5
+        paginated_data = paginator.paginate_queryset(ncm_transactions, request)
+
+        serializer = NCMTransactionSerializer(paginated_data, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    def post(self, request):
+        data = request.data
+        data['enterprise'] = request.user.person.enterprise.id
+        serializer = NCMTransactionSerializer(data=data)
+        data['ncm'] = NCM.objects.filter(enterprise=request.user.person.enterprise).first().id
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk):
+        data = request.data
+        data['enterprise'] = request.user.person.enterprise.id
+        role = request.user.person.role
+        if role != "Admin":
+            return Response("Unauthorized")
+        ncm_transaction = NCMTransaction.objects.get(id=pk)
+        serializer = NCMTransactionSerializer(ncm_transaction, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)
+
+    def delete(self, request, pk):
+        role = request.user.person.role
+        if role != "Admin":
+            return Response("Unauthorized")
+        ncm_transaction = NCMTransaction.objects.filter(id=pk).first()
+        ncm = ncm_transaction.ncm if ncm_transaction else None
+        if ncm: 
+            ncm.due -= ncm_transaction.amount
+            ncm.save()
+        if not ncm_transaction:
+            return Response("NCM Transaction not found", status=status.HTTP_404_NOT_FOUND)
+        ncm_transaction.delete()
+        return Response("Deleted", status=status.HTTP_204_NO_CONTENT)
     
 
 class VendorStatementView(APIView):
@@ -1932,3 +2026,84 @@ class ClosingCashView(APIView):
             qs = qs.filter(branch_id=branch_id)
         serializer = ClosingCashSerializer(qs, many=True)
         return Response(serializer.data)
+
+
+class NCMReport(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, branch=None):
+        """Return a statement for the enterprise's NCM account.
+
+        The logic is essentially a copy of :class:`DebtorStatementView` but
+        operates on the ``NCM`` / ``NCMTransaction`` models.  We allow an
+        optional ``branch`` path parameter so the frontend can view statements
+        branch‑wise (the user asked for a branch column on the page).
+        """
+
+        enterprise = request.user.person.enterprise
+        ncm = NCM.objects.filter(enterprise=enterprise).first()
+        # if there is no NCM record for the enterprise we cannot proceed
+        if not ncm:
+            return Response("NCM not found", status=status.HTTP_404_NOT_FOUND)
+
+        # transactions should be filtered by the base NCM object (there should
+        # only be one per enterprise) but also optionally by branch
+        ncm_transactions = NCMTransaction.objects.filter(enterprise=enterprise, ncm=ncm)
+        print("Initial NCM transactions count: ", ncm_transactions.count())
+        # if branch:
+        #     ncm_transactions = ncm_transactions.filter(branch=branch)
+
+        if not ncm:
+            return Response("NCM not found", status=status.HTTP_404_NOT_FOUND)
+
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        if start_date and end_date:
+            start_date = parse_date(start_date)
+            end_date = parse_date(end_date)
+
+    
+        if start_date and end_date:
+            ncm_transactions = ncm_transactions.filter(
+                date__range=(start_date, end_date)
+            )
+        elif start_date and not end_date:
+            ncm_transactions = ncm_transactions.filter(
+                date__gte=start_date
+            )
+        elif not start_date and end_date:
+            ncm_transactions = ncm_transactions.filter(
+                date__lte=end_date
+            )
+
+        ncm_transactions = ncm_transactions.order_by('date','id')
+        ncm_data = NCMSerializer(ncm).data
+        # include human readable branch name for frontend convenience
+        branch_name = None
+        if branch:
+            try:
+                branch_obj = Branch.objects.get(id=branch)
+                branch_name = branch_obj.name
+            except Branch.DoesNotExist:
+                branch_name = None
+        else:
+            # if the NCM object itself has a branch set use that
+            branch_name = ncm.branch.name if ncm.branch else None
+        if branch_name:
+            ncm_data['branch_name'] = branch_name
+        # Calculate previous due when a start_date is provided
+        previous_due = 0
+        if start_date:
+            prev_sum = NCMTransaction.objects.filter(
+                enterprise=enterprise,
+                ncm=ncm,
+                date__lt=start_date
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            # running business logic: due decreases by amount so opening due
+            # is negative of the sum of prior amounts
+            previous_due = -float(prev_sum)
+            ncm_data['previous_due'] = previous_due
+        ncmts = NCMTransactionSerializer(ncm_transactions, many=True).data
+        return Response({'ncm_data': ncm_data, 'ncm_transactions': ncmts})
+    
