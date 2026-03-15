@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import ClosingCash, Vendor, Purchase, PurchaseTransaction,PurchaseReturn, Sales, SalesTransaction, VendorTransactions, SalesReturn, Expenses
 from django.db import transaction
 from allinventory.models import Product,Brand
-from alltransactions.models import Staff,StaffTransactions, Debtor, DebtorTransaction, StaffTransactionDetail, Withdrawal, ClosingCash
+from alltransactions.models import Staff,StaffTransactions, Debtor, DebtorTransaction, StaffTransactionDetail, Withdrawal, ClosingCash, NCM, NCMTransaction
 
 
 
@@ -402,6 +402,24 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
                 'branch': transaction.branch,
                 'enterprise': transaction.enterprise
             })
+        
+        if transaction.is_ncm:
+            # choose the NCM entry matching enterprise/branch if available
+            ncm_qs = NCM.objects.filter(enterprise=transaction.enterprise)
+            if transaction.branch:
+                ncm_qs = ncm_qs.filter(branch=transaction.branch)
+            ncm = ncm_qs.first() or NCM.objects.filter(enterprise=transaction.enterprise).first()
+            ncm_amount = transaction.delivery_charge + transaction.cod_amount
+            ncm_transaction = NCMTransactionSerializer().create({
+                'amount': -ncm_amount,
+                'ncm': ncm,
+                'desc': desc,
+                'all_sales_transaction': transaction,
+                'date': transaction.date,
+                'enterprise': transaction.enterprise,
+                'branch': transaction.branch
+            })
+            
         return transaction
 
     @transaction.atomic
@@ -1141,3 +1159,46 @@ class ClosingCashSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClosingCash
         fields = '__all__'
+
+class NCMSerializer(serializers.ModelSerializer):
+    # ``NCM`` model itself doesn't have a date field; the serializer previously
+    # declared one which would blow up during serialization/validation because
+    # there is no corresponding attribute on the model.  The debtor/ vendor
+    # serializers don't declare a date field either so we follow the same
+    # pattern here.  Any date filtering is handled in the view when building the
+    # statement report.
+
+    # (If a timestamp field is ever added to the model we can expose it here.)
+
+    class Meta:
+        model = NCM
+        fields = '__all__'
+
+class NCMTransactionSerializer(serializers.ModelSerializer):
+    date = serializers.DateField()
+    branch_name = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = NCMTransaction
+        fields = '__all__'
+
+    @transaction.atomic
+    def create(self, validated_data):
+        transaction = NCMTransaction.objects.create(**validated_data)
+        ncm = NCM.objects.first()
+        print("HEREEEE")
+        ncm.due = ncm.due - transaction.amount if ncm.due is not None else -transaction.amount
+        ncm.save()
+        return transaction
+
+    def get_branch_name(self, obj):
+        return obj.branch.name if obj.branch else None
+    
+    # @transaction.atomic
+    # def update(self, instance, validated_data):
+    #     old_delivery_charge = instance.delivery_charge or 0
+    #     old_cod_amount = instance.cod_amount or 0
+
+    #     for attr, value in validated_data.items():
+    #         setattr(instance, attr, value)
+    #     instance.save()
+    #     instance.refresh_from_db()

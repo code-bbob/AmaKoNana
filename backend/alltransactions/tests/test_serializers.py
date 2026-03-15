@@ -192,6 +192,59 @@ class StaffTransactionSerializerTestCase(TestCase):
         self.staff1.refresh_from_db()
         self.assertEqual(self.staff1.due, 500)
 
+
+class NCMSerializerTestCase(TestCase):
+    """Tests for NCM and NCMTransaction serializer behavior."""
+
+    def setUp(self):
+        self.enterprise = Enterprise.objects.create(name="Test Ent")
+        # create an NCM record for enterprise
+        from alltransactions.models import NCM
+        self.ncm = NCM.objects.create(enterprise=self.enterprise, due=1000)
+
+    def test_ncm_transaction_creation_updates_due(self):
+        from alltransactions.serializers import NCMTransactionSerializer
+
+        data = {
+            'date': datetime.date.today(),
+            'amount': 200,
+            'enterprise': self.enterprise.id,
+            'ncm': self.ncm.id,
+        }
+        serializer = NCMTransactionSerializer(data=data)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        tx = serializer.save()
+        self.ncm.refresh_from_db()
+        # due should decrease by 200
+        self.assertEqual(self.ncm.due, 800)
+
+    def test_sales_transaction_creates_matching_ncm_tx(self):
+        # ensure SalesTransactionSerializer links ncm correctly
+        from alltransactions.serializers import SalesTransactionSerializer
+        from alltransactions.models import SalesTransaction, NCMTransaction
+
+        # create transaction with is_ncm flag
+        payload = {
+            'enterprise': self.enterprise.id,
+            'date': datetime.date.today(),
+            'bill_no': 123,
+            'total_amount': 0,
+            'sales': [],
+            'method': 'cash',
+            'is_ncm': True,
+            'delivery_charge': 50,
+            'cod_amount': 0,
+        }
+        serializer = SalesTransactionSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        st = serializer.save()
+        # a corresponding ncm transaction should exist
+        ncm_ts = NCMTransaction.objects.filter(all_sales_transaction=st)
+        self.assertTrue(ncm_ts.exists())
+        self.ncm.refresh_from_db()
+        # due should have been reduced by delivery charge
+        self.assertEqual(self.ncm.due, 950)
+
 # class PurcahseTransactionSerializerTestCase(TestCase):
 #     def setUp(self):
 #         # Create an Enterprise instance for testing

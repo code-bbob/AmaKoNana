@@ -62,6 +62,11 @@ function AllSalesTransactionForm() {
     branch: branchId, // New branch field added to state
         sales: [{ product: "", unit_price: "", quantity: "", discount_type: "percent", discount_value: "", line_subtotal: "", total_price: "" }],
     method: "cash",
+    is_ncm: false,
+    prepaid: false,
+    prepaid_target: "online",
+    delivery_charge: "",
+    cod_amount: "",
     debtor: "", // New field for debtor's name
     amount_paid: null,
     amount_received: "", // separate field for cash received used only for change display
@@ -146,6 +151,35 @@ function AllSalesTransactionForm() {
     const paid = parseFloat(formData.amount_paid) || 0;
     setChange(Math.max(0, received - paid).toFixed(2));
   }, [formData.amount_received, formData.cash_amount, formData.card_amount, formData.online_amount, formData.method, totalAmount, formData.amount_paid]);
+
+  useEffect(() => {
+    if (!formData.is_ncm) return;
+
+    const prepaidAmount = formData.prepaid ? (parseFloat(totalAmount) || 0) : 0;
+    const target = formData.prepaid_target || "online";
+    const targetMethod = target === "credit" ? "credit" : target;
+
+    setFormData((prev) => {
+      const next = {
+        ...prev,
+        amount_paid: prepaidAmount,
+        cash_amount: 0,
+        online_amount: 0,
+        card_amount: 0,
+        credited_amount: 0,
+      };
+
+      if (formData.prepaid) {
+        next.method = targetMethod;
+        if (target === "cash") next.cash_amount = prepaidAmount;
+        else if (target === "online") next.online_amount = prepaidAmount;
+        else if (target === "card") next.card_amount = prepaidAmount;
+        else if (target === "credit") next.credited_amount = prepaidAmount;
+      }
+
+      return next;
+    });
+  }, [formData.is_ncm, formData.prepaid, formData.prepaid_target, totalAmount]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -434,7 +468,9 @@ const handleNewProductVendorChange = (ids) => {
       // console.debug("formdata before submit:", formData);
       const originalTotal = totalAmount;
       // Raw amount paid (no clamping); mixed sums its parts
-      const rawPaid = formData.method === 'mixed'
+      const rawPaid = formData.is_ncm
+      ? (formData.prepaid ? (parseFloat(originalTotal) || 0) : 0)
+      : formData.method === 'mixed'
       ? (parseFloat(formData.cash_amount)||0) + (parseFloat(formData.card_amount)||0) + (parseFloat(formData.online_amount)||0)
       : (parseFloat(formData.amount_paid)||0);
       
@@ -443,13 +479,33 @@ const handleNewProductVendorChange = (ids) => {
         sales: preparedSales,
         subtotal: subtotal,
         total_amount: originalTotal,
+        is_ncm: Boolean(formData.is_ncm),
+        delivery_charge: formData.is_ncm ? (parseFloat(formData.delivery_charge) || 0) : 0,
+        cod_amount: formData.is_ncm ? (parseFloat(formData.cod_amount) || 0) : 0,
         cash_amount: parseFloat(formData.cash_amount) || 0,
         card_amount: parseFloat(formData.card_amount) || 0,
         online_amount: parseFloat(formData.online_amount) || 0,
         amount_paid: rawPaid,
         credited_amount: formData.credited_amount || 0
       };
-      if (formData.method== 'cash'){
+
+      if (formData.is_ncm && formData.prepaid) {
+        const prepaidTotal = parseFloat(originalTotal) || 0;
+        const prepaidMethod = formData.prepaid_target === 'credit' ? 'credit' : formData.prepaid_target;
+        payload.method = prepaidMethod;
+        payload.amount_paid = prepaidTotal;
+        payload.cash_amount = 0;
+        payload.online_amount = 0;
+        payload.card_amount = 0;
+        payload.credited_amount = 0;
+
+        if (formData.prepaid_target === 'cash') payload.cash_amount = prepaidTotal;
+        else if (formData.prepaid_target === 'online') payload.online_amount = prepaidTotal;
+        else if (formData.prepaid_target === 'card') payload.card_amount = prepaidTotal;
+        else if (formData.prepaid_target === 'credit') payload.credited_amount = prepaidTotal;
+      } else if (formData.is_ncm && !formData.prepaid) {
+        payload.amount_paid = 0;
+      } else if (formData.method== 'cash'){
         payload.cash_amount=payload.amount_paid;
       }
       else if (formData.method == 'online'){
@@ -1169,6 +1225,115 @@ const handleNewProductVendorChange = (ids) => {
                               <SelectItem value="credit" className="text-white">Credit</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+
+                        {/* NCM Section */}
+                        <div className="rounded-md border border-slate-700 bg-slate-800 p-4 space-y-4">
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              id="is_ncm_pay"
+                              checked={!!formData.is_ncm}
+                              onCheckedChange={(checked) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  is_ncm: checked === true,
+                                  prepaid: checked === true ? prev.prepaid : false,
+                                  prepaid_target: checked === true ? prev.prepaid_target : "online",
+                                  delivery_charge: checked === true ? prev.delivery_charge : "",
+                                  cod_amount: checked === true ? prev.cod_amount : "",
+                                }))
+                              }
+                            />
+                            <Label htmlFor="is_ncm_pay" className="text-sm font-medium text-slate-200 cursor-pointer">
+                              NCM Sale
+                            </Label>
+                          </div>
+
+                          {formData.is_ncm && (
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="flex items-center gap-3">
+                                  <Checkbox
+                                    id="ncm_prepaid"
+                                    checked={!!formData.prepaid}
+                                    onCheckedChange={(checked) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        prepaid: checked === true,
+                                      }))
+                                    }
+                                  />
+                                  <Label htmlFor="ncm_prepaid" className="text-xs text-slate-300 cursor-pointer">
+                                    Prepaid
+                                  </Label>
+                                </div>
+                                {formData.prepaid && (
+                                  <div>
+                                    <Label className="text-xs text-slate-400 mb-1 block">Add prepaid amount to</Label>
+                                    <Select
+                                      value={formData.prepaid_target}
+                                      onValueChange={(value) =>
+                                        setFormData((prev) => ({ ...prev, prepaid_target: value }))
+                                      }
+                                    >
+                                      <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white h-9">
+                                        <SelectValue placeholder="Select target" />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-slate-800 border-slate-700">
+                                        <SelectItem value="online" className="text-white">Online Amount</SelectItem>
+                                        <SelectItem value="cash" className="text-white">Cash Amount</SelectItem>
+                                        <SelectItem value="card" className="text-white">Card Amount</SelectItem>
+                                        <SelectItem value="credit" className="text-white">Credit Amount</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <Label className="text-xs text-slate-400 mb-1 block">Delivery Charge</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={formData.delivery_charge}
+                                    onChange={(e) =>
+                                      setFormData((prev) => ({ ...prev, delivery_charge: e.target.value }))
+                                    }
+                                    className="bg-slate-900 border-slate-700 text-white"
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-slate-400 mb-1 block">COD Amount</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={formData.cod_amount}
+                                    onChange={(e) =>
+                                      setFormData((prev) => ({ ...prev, cod_amount: e.target.value }))
+                                    }
+                                    className="bg-slate-900 border-slate-700 text-white"
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-between items-center border-t border-slate-700 pt-3">
+                                <span className="text-xs text-slate-400">NCM Total</span>
+                                <span className="font-mono text-sm font-semibold text-white">
+                                  {((parseFloat(formData.delivery_charge) || 0) + (parseFloat(formData.cod_amount) || 0)).toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center border-t border-slate-700 pt-3">
+                                <span className="text-xs text-slate-400">Amount Paid</span>
+                                <span className="font-mono text-sm font-semibold text-white">
+                                  {(formData.prepaid ? (parseFloat(totalAmount) || 0) : 0).toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {formData.method !== 'credit' && formData.method !== 'mixed' && (

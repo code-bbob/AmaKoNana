@@ -68,4 +68,12 @@ urlpatterns = [
     path('income-expense-report/', views.IncomeExpenseReportView.as_view(), name='incomeexpensereport'),
     path('income-expense-report/branch/<int:branch>/', views.IncomeExpenseReportView.as_view(), name='incomeexpensereport'),
     path('closing-cash/', views.ClosingCashView.as_view(), name='closingcash'),
+
+    # NCM endpoints (statement + transactions)
+    path('ncm/statement/', views.NCMReport.as_view(), name='ncmstatement'),
+    path('ncm/statement/branch/<int:branch>/', views.NCMReport.as_view(), name='ncmstatement'),
+
+    path('ncmtransaction/', views.NCMTransactionView.as_view(), name='ncmtransaction'),
+    path('ncmtransaction/branch/<int:branch>/', views.NCMTransactionView.as_view(), name='ncmtransaction'),
+    path('ncmtransaction/<int:pk>/', views.NCMTransactionView.as_view(), name='ncmtransaction'),
 ]

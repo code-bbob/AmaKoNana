@@ -100,6 +100,10 @@ class SalesTransaction(models.Model):
     credited_amount = models.FloatField(null=True,blank=True,default=0)
     amount_paid = models.FloatField(null=True,blank=True,default=0)
     person = models.ForeignKey('enterprise.Person', on_delete=models.SET_NULL, null=True, blank=True)
+    cod_amount = models.FloatField(null=True,blank=True,default=0)
+    delivery_charge = models.FloatField(null=True,blank=True,default=0)
+    is_ncm = models.BooleanField(default=False)
+    
     def __str__(self):
         return f"Sales Transaction {self.pk} of {self.enterprise.name}"
     
@@ -305,3 +309,23 @@ class ClosingCash(models.Model):
 
     def __str__(self):
         return f"Closing cash at branch {self.branch.name} of {self.enterprise.name}"
+
+
+
+class NCM(models.Model):
+    enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE,related_name='ncm')
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True, blank=True)
+    due = models.FloatField(null=True,blank=True)
+
+    
+class NCMTransaction(models.Model):
+    date = models.DateField()
+    enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE,related_name='all_ncm_payments')
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True, blank=True)
+    amount = models.FloatField(null=True,blank=True)
+    desc = models.CharField(max_length=1000,null=True,blank=True)
+    all_sales_transaction = models.ForeignKey(SalesTransaction, on_delete=models.CASCADE,related_name="all_ncm_transaction",null=True,blank=True)
+    ncm = models.ForeignKey(NCM, on_delete=models.CASCADE, related_name='ncm_transactions', null=True, blank=True)
+
+    def __str__(self):
+        return f"NCM Transaction {self.pk} of {self.enterprise.name}: branch {self.branch.name} - amount {self.amount}"

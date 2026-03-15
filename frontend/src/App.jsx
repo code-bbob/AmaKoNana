@@ -51,6 +51,11 @@ import EditDebtorTransactionForm from "./pages/editAllDebtors";
 import AllVendorStatementPage from "./pages/allVendorStatementPage";
 import AllDebtorStatementPage from "./pages/allDebtorStatementPage";
 import StaffStatementPage from "./pages/staffStatementPage";
+// NCM related pages
+import AllNCMStatementPage from "./pages/allNCMStatementPage";
+import AllNCMTransactions from "./pages/allNCMTransactions";
+import NCMTransactionForm from "./pages/ncmTransactionForm";
+import EditNCMTransactionForm from "./pages/editNCMTransactionForm";
 import TransferForm from "./components/transferForm";
 import OrderForm from "./components/orderForm";
 import EditOrderForm from "./components/editOrderForm";
@@ -138,6 +143,12 @@ function App() {
           <Route path="debtor-transactions/branch/:branchId/form" element={<DebtorTransactionForm />} />
           <Route path="debtor-transactions/branch/:branchId/editform/:debtorTransactionId" element={<EditDebtorTransactionForm />} />
           <Route path="debtors/branch/:branchId/statement/:debtorId/" element={<AllDebtorStatementPage />} />
+
+          {/* NCM pages */}
+          <Route path="ncm-transactions/branch/:branchId" element={<AllNCMTransactions />} />
+          <Route path="ncm-transactions/branch/:branchId/form" element={<NCMTransactionForm />} />
+          <Route path="ncm-transactions/branch/:branchId/editform/:ncmTransactionId" element={<EditNCMTransactionForm />} />
+          <Route path="ncm/statement/branch/:branchId" element={<AllNCMStatementPage />} />
 
           <Route path="invoice/:transactionId" element={<InvoicePage />} />
           <Route path="transfer/form/branch/:branchId" element={<TransferForm />} />
