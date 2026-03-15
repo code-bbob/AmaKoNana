@@ -892,7 +892,7 @@ class SalesReturnView(APIView):
         # 1) Search Filter
         # -----------------
         if search:
-            name_filter = sales_returns.filter(sales_transaction__customer_name=search)
+            name_filter = sales_returns.filter(sales_transaction__name=search)
             # amount_filter = purchase_returns.filter(amount__icontains=search)
             product_name = sales_returns.filter(sales__product__name__icontains=search)
             
