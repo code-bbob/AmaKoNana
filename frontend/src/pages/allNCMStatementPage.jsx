@@ -107,7 +107,7 @@ const AllNCMStatementPage = () => {
     ].map(escapeField).join(',') + '\n';
 
     transactionsWithBalance.forEach(tx => {
-      const sign = tx.amount > 0 ? '-' : '';
+      const sign = tx.amount > 0 ? '' : '-';
       const amt = `${sign}NPR ${Math.abs(tx.amount).toFixed(2)}`;
       const row = [
         tx.date,
@@ -171,7 +171,7 @@ const AllNCMStatementPage = () => {
         tx.desc || "N/A",
       ];
       if (includeBranch) row.push(tx.branch_name || tx.branch || "-");
-      row.push(`${tx.amount > 0 ? "-" : ""}NPR ${Math.abs(tx.amount).toLocaleString()}`);
+      row.push(`${tx.amount > 0 ? "" : "-"}NPR ${Math.abs(tx.amount).toLocaleString()}`);
       row.push(`NPR ${Number(tx.due).toLocaleString()}`);
       return row;
     });
@@ -244,7 +244,7 @@ const AllNCMStatementPage = () => {
     let running = Number(startingDue) || 0;
     return transactions.map((transaction) => {
       const amt = Number(transaction.amount) || 0;
-      running -= amt;
+      running += amt;
       return { ...transaction, due: running };
     });
   };

@@ -230,7 +230,7 @@ const AllIncomeExpenseReport = () => {
 						</TableHeader>
 						<TableBody>
 							{data.transactions.map((t,i)=>(
-								<TableRow key={i} onClick={() => navigate(t.type === 'Sale' ? `/sales/branch/${branchId}/editform/${t.id}` : t.type === 'Order' ? `/orders/branch/${branchId}/editform/${t.id}` : `/expenses/branch/${branchId}/edit/${t.id}`)} className="cursor-pointer hover:bg-slate-700 print:hover:bg-transparent">
+								<TableRow key={i} onClick={() => navigate(t.type === 'Sale' ? `/sales/branch/${branchId}/editform/${t.id}` : t.type === 'Order' ? `/orders/branch/${branchId}/editform/${t.id}` : t.type === 'Withdrawal' ? `/withdrawals/branch/${branchId}/edit/${t.id}` : `/expenses/branch/${branchId}/edit/${t.id}`)} className="cursor-pointer hover:bg-slate-700 print:hover:bg-transparent">
 
 									<TableCell className="font-medium text-white print:text-black">{t.date}</TableCell>
 									<TableCell className="text-white print:text-black">{t.bill_no}</TableCell>

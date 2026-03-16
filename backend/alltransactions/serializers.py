@@ -409,9 +409,9 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
             if transaction.branch:
                 ncm_qs = ncm_qs.filter(branch=transaction.branch)
             ncm = ncm_qs.first() or NCM.objects.filter(enterprise=transaction.enterprise).first()
-            ncm_amount = transaction.delivery_charge + transaction.cod_amount
+            ncm_amount = transaction.cod_amount - transaction.delivery_charge
             ncm_transaction = NCMTransactionSerializer().create({
-                'amount': -ncm_amount,
+                'amount': ncm_amount,
                 'ncm': ncm,
                 'desc': desc,
                 'all_sales_transaction': transaction,
@@ -1186,7 +1186,7 @@ class NCMTransactionSerializer(serializers.ModelSerializer):
         transaction = NCMTransaction.objects.create(**validated_data)
         ncm = NCM.objects.first()
         print("HEREEEE")
-        ncm.due = ncm.due - transaction.amount if ncm.due is not None else -transaction.amount
+        ncm.due = ncm.due + transaction.amount if ncm.due is not None else transaction.amount
         ncm.save()
         return transaction
 

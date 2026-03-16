@@ -1323,13 +1323,13 @@ const handleNewProductVendorChange = (ids) => {
                               <div className="flex justify-between items-center border-t border-slate-700 pt-3">
                                 <span className="text-xs text-slate-400">NCM Total</span>
                                 <span className="font-mono text-sm font-semibold text-white">
-                                  {((parseFloat(formData.delivery_charge) || 0) + (parseFloat(formData.cod_amount) || 0)).toFixed(2)}
+                                  {( (parseFloat(formData.cod_amount) || 0)).toFixed(2) - (parseFloat(formData.delivery_charge) || 0)}
                                 </span>
                               </div>
                               <div className="flex justify-between items-center border-t border-slate-700 pt-3">
                                 <span className="text-xs text-slate-400">Amount Paid</span>
                                 <span className="font-mono text-sm font-semibold text-white">
-                                  {(formData.prepaid ? (parseFloat(totalAmount) || 0) : 0).toFixed(2)}
+                                  {(formData.prepaid ? (parseFloat(totalAmount) + parseFloat(formData.delivery_charge) || 0) : 0).toFixed(2)}
                                 </span>
                               </div>
                             </div>
