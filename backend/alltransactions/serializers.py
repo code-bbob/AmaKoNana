@@ -410,6 +410,8 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
                 ncm_qs = ncm_qs.filter(branch=transaction.branch)
             ncm = ncm_qs.first() or NCM.objects.filter(enterprise=transaction.enterprise).first()
             ncm_amount = transaction.cod_amount - transaction.delivery_charge
+            if ncm_amount < transaction.total_amount:
+                desc += f"(Prepaid)"
             ncm_transaction = NCMTransactionSerializer().create({
                 'amount': ncm_amount,
                 'ncm': ncm,
@@ -997,7 +999,7 @@ class StaffTransactionDetailsSerializer(serializers.ModelSerializer):
     product_name = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = StaffTransactionDetail
-        fields = ['id','product','product_name','quantity','rate','total']
+        fields = ['id', 'bill_no', 'product','product_name','quantity','rate','total']
         read_only_fields = ['total_price']
 
     def get_product_name(self, obj):

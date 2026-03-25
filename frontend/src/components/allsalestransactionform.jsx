@@ -155,7 +155,9 @@ function AllSalesTransactionForm() {
   useEffect(() => {
     if (!formData.is_ncm) return;
 
-    const prepaidAmount = formData.prepaid ? (parseFloat(totalAmount) || 0) : 0;
+    const prepaidAmount = formData.prepaid
+      ? ((parseFloat(totalAmount) || 0) + (parseFloat(formData.delivery_charge) || 0))
+      : 0;
     const target = formData.prepaid_target || "online";
     const targetMethod = target === "credit" ? "credit" : target;
 
@@ -179,7 +181,7 @@ function AllSalesTransactionForm() {
 
       return next;
     });
-  }, [formData.is_ncm, formData.prepaid, formData.prepaid_target, totalAmount]);
+  }, [formData.is_ncm, formData.prepaid, formData.prepaid_target, totalAmount, formData.delivery_charge]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -467,9 +469,10 @@ const handleNewProductVendorChange = (ids) => {
       });
       // console.debug("formdata before submit:", formData);
       const originalTotal = totalAmount;
+      const deliveryChargeValue = parseFloat(formData.delivery_charge) || 0;
       // Raw amount paid (no clamping); mixed sums its parts
       const rawPaid = formData.is_ncm
-      ? (formData.prepaid ? (parseFloat(originalTotal) || 0) : 0)
+      ? (formData.prepaid ? ((parseFloat(originalTotal) || 0) + deliveryChargeValue) : 0)
       : formData.method === 'mixed'
       ? (parseFloat(formData.cash_amount)||0) + (parseFloat(formData.card_amount)||0) + (parseFloat(formData.online_amount)||0)
       : (parseFloat(formData.amount_paid)||0);
@@ -490,7 +493,7 @@ const handleNewProductVendorChange = (ids) => {
       };
 
       if (formData.is_ncm && formData.prepaid) {
-        const prepaidTotal = parseFloat(originalTotal) || 0;
+        const prepaidTotal = (parseFloat(originalTotal) || 0) + deliveryChargeValue;
         const prepaidMethod = formData.prepaid_target === 'credit' ? 'credit' : formData.prepaid_target;
         payload.method = prepaidMethod;
         payload.amount_paid = prepaidTotal;
@@ -1329,7 +1332,7 @@ const handleNewProductVendorChange = (ids) => {
                               <div className="flex justify-between items-center border-t border-slate-700 pt-3">
                                 <span className="text-xs text-slate-400">Amount Paid</span>
                                 <span className="font-mono text-sm font-semibold text-white">
-                                  {(formData.prepaid ? (parseFloat(totalAmount) + parseFloat(formData.delivery_charge) || 0) : 0).toFixed(2)}
+                                  {(formData.prepaid ? ((parseFloat(totalAmount) || 0) + (parseFloat(formData.delivery_charge) || 0)) : 0).toFixed(2)}
                                 </span>
                               </div>
                             </div>

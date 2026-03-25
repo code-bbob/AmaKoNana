@@ -271,7 +271,8 @@ export default function StaffTransactions() {
                         <div className="text-slate-300 text-sm space-y-1">
                           {transaction.staff_transaction_details.map((d) => (
                             <div key={d.id} className="flex justify-between">
-                              <span>{d.product_name || 'Item'} × {d.quantity}</span>
+                              
+                              <span>#{d.bill_no} : {d.product_name || 'Item'} × {d.quantity}</span>
                               <span>RS. {Number(d.rate)?.toFixed(2)} → RS. {Number(d.total)?.toFixed(2)}</span>
                             </div>
                           ))}

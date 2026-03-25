@@ -202,7 +202,7 @@ class StaffTransactions(models.Model):
     amount = models.FloatField(null=True,blank=True)
     enterprise = models.ForeignKey('enterprise.Enterprise', on_delete=models.CASCADE,related_name='all_staff_transactions')
     branch = models.ForeignKey('enterprise.Branch', on_delete=models.CASCADE, null=True, blank=True)
-    desc = models.CharField(max_length=255)
+    desc = models.CharField(max_length=255, null=True, blank=True)
     staff_type = models.CharField(max_length=20,choices=(('incentive','Incentive'),('salary','Salary')),default='payment')
     transaction_type = models.CharField(max_length=20,choices=(('Salary Credited','Salary Credited'),('Payment','Payment')),default='Payment')
     
@@ -217,6 +217,7 @@ class StaffTransactions(models.Model):
 
 class StaffTransactionDetail(models.Model):
     staff_transaction = models.ForeignKey(StaffTransactions, on_delete=models.CASCADE,related_name='staff_transaction_details')
+    bill_no = models.CharField(max_length=20, null=True, blank=True)
     quantity = models.IntegerField()
     rate = models.FloatField()
     total = models.FloatField(null=True,blank=True)
@@ -329,3 +330,10 @@ class NCMTransaction(models.Model):
 
     def __str__(self):
         return f"NCM Transaction {self.pk} of {self.enterprise.name}: branch {self.branch.name} - amount {self.amount}"
+
+    @transaction.atomic
+    def delete(self, *args, **kwargs):
+        if self.ncm:
+            self.ncm.due = self.ncm.due - self.amount if self.ncm.due is not None else -self.amount
+            self.ncm.save() 
+        super().delete(*args, **kwargs)

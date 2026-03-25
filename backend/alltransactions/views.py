@@ -275,6 +275,10 @@ class SalesTransactionView(APIView):
         dt = DebtorTransaction.objects.filter(all_sales_transaction=sales_transaction).first()
         if dt:
             dt.delete()
+        
+        nts = NCMTransaction.objects.filter(all_sales_transaction=sales_transaction)
+        for nt in nts:
+            nt.delete()
 
         sales_transaction.delete()
         return Response("Deleted")

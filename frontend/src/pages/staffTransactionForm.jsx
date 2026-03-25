@@ -55,7 +55,7 @@ function StaffTransactionForm() {
   console.log(formData)
 
   // Incentive entries: dynamic rows with product selection
-  const [entries, setEntries] = useState([{ product: "", product_name: "", quantity: "", rate: "" }]);
+  const [entries, setEntries] = useState([{ bill_no: "", product: "", product_name: "", quantity: "", rate: "" }]);
   const [openProduct, setOpenProduct] = useState([false]);
   const [products, setProducts] = useState([]);
   const [showNewIncentive, setShowNewIncentive] = useState(false);
@@ -75,6 +75,12 @@ function StaffTransactionForm() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entries, formData.staff_type]);
+
+  useEffect(() => {
+    if (formData.staff_type === "incentive" && formData.transaction_type !== "Salary Credited") {
+      setFormData((prev) => ({ ...prev, transaction_type: "Salary Credited" }));
+    }
+  }, [formData.staff_type, formData.transaction_type]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,10 +103,12 @@ function StaffTransactionForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (error) setError(null);
     setFormData((prevState) => ({ ...prevState, [name]: value }));
   };
 
   const handleStaffChange = (value) => {
+    if (error) setError(null);
     setFormData((prevState) => ({
       ...prevState,
       staff: value,
@@ -113,7 +121,6 @@ function StaffTransactionForm() {
     if (!formData.date?.trim()) return false;
     if (!formData.staff?.trim()) return false;
     if (!formData.amount || parseFloat(formData.amount) <= 0) return false;
-    if (!formData.desc?.trim()) return false;
     if (!formData.staff_type?.trim()) return false;
     if (!formData.transaction_type?.trim()) return false;
     
@@ -144,10 +151,6 @@ function StaffTransactionForm() {
       setError("Amount is required and must be greater than 0");
       return;
     }
-    if (!formData.desc.trim()) {
-      setError("Description is required");
-      return;
-    }
     if (!formData.staff_type.trim()) {
       setError("Staff Type is required");
       return;
@@ -173,14 +176,16 @@ function StaffTransactionForm() {
       setSubLoading(true);
       setError(null);
       // Build payload, including incentive details when applicable
-      const payload = { ...formData };
+      const payload = { ...formData, desc: formData.desc?.trim() || "" };
       if (formData.staff_type === "incentive") {
+        payload.transaction_type = "Salary Credited";
         const details = entries
           .filter((e) => (e.product || e.quantity || e.rate))
           .map((e) => {
             const quantity = parseFloat(e.quantity) || 0;
             const rate = parseFloat(e.rate) || 0;
             return {
+              bill_no: e.bill_no?.trim() || "",
               product: e.product ? Number(e.product) : null,
               quantity,
               rate,
@@ -227,14 +232,6 @@ function StaffTransactionForm() {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
         Loading...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-red-500">
-        {error}
       </div>
     );
   }
@@ -339,12 +336,16 @@ function StaffTransactionForm() {
                   <Label htmlFor="transaction_type" className="text-sm font-medium text-white mb-2">
                     Transaction Type
                   </Label>
-                  <Select value={formData.transaction_type} onValueChange={(value) => handleChange({ target: { name: "transaction_type", value } })}>
+                  <Select
+                    value={formData.transaction_type}
+                    onValueChange={(value) => handleChange({ target: { name: "transaction_type", value } })}
+                    disabled={formData.staff_type === "incentive"}
+                  >
                     <SelectTrigger className=" bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500">
                       <SelectValue placeholder="Transaction Type" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-700 border-slate-600 text-white">
-                      <SelectItem value="Payment">Payment</SelectItem>
+                      {formData.staff_type !== "incentive" && <SelectItem value="Payment">Payment</SelectItem>}
                       <SelectItem value="Salary Credited">Salary Credited</SelectItem>
                     </SelectContent>
                   </Select>
@@ -362,7 +363,6 @@ function StaffTransactionForm() {
                   onChange={handleChange}
                   className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
                   placeholder="Enter description"
-                  required
                 />
               </div>
 
@@ -370,7 +370,21 @@ function StaffTransactionForm() {
                 <div className="space-y-4">
                   {entries.map((entry, idx) => (
                     <div key={idx} className="bg-slate-700 text-white p-4 rounded-md shadow mb-4">
-                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                        <div>
+                          <Label className="text-sm font-medium text-white mb-2 block">Bill No.</Label>
+                          <Input
+                            type="text"
+                            value={entry.bill_no || ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setEntries((prev) => prev.map((it, i) => (i === idx ? { ...it, bill_no: v } : it)));
+                            }}
+                            className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                            placeholder="Enter bill no"
+                          />
+                        </div>
+
                         {/* Product combobox */}
                         <div className="flex flex-col col-span-2">
                           <Label className="text-sm font-medium text-white mb-2">Product</Label>
@@ -506,7 +520,7 @@ function StaffTransactionForm() {
                     type="button"
                     className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                     onClick={() => {
-                      setEntries((prev) => [...prev, { product: "", product_name: "", quantity: "", rate: "" }]);
+                      setEntries((prev) => [...prev, { bill_no: "", product: "", product_name: "", quantity: "", rate: "" }]);
                       setOpenProduct((prev) => [...prev, false]);
                     }}
                   >
@@ -531,7 +545,7 @@ function StaffTransactionForm() {
               </div>
               <Button
                 type="submit"
-                disabled={subLoading || !isFormValid()}
+                disabled={subLoading}
                 className="w-full bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-600 disabled:cursor-not-allowed"
               >
                 {subLoading ? "Submitting..." : "Submit Staff Transaction"}

@@ -469,7 +469,7 @@ const AllNCMStatementPage = () => {
                       </TableCell>
                     )}
                     <TableCell className="text-right text-white print:text-black">
-                      {transaction.amount > 0 ? '-' : ''}NPR {Math.abs(transaction.amount).toLocaleString()}
+                      {transaction.amount > 0 ? '' : '-'}NPR {Math.abs(transaction.amount).toLocaleString()}
                     </TableCell>
                     <TableCell className="text-right text-white print:text-black">
                       NPR {Number(transaction.due).toLocaleString()}
