@@ -41,6 +41,40 @@ export default function Sidebar() {
   
   // Use branch management hook
   const { navigateWithBranch, currentBranch, clearBranch } = useBranchManagement()
+  const normalizedRole = String(role || '').toLowerCase()
+
+  const canViewMenuItem = (item) => {
+    if (Array.isArray(item.visibleToRoles) && item.visibleToRoles.length > 0) {
+      return item.visibleToRoles.includes(normalizedRole)
+    }
+    if (item.adminOnly) {
+      return normalizedRole === 'admin'
+    }
+    return true
+  }
+
+  const isMenuItemActive = (itemPath) => {
+    const segs = location.pathname.split('/').filter(Boolean)
+    const first = segs[0]
+    const second = segs[1]
+
+    if (itemPath.includes('/')) {
+      const [root, child] = itemPath.split('/')
+      return root === first && child === second
+    }
+
+    return first === itemPath && second !== 'form'
+  }
+
+  const getItemHref = (itemPath) => {
+    if (itemPath === '/mobile') return '/mobile'
+    if (!currentBranch) return '#'
+    return `/${itemPath}/branch/${currentBranch.id}`
+  }
+
+  const setAllGroupsOpenState = (isExpanded) => {
+    setOpenGroups(Object.fromEntries(Object.keys(openGroups).map((key) => [key, isExpanded])))
+  }
 
   useEffect(() => {
     fetchRole()
@@ -50,7 +84,8 @@ export default function Sidebar() {
   const fetchRole = async () => {
     try {
       const r = await api.get('enterprise/role/')
-      setRole(r.data)
+      const roleValue = typeof r.data === 'string' ? r.data : (r.data?.role || '')
+      setRole(roleValue)
     } catch (e) {
       // silently fail
     }
@@ -97,7 +132,7 @@ export default function Sidebar() {
       mainPath: 'inventory',
       items: [
         { title: 'Inventory', icon: Container, path: 'inventory' },
-        { title: 'Manufacture', icon: Zap, path: 'manufacture'}
+        { title: 'Manufacture', icon: Zap, path: 'manufacture', visibleToRoles: ['admin', 'manager'] }
       ]
     },
     {
@@ -234,21 +269,14 @@ export default function Sidebar() {
 
   const handleNavigation = (path) => {
     setIsOpen(false)
-    
-      // Use branch management for other paths
-      navigateWithBranch(path)
-    
+    navigateWithBranch(path)
   }
 
   const handleChangeBranch = async () => {
-    console.log('Change branch clicked')
     setIsChangingBranch(true)
     try {
-      // Clear the selected branch to trigger branch selection
       clearBranch()
-      console.log('Branch cleared, navigating to select-branch')
-      setIsOpen(false) // Close sidebar on mobile
-      // Navigate to branch selection page
+      setIsOpen(false)
       navigate('/select-branch')
     } catch (error) {
       console.error('Error changing branch:', error)
@@ -281,7 +309,9 @@ export default function Sidebar() {
               <div
                 className="text-2xl font-bold text-center text-white cursor-pointer tracking-wide"
                 onClick={() => {
-                  navigate(`/branch/${currentBranch.id}`)
+                  if (currentBranch?.id) {
+                    navigate(`/branch/${currentBranch.id}`)
+                  }
                   setIsOpen(false)
                 }}
               >
@@ -297,7 +327,7 @@ export default function Sidebar() {
                 <div className="flex items-center text-[10px] font-medium uppercase tracking-wide rounded-full overflow-hidden border border-slate-600/60 bg-slate-800/70 backdrop-blur-sm shadow-inner shadow-slate-900/50">
                   <button
                     aria-label="Expand all groups"
-                    onClick={() => setOpenGroups(Object.fromEntries(Object.keys(openGroups).map(k => [k, true])))}
+                    onClick={() => setAllGroupsOpenState(true)}
                     className="px-3 py-1 flex items-center gap-1 text-slate-300 hover:bg-slate-700/70 hover:text-white transition"
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.8)]"></span>
@@ -306,7 +336,7 @@ export default function Sidebar() {
                   <span className="w-px h-4 bg-slate-600/60" />
                   <button
                     aria-label="Collapse all groups"
-                    onClick={() => setOpenGroups(Object.fromEntries(Object.keys(openGroups).map(k => [k, false])))}
+                    onClick={() => setAllGroupsOpenState(false)}
                     className="px-3 py-1 flex items-center gap-1 text-slate-400 hover:bg-slate-700/70 hover:text-white transition"
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-pink-400 shadow-[0_0_6px_rgba(244,114,182,0.7)]"></span>
@@ -356,6 +386,10 @@ export default function Sidebar() {
               
               <nav className="space-y-3 mt-2">
                 {groupedMenu.map(group => {
+                  const visibleItems = group.items.filter(canViewMenuItem)
+                  if (visibleItems.length === 0) {
+                    return null
+                  }
                   const isGroupOpen = openGroups[group.label]
                   return (
                     <div key={group.label} className="group border border-slate-700/50 rounded-xl overflow-hidden bg-slate-800/40 backdrop-blur-sm shadow-md shadow-slate-900/40 transition hover:border-slate-500/60">
@@ -397,23 +431,9 @@ export default function Sidebar() {
                             transition={{ duration: 0.2 }}
                             className="flex flex-col bg-slate-800/40"
                           >
-                            {group.items.filter(item => !item.adminOnly || role === 'Admin').map(item => {
+                            {visibleItems.map(item => {
                               const isExternalReport = item.externalReport
-                              // Determine active state by comparing current pathname core segment
-                              let active = false
-                              if (!isExternalReport) {
-                                const segs = location.pathname.split('/').filter(Boolean)
-                                const first = segs[0]
-                                const second = segs[1]
-                                // Multi-part path (e.g., purchases/form)
-                                if (item.path.includes('/')) {
-                                  const parts = item.path.split('/')
-                                  if (parts[0] === first && parts[1] === second) active = true
-                                } else {
-                                  // Single segment item should NOT be active on a form sub-route
-                                  if (first === item.path && second !== 'form') active = true
-                                }
-                              }
+                              const active = !isExternalReport && isMenuItemActive(item.path)
                               if (isExternalReport) {
                                 const fullPath = currentBranch ? `/${item.path}/branch/${currentBranch.id}` : '#'
                                 return (
@@ -433,7 +453,7 @@ export default function Sidebar() {
                                   </li>
                                 )
                               }
-                              const fullPath = item.path === '/mobile' ? '/mobile' : (currentBranch ? `/${item.path}/branch/${currentBranch.id}` : '#')
+                              const fullPath = getItemHref(item.path)
                               return (
                                 <li key={item.path} className="border-t border-slate-700/30 relative">
                                   <a

@@ -279,6 +279,10 @@ class SalesTransactionView(APIView):
         nts = NCMTransaction.objects.filter(all_sales_transaction=sales_transaction)
         for nt in nts:
             nt.delete()
+        
+        ncmts = NCMTransaction.objects.filter(all_sales_transaction=sales_transaction)
+        for ncmt in ncmts:
+            ncmt.delete()
 
         sales_transaction.delete()
         return Response("Deleted")

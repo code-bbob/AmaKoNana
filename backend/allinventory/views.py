@@ -298,6 +298,9 @@ class IncentiveProductView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request, pk, *args, **kwargs):
+        role = request.user.person.role
+        if role != "Admin":
+            return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
         try:
             incentive_product = IncentiveProduct.objects.get(
                 pk=pk, enterprise=request.user.person.enterprise

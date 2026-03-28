@@ -27,6 +27,7 @@ class Person(models.Model):
 
     ROLE_CHOICES = [
         ('Admin', 'Admin'),
+        ('Manager', 'Manager'),
         ('Staff', 'Staff'),
         # ('Technician', 'Technician'),
     ]

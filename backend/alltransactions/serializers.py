@@ -433,6 +433,8 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
         old_credited_amount = instance.credited_amount or 0
         old_amount_paid = instance.amount_paid or 0
         sales_data = validated_data.pop('sales', [])
+        old_is_ncm = instance.is_ncm
+        is_ncm = validated_data.get('is_ncm', instance.is_ncm)
 
         # Update transaction fields
         for attr, value in validated_data.items():
@@ -580,6 +582,39 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
                     'all_sales_transaction': instance,
                 }
                 DebtorTransactionSerializer().create(base)
+
+        if is_ncm and not old_is_ncm:
+            ncm = NCM.objects.filter(enterprise=instance.enterprise).first()
+            ncm_amount = instance.cod_amount - instance.delivery_charge
+            if ncm_amount < instance.total_amount:
+                desc += f"(Prepaid)"
+            ncm_transaction = NCMTransactionSerializer().create({
+                    'amount': ncm_amount,
+                    'ncm': ncm,
+                    'desc': desc,
+                    'all_sales_transaction': instance,
+                    'date': instance.date,
+                    'enterprise': instance.enterprise,
+                    'branch': instance.branch
+            })
+            
+        elif is_ncm and old_is_ncm:
+            ncm_transaction = NCMTransaction.objects.filter(all_sales_transaction=instance).first()
+            ncm_transaction.delete()
+
+            new_ncm_amount = instance.cod_amount - instance.delivery_charge
+            print("New NCM amount:", new_ncm_amount)
+            if new_ncm_amount < instance.total_amount:
+                desc += f"(Prepaid)"
+            new_ncm_transaction = NCMTransactionSerializer().create({
+                    'amount': new_ncm_amount,
+                    'ncm': ncm_transaction.ncm,
+                    'desc': desc,
+                    'all_sales_transaction': instance,
+                    'date': instance.date,
+                    'enterprise': instance.enterprise,
+                    'branch': instance.branch
+            })
 
         return instance
 
