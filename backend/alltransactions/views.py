@@ -813,7 +813,7 @@ class StaffTransactionView(APIView):
         data = request.data
         data["enterprise"] = request.user.person.enterprise.id
         role = request.user.person.role
-        if role != "Admin":
+        if role == "Staff":
             return Response("Unauthorized")
         serializer = StaffTransactionSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
