@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - adb_data:/var/lib/postgresql/data
     healthcheck:
       # Use CMD form so Compose recognizes it
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}", "-h", "localhost", "-p", "${POSTGRES_PORT}"]
@@ -34,5 +34,5 @@ services:
       --bind 0.0.0.0:8000 --workers 3
 
 volumes:
-  db_data:
+  adb_data:
 

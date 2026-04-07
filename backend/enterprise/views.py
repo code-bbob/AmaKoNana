@@ -42,7 +42,7 @@ class BranchStaffView(APIView):
     def get(self, request,id):
         user = request.user
         enterprise = user.person.enterprise
-        if user.person.role == 'Admin':
+        if user.person.role != "Staff":
             staff = Staff.objects.filter(branch=id)
             serializer = StaffSerializer(staff, many=True)
             return Response(serializer.data)
