@@ -55,6 +55,8 @@ const AllIncomeExpenseReport = () => {
   const [message, setMessage] = useState("");
   const [role, setRole] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const [approveStatus, setApproveStatus] = useState(null);
   const api = useAxios();
   const navigate = useNavigate();
   const methodColor = {
@@ -68,6 +70,7 @@ const AllIncomeExpenseReport = () => {
   useEffect(() => {
     fetchIncomeExpenseData();
     fetchRole();
+    checkApprovalStatus();
   }, []);
 
   const fetchRole = async () => {
@@ -139,9 +142,20 @@ const AllIncomeExpenseReport = () => {
     fetchIncomeExpenseData(params);
   };
 
-  const [approveStatus, setApproveStatus] = useState(null);
-
   const handlePrint = () => window.print();
+
+  const checkApprovalStatus = async () => {
+    try {
+      const response = await api.get("alltransaction/closing-cash/", {
+        params: { branch: branchId }
+      });
+      // If closing cash exists for today, isApproved = true (disable approval button)
+      // If no closing cash yet, isApproved = false (enable approval button)
+      setIsApproved(response.data && response.data.length > 0);
+    } catch (e) {
+      setIsApproved(false);
+    }
+  };
 
   const handleApprove = async () => {
     if (!data) return;
@@ -152,6 +166,7 @@ const AllIncomeExpenseReport = () => {
         amount: data.net_cash_in_hand,
         date: format(new Date(), "yyyy-MM-dd"),
       });
+      setIsApproved(true);
       setApproveStatus("Approved");
       fetchIncomeExpenseData();
     } catch (e) {
@@ -237,12 +252,16 @@ const AllIncomeExpenseReport = () => {
             <div className=" flex items-center space-x-2 print:hidden">
               <Button
                 onClick={() => setConfirmOpen(true)}
-                disabled={approveStatus === "Approved"}
+                disabled={isApproved}
                 variant="outline"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white border-none disabled:opacity-50"
+                className={`${
+                  isApproved
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-green-600 hover:bg-green-700"
+                } text-white border-none disabled:opacity-50`}
               >
                 <CheckCircle className="mr-2 h-4 w-4" />{" "}
-                {approveStatus ? approveStatus : "Approve"}
+                {approveStatus ? approveStatus : isApproved ? "Approved" : "Approve"}
               </Button>
             </div>
           )}
