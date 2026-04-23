@@ -1802,6 +1802,8 @@ class IncomeExpenseReportView(APIView):
         list1=[]
         for sale in sales:
             desc = ""
+            if sale.is_sale_exchange:
+                desc += "Sale Exchange for balance amounting to " + str(sale.exchange_previous_balance) + ". \nTotal: " + str(sale.total_amount) + ". \t Prev: " + str(sale.exchange_previous_balance) + ". \t Exceeding: " + str(sale.exchange_exceeded_amount) + ". \nProducts: "
             for s in sale.sales.all():
                 desc += f"{s.product.name} (x{s.quantity}), \n "
             sale.description = desc.rstrip(", ")

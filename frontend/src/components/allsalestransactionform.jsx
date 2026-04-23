@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlusCircle, Trash2, Check, ChevronsUpDown, Menu } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   Command,
@@ -51,10 +51,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import NewProductDialog from "@/components/newProductDialog"; // Adjust the path as needed
 import { Checkbox } from "@/components/ui/checkbox";
 
-function AllSalesTransactionForm() {
+function AllSalesTransactionForm({ isExchange = false }) {
   const api = useAxios();
   const { branchId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const exchangeContext = isExchange ? (location.state || {}) : {};
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     phone_number: "",
@@ -128,12 +130,19 @@ function AllSalesTransactionForm() {
   const [masterDiscount, setMasterDiscount] = useState(""); // percentage string 0-100
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
+  const previousBalance = Math.max(0, Number(exchangeContext?.previous_balance) || 0);
+  const exchangeAppliedAmount = isExchange ? Math.min(totalAmount, previousBalance) : 0;
+  const exchangeExceededAmount = isExchange ? Math.max(0, totalAmount - previousBalance) : 0;
+  const exchangeRemainingBalance = isExchange ? Math.max(0, previousBalance - totalAmount) : 0;
+  const paymentTargetAmount = isExchange ? exchangeExceededAmount : totalAmount;
+  const requiresPaymentInput = !isExchange || exchangeExceededAmount > 0;
+
   // Simplified writeoff: totalAmount - amount_paid (clamped at 0) for non-mixed/non-credit.
   useEffect(() => {
     if (formData.method === 'mixed' || formData.method === 'credit') return;
     const paid = parseFloat(formData.amount_paid) || 0;
-    setFormData(prev => ({ ...prev, writeoff: Math.max(0, totalAmount - paid) }));
-  }, [formData.amount_paid, formData.method, totalAmount]);
+    setFormData(prev => ({ ...prev, writeoff: Math.max(0, paymentTargetAmount - paid) }));
+  }, [formData.amount_paid, formData.method, paymentTargetAmount]);
 
   const [change, setChange] = useState(0);
 
@@ -144,13 +153,43 @@ function AllSalesTransactionForm() {
     if (formData.method === 'credit') { setChange('0.00'); return; }
     if (formData.method === 'mixed') {
       const sum = (parseFloat(formData.cash_amount)||0)+(parseFloat(formData.card_amount)||0)+(parseFloat(formData.online_amount)||0);
-      setChange(Math.max(0, sum - totalAmount).toFixed(2));
+      setChange(Math.max(0, sum - paymentTargetAmount).toFixed(2));
       return;
     }
     const received = parseFloat(formData.amount_received) || 0;
     const paid = parseFloat(formData.amount_paid) || 0;
     setChange(Math.max(0, received - paid).toFixed(2));
-  }, [formData.amount_received, formData.cash_amount, formData.card_amount, formData.online_amount, formData.method, totalAmount, formData.amount_paid]);
+  }, [formData.amount_received, formData.cash_amount, formData.card_amount, formData.online_amount, formData.method, paymentTargetAmount, formData.amount_paid]);
+
+  useEffect(() => {
+    if (!isExchange || exchangeExceededAmount > 0) {
+      return;
+    }
+
+    setFormData((prev) => {
+      if (
+        prev.method === "cash" &&
+        (parseFloat(prev.amount_paid) || 0) === 0 &&
+        (parseFloat(prev.cash_amount) || 0) === 0 &&
+        (parseFloat(prev.online_amount) || 0) === 0 &&
+        (parseFloat(prev.card_amount) || 0) === 0 &&
+        (parseFloat(prev.credited_amount) || 0) === 0
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        method: "cash",
+        amount_paid: 0,
+        cash_amount: 0,
+        online_amount: 0,
+        card_amount: 0,
+        credited_amount: 0,
+        debtor: "",
+      };
+    });
+  }, [isExchange, exchangeExceededAmount]);
 
   useEffect(() => {
     if (!formData.is_ncm) return;
@@ -225,11 +264,11 @@ function AllSalesTransactionForm() {
     if (formData.method === 'credit') {
       setFormData(prevFormData => ({
         ...prevFormData,
-        credited_amount: Math.max(0, totalAmount - (parseFloat(prevFormData.amount_paid) || 0)),
+        credited_amount: Math.max(0, paymentTargetAmount - (parseFloat(prevFormData.amount_paid) || 0)),
         writeoff: 0
       }));
     }
-  }, [formData.amount_paid, totalAmount, formData.method]);
+  }, [formData.amount_paid, paymentTargetAmount, formData.method]);
 
   // New useEffect to fetch branch info – adjust endpoints as needed
   useEffect(() => {
@@ -437,7 +476,7 @@ const handleNewProductVendorChange = (ids) => {
     try {
       setSubLoading(true);
       // Validate amount paid (empty only) for non-mixed
-      if (formData.method !== 'mixed' && (formData.amount_paid === null || formData.amount_paid === '')) {
+      if (formData.method !== 'mixed' && requiresPaymentInput && (formData.amount_paid === null || formData.amount_paid === '')) {
         setPaymentToast('Please enter the amount paid before submitting.');
         setSubLoading(false);
         return;
@@ -470,11 +509,15 @@ const handleNewProductVendorChange = (ids) => {
       // console.debug("formdata before submit:", formData);
       const originalTotal = totalAmount;
       const deliveryChargeValue = parseFloat(formData.delivery_charge) || 0;
+      const mixedAmount = (parseFloat(formData.cash_amount)||0) + (parseFloat(formData.card_amount)||0) + (parseFloat(formData.online_amount)||0);
+      const exchangeRawPaid = formData.method === 'mixed' ? mixedAmount : (parseFloat(formData.amount_paid)||0);
       // Raw amount paid (no clamping); mixed sums its parts
-      const rawPaid = formData.is_ncm
+      const rawPaid = isExchange
+      ? (exchangeExceededAmount > 0 ? exchangeRawPaid : 0)
+      : formData.is_ncm
       ? (formData.prepaid ? ((parseFloat(originalTotal) || 0) + deliveryChargeValue) : 0)
       : formData.method === 'mixed'
-      ? (parseFloat(formData.cash_amount)||0) + (parseFloat(formData.card_amount)||0) + (parseFloat(formData.online_amount)||0)
+      ? mixedAmount
       : (parseFloat(formData.amount_paid)||0);
       
       let payload = {
@@ -489,10 +532,39 @@ const handleNewProductVendorChange = (ids) => {
         card_amount: parseFloat(formData.card_amount) || 0,
         online_amount: parseFloat(formData.online_amount) || 0,
         amount_paid: rawPaid,
-        credited_amount: formData.credited_amount || 0
+        credited_amount: formData.credited_amount || 0,
+        is_sale_exchange: isExchange,
+        exchange_previous_balance: isExchange ? previousBalance : 0,
+        exchange_exceeded_amount: isExchange ? exchangeExceededAmount : 0,
+        exchange_desc: isExchange && exchangeExceededAmount > 0
+          ? `Sales exchanged exceeding balance ${previousBalance.toFixed(2)}`
+          : ''
       };
 
-      if (formData.is_ncm && formData.prepaid) {
+      if (isExchange) {
+        payload.cash_amount = 0;
+        payload.online_amount = 0;
+        payload.card_amount = 0;
+
+        if (exchangeExceededAmount <= 0) {
+          payload.amount_paid = 0;
+          payload.credited_amount = 0;
+          payload.method = 'cash';
+        } else if (formData.method === 'mixed') {
+          payload.amount_paid = mixedAmount;
+          payload.cash_amount = parseFloat(formData.cash_amount) || 0;
+          payload.card_amount = parseFloat(formData.card_amount) || 0;
+          payload.online_amount = parseFloat(formData.online_amount) || 0;
+        } else if (formData.method === 'cash') {
+          payload.cash_amount = payload.amount_paid;
+        } else if (formData.method === 'online') {
+          payload.online_amount = payload.amount_paid;
+        } else if (formData.method === 'card') {
+          payload.card_amount = payload.amount_paid;
+        } else if (formData.method === 'credit') {
+          payload.credited_amount = Math.max(0, exchangeExceededAmount - (parseFloat(formData.amount_paid) || 0));
+        }
+      } else if (formData.is_ncm && formData.prepaid) {
         const prepaidTotal = (parseFloat(originalTotal) || 0) + deliveryChargeValue;
         const prepaidMethod = formData.prepaid_target === 'credit' ? 'credit' : formData.prepaid_target;
         payload.method = prepaidMethod;
@@ -755,9 +827,9 @@ const handleNewProductVendorChange = (ids) => {
     const card = parseFloat(formData.card_amount) || 0;
     const online = parseFloat(formData.online_amount) || 0;
     const sum = cash + card + online; // raw sum
-    setPayable(sum);
-    setFormData(prev => ({ ...prev, writeoff: Math.max(0, totalAmount - sum), amount_paid: sum }));
-  }, [formData.cash_amount, formData.card_amount, formData.online_amount, formData.method, totalAmount]);
+    setPayable(paymentTargetAmount);
+    setFormData(prev => ({ ...prev, writeoff: Math.max(0, paymentTargetAmount - sum), amount_paid: sum }));
+  }, [formData.cash_amount, formData.card_amount, formData.online_amount, formData.method, paymentTargetAmount]);
 
   // No separate global discount; totalAmount derived above
 
@@ -769,7 +841,7 @@ const handleNewProductVendorChange = (ids) => {
           <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl lg:text-3xl font-bold mb-6 text-white">
-                Add Sales Transaction
+                {isExchange ? "Sale Exchange" : "Add Sales Transaction"}
 
             </h2>
  <Button
@@ -1118,7 +1190,7 @@ const handleNewProductVendorChange = (ids) => {
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
                   <div>
-                    <DialogTitle className="text-xl font-semibold">Payment</DialogTitle>
+                    <DialogTitle className="text-xl font-semibold">{isExchange ? "Sale Exchange Payment" : "Payment"}</DialogTitle>
                     <DialogDescription className="text-slate-400 mt-1">Bill #{formData.bill_no} • {formData.date}</DialogDescription>
                   </div>
                   {/* <Button variant="outline" onClick={() => setShowPaymentDialog(false)} className="border-slate-600 bg-slate-800 hover:bg-slate-700 text-white">Close</Button> */}
@@ -1171,6 +1243,14 @@ const handleNewProductVendorChange = (ids) => {
                     <div className="mt-auto border-t border-slate-800 bg-slate-900 px-6 py-4 space-y-2">
                       <div className="flex justify-between text-slate-300 text-sm"><span>Subtotal</span><span className="font-mono">{subtotal.toFixed(2)}</span></div>
                       <div className="flex justify-between text-slate-300 text-sm"><span>Discount</span><span className="font-mono">{totalDiscount.toFixed(2)}</span></div>
+                      {isExchange && (
+                        <>
+                          <div className="flex justify-between text-slate-300 text-sm"><span>Previous Return</span><span className="font-mono">{previousBalance.toFixed(2)}</span></div>
+                          <div className="flex justify-between text-slate-300 text-sm"><span>Used From Balance</span><span className="font-mono">{exchangeAppliedAmount.toFixed(2)}</span></div>
+                          <div className="flex justify-between text-slate-300 text-sm"><span>Remaining Balance</span><span className="font-mono">{exchangeRemainingBalance.toFixed(2)}</span></div>
+                          <div className="flex justify-between text-amber-300 text-sm"><span>Exceeded Amount</span><span className="font-mono">{exchangeExceededAmount.toFixed(2)}</span></div>
+                        </>
+                      )}
                       <div className="flex justify-between text-slate-300 text-sm"><span>Write-off</span><span className="font-mono">{(parseFloat(formData.writeoff)||0).toFixed(2)}</span></div>
                       <div className="flex justify-between text-white text-base font-semibold"><span>Total</span><span className="font-mono">{totalAmount.toFixed(2)}</span></div>
                     </div>
@@ -1185,17 +1265,32 @@ const handleNewProductVendorChange = (ids) => {
                               <div className="flex justify-between mb-1">
                                 Total: <span className="font-mono">{totalAmount.toFixed(2)}</span>
                               </div>
+                              {isExchange && (
+                                <>
+                                  <div className="flex justify-between mb-1 text-slate-300">
+                                    Previous Return: <span className="font-mono">{previousBalance.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between mb-1 text-amber-300 font-semibold">
+                                    Extra Payment Required: <span className="font-mono">{exchangeExceededAmount.toFixed(2)}</span>
+                                  </div>
+                                </>
+                              )}
                               <div className="flex items-center justify-between my-3 gap-4">
                                 <span>Amount Paid:</span>
                                 <Input
                                   type="number"
                                   value={formData.amount_paid ?? ''}
-                                  required
+                                  required={requiresPaymentInput}
                                   onChange={(e)=>setFormData(prev=>({...prev, amount_paid: e.target.value }))}
                                   className="bg-slate-800 border-slate-700 text-white w-32 font-mono"
                                   placeholder="0.00"
                                 />
                               </div>
+                              {isExchange && exchangeExceededAmount <= 0 && (
+                                <div className="mt-2 bg-green-600/20 border border-green-600 text-green-200 text-sm px-3 py-2 rounded">
+                                  Current exchange is fully covered by returned balance. No additional payment is required.
+                                </div>
+                              )}
                               <div className="flex justify-between my-3">
                                 Write-off: <span className="font-mono">{(parseFloat(formData.writeoff)||0).toFixed(2)}</span>
                               </div>
@@ -1210,10 +1305,11 @@ const handleNewProductVendorChange = (ids) => {
                           <Label className="text-slate-300 mb-1">Method</Label>
                           <Select
                             value={formData.method}
+                            disabled={isExchange && exchangeExceededAmount <= 0}
                             onValueChange={(value)=>{
                               setFormData(prev=>({...prev, method:value }));
                               if (value !== 'mixed') {
-                                setFormData(prev=>({...prev, cash_amount: value==='cash'?payable:0, card_amount: value==='card'?payable:0, online_amount: value==='online'?payable:0 }));
+                                setFormData(prev=>({...prev, cash_amount: value==='cash'?paymentTargetAmount:0, card_amount: value==='card'?paymentTargetAmount:0, online_amount: value==='online'?paymentTargetAmount:0 }));
                               }
                             }}
                           >
@@ -1455,7 +1551,7 @@ const handleNewProductVendorChange = (ids) => {
                   <div className="text-xs text-slate-400">Press Enter to confirm • Esc to cancel</div>
                   <div className="flex gap-3">
                     <Button type="button" variant="outline" className="bg-slate-800 border-slate-700 text-white" onClick={()=>setShowPaymentDialog(false)}>Cancel</Button>
-                    <Button type="submit" onClick={handleSubmit} className="bg-green-600 hover:bg-green-700 text-white" disabled={subLoading || (formData.method !== 'mixed' && (formData.amount_paid === null || formData.amount_paid === ''))}>Confirm & Submit</Button>
+                    <Button type="submit" onClick={handleSubmit} className="bg-green-600 hover:bg-green-700 text-white" disabled={subLoading || (formData.method !== 'mixed' && requiresPaymentInput && (formData.amount_paid === null || formData.amount_paid === ''))}>Confirm & Submit</Button>
                   </div>
                 </div>
               </DialogContent>

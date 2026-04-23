@@ -535,12 +535,30 @@ const handleNewProductVendorChange = (ids) => {
     e.preventDefault();
     setSubLoading(true);
     try {
+      const returnedAmount = returns.reduce((sum, returnedItem) => {
+        const matchedSale = formData.sales.find((sale) => sale.id === returnedItem.id);
+        if (!matchedSale) {
+          return sum;
+        }
+        const qty = parseFloat(returnedItem.quantity) || 0;
+        const saleQty = parseFloat(matchedSale.quantity) || 0;
+        const saleTotal = parseFloat(matchedSale.total_price) || 0;
+        const perUnit = saleQty > 0 ? saleTotal / saleQty : (parseFloat(matchedSale.unit_price) || 0);
+        return sum + qty * perUnit;
+      }, 0);
+
       await api.post("alltransaction/sales-return/", {
         returns: returns, // Changed to send array of {id, quantity}
         sales_transaction_id: salesId,
         branch: branchId,
       });
-      navigate("/sales/branch/" + branchId);
+      navigate(`/sales/exchange/form/branch/${branchId}`, {
+        state: {
+          previous_balance: Number(returnedAmount.toFixed(2)),
+          source_sales_id: salesId,
+          returned_lines: returns,
+        },
+      });
     } catch (err) {
       console.error(err);
       setError("Failed to process return. Please try again.");

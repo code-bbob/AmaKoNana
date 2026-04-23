@@ -64,6 +64,7 @@ import OrdersPage from "./pages/ordersPage";
 import ProductIncentivesPage from "./pages/productIncentivesPage";
 import OrderOverviewPage from "./pages/allOrderOverview";
 import OrderReport from "./pages/orderReport";
+import SaleExchange from "./pages/saleExchange";
 
 function App() {
   const { isAuthenticated } = useSelector((state) => state.root);
@@ -105,6 +106,7 @@ function App() {
 
           <Route path="sales/branch/:branchId" element={<AllSalesTransactions />} />
           <Route path="sales/form/branch/:branchId" element={<AllSalesTransactionForm />} />
+          <Route path="sales/exchange/form/branch/:branchId" element={<SaleExchange />} />
           <Route path="sales/branch/:branchId/editform/:salesId" element={<EditAllSalesTransactionForm />} />
 
           <Route path="sales-returns/branch/:branchId" element={<AllSalesReturns/>}/>

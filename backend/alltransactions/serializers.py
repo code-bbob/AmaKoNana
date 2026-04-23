@@ -343,6 +343,10 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
     sales = SalesSerializer(many=True)
     date = serializers.DateField()
     person_name = serializers.SerializerMethodField()
+    is_sale_exchange = serializers.BooleanField(write_only=True, required=False, default=False)
+    exchange_previous_balance = serializers.FloatField(write_only=True, required=False, default=0)
+    exchange_exceeded_amount = serializers.FloatField(write_only=True, required=False, default=0)
+    exchange_desc = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = SalesTransaction
@@ -358,6 +362,10 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        is_sale_exchange = validated_data.get('is_sale_exchange', False)
+        exchange_previous_balance = float(validated_data.get('exchange_previous_balance', 0) or 0)
+        exchange_exceeded_amount = float(validated_data.get('exchange_exceeded_amount', 0) or 0)
+        exchange_desc = validated_data.pop('exchange_desc', '')
         sales = validated_data.pop('sales')
         transaction = SalesTransaction.objects.create(**validated_data)
 
@@ -389,15 +397,22 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
 
         transaction.calculate_total_amount()
 
+        exchange_note = ""
+        if is_sale_exchange and exchange_exceeded_amount > 0:
+            exchange_note = exchange_desc or f"Sales exchanged exceeding balance {exchange_previous_balance}"
+
         if transaction.method == 'credit':
             debtor_id = transaction.debtor.id
             debtor = Debtor.objects.select_for_update().get(id=debtor_id)
+            debtor_desc = desc
+            if exchange_note:
+                debtor_desc = f"{debtor_desc}\n{exchange_note}"
             DebtorTransactionSerializer().create({
                 'debtor': debtor,
                 'amount': -transaction.credited_amount,
                 'date': transaction.date,
                 'method': transaction.method,
-                'desc': desc,
+                'desc': debtor_desc,
                 'all_sales_transaction': transaction,
                 'branch': transaction.branch,
                 'enterprise': transaction.enterprise
@@ -950,16 +965,17 @@ class SalesReturnSerializer(serializers.ModelSerializer):
                 'bill_no': sales_return.sales_transaction.bill_no
             })
         else:
-            Expenses.objects.create(
-                enterprise = sales_return.enterprise,
-                branch = sales_return.branch,
-                date = sales_return.date,
-                amount = amount_diff,
-                desc = f'Expense recorded for sales return id {sales_return.id} with bill no {sales_return.sales_transaction.bill_no}\nDetails: {desc}',
-                method = 'cash',
-                type = 'sales_return',
-                sales_return = sales_return
-            )
+            # Expenses.objects.create(
+            #     enterprise = sales_return.enterprise,
+            #     branch = sales_return.branch,
+            #     date = sales_return.date,
+            #     amount = amount_diff,
+            #     desc = f'Expense recorded for sales return id {sales_return.id} with bill no {sales_return.sales_transaction.bill_no}\nDetails: {desc}',
+            #     method = 'cash',
+            #     type = 'sales_return',
+            #     sales_return = sales_return
+            # )
+            pass
 
         return sales_return
 

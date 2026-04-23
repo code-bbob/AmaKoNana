@@ -103,6 +103,9 @@ class SalesTransaction(models.Model):
     cod_amount = models.FloatField(null=True,blank=True,default=0)
     delivery_charge = models.FloatField(null=True,blank=True,default=0)
     is_ncm = models.BooleanField(default=False)
+    is_sale_exchange = models.BooleanField(default=False)
+    exchange_previous_balance = models.FloatField(null=True, blank=True, default=0)
+    exchange_exceeded_amount = models.FloatField(null=True, blank=True, default=0)
     
     def __str__(self):
         return f"Sales Transaction {self.pk} of {self.enterprise.name}"
