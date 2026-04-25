@@ -30,7 +30,14 @@ export default function NCMTransactionForm() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await api.post("alltransaction/ncmtransaction/", formData);
+      const enteredAmount = parseFloat(formData.amount);
+      const payload = {
+        ...formData,
+        amount: -Math.abs(Number.isFinite(enteredAmount) ? enteredAmount : 0),
+      };
+
+      console.log("Submitting form data:", payload);
+      await api.post("alltransaction/ncmtransaction/", payload);
       navigate(`/ncm-transactions/branch/${branchId}`);
     } catch {
       setError("Could not create NCM transaction.");
@@ -77,7 +84,7 @@ export default function NCMTransactionForm() {
 
               <div className="flex flex-col">
                 <Label htmlFor="amount" className="text-sm font-medium text-white mb-2">
-                  Amount
+                  Amount Received
                 </Label>
                 <Input
                   type="number"

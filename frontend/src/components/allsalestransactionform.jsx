@@ -224,7 +224,7 @@ function AllSalesTransactionForm({ isExchange = false }) {
 
       return next;
     });
-  }, [formData.is_ncm, formData.prepaid, formData.prepaid_target, totalAmount, formData.delivery_charge, formData.amount_paid, formData.amountPaid]);
+  }, [formData.is_ncm, formData.prepaid, formData.prepaid_target, totalAmount, formData.delivery_charge]);
 
   useEffect(() => {
     const fetchData = async () => {
