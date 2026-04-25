@@ -194,8 +194,12 @@ function AllSalesTransactionForm({ isExchange = false }) {
   useEffect(() => {
     if (!formData.is_ncm) return;
 
+    const enteredAmountPaid = parseFloat(formData.amountPaid ?? formData.amount_paid);
+    const hasEnteredAmountPaid = Number.isFinite(enteredAmountPaid) && enteredAmountPaid > 0;
     const prepaidAmount = formData.prepaid
-      ? ((parseFloat(totalAmount) || 0) + (parseFloat(formData.delivery_charge) || 0))
+      ? (hasEnteredAmountPaid
+        ? enteredAmountPaid
+        : ((parseFloat(totalAmount) || 0) + (parseFloat(formData.delivery_charge) || 0)))
       : 0;
     const target = formData.prepaid_target || "online";
     const targetMethod = target === "credit" ? "credit" : target;
@@ -220,7 +224,7 @@ function AllSalesTransactionForm({ isExchange = false }) {
 
       return next;
     });
-  }, [formData.is_ncm, formData.prepaid, formData.prepaid_target, totalAmount, formData.delivery_charge]);
+  }, [formData.is_ncm, formData.prepaid, formData.prepaid_target, totalAmount, formData.delivery_charge, formData.amount_paid, formData.amountPaid]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -510,12 +514,18 @@ const handleNewProductVendorChange = (ids) => {
       const originalTotal = totalAmount;
       const deliveryChargeValue = parseFloat(formData.delivery_charge) || 0;
       const mixedAmount = (parseFloat(formData.cash_amount)||0) + (parseFloat(formData.card_amount)||0) + (parseFloat(formData.online_amount)||0);
+      const prepaidTotal = (() => {
+        const enteredAmountPaid = parseFloat(formData.amountPaid ?? formData.amount_paid);
+        if (Number.isFinite(enteredAmountPaid) && enteredAmountPaid > 0) {
+          return enteredAmountPaid;
+        }
+
+        return (parseFloat(totalAmount) || 0) + deliveryChargeValue;
+      })();
       const exchangeRawPaid = formData.method === 'mixed' ? mixedAmount : (parseFloat(formData.amount_paid)||0);
       // Raw amount paid (no clamping); mixed sums its parts
       const rawPaid = isExchange
       ? (exchangeExceededAmount > 0 ? exchangeRawPaid : 0)
-      : formData.is_ncm
-      ? (formData.prepaid ? ((parseFloat(originalTotal) || 0) + deliveryChargeValue) : 0)
       : formData.method === 'mixed'
       ? mixedAmount
       : (parseFloat(formData.amount_paid)||0);
@@ -565,14 +575,13 @@ const handleNewProductVendorChange = (ids) => {
           payload.credited_amount = Math.max(0, exchangeExceededAmount - (parseFloat(formData.amount_paid) || 0));
         }
       } else if (formData.is_ncm && formData.prepaid) {
-        const prepaidTotal = (parseFloat(originalTotal) || 0) + deliveryChargeValue;
         const prepaidMethod = formData.prepaid_target === 'credit' ? 'credit' : formData.prepaid_target;
         payload.method = prepaidMethod;
-        payload.amount_paid = prepaidTotal;
         payload.cash_amount = 0;
         payload.online_amount = 0;
         payload.card_amount = 0;
         payload.credited_amount = 0;
+        payload.writeoff = 0;
 
         if (formData.prepaid_target === 'cash') payload.cash_amount = prepaidTotal;
         else if (formData.prepaid_target === 'online') payload.online_amount = prepaidTotal;
@@ -589,6 +598,10 @@ const handleNewProductVendorChange = (ids) => {
       else if (formData.method == 'card'){
         payload.card_amount = payload.amount_paid;
       }
+      console.log("Prepared payload for submission:", payload);
+
+
+      console.log("Submitting payload:", payload);
       const response = await api.post(
         "alltransaction/salestransaction/",
         payload
