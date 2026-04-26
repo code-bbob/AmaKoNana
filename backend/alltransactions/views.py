@@ -1086,13 +1086,11 @@ class NCMTransactionView(APIView):
 
     def get(self, request, ncm_pk=None, pk=None, branch=None):
         enterprise = request.user.person.enterprise
-        ncm_transactions = NCMTransaction.objects.filter(enterprise=enterprise)
+        ncm_transactions = NCMTransaction.objects.filter(enterprise=enterprise, branch=branch)
 
         query = request.GET.get('search')
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
-        if branch:
-            ncm_transactions = ncm_transactions.filter(branch=branch)
 
         if pk:
             ncm_transactions = NCMTransaction.objects.filter(id=pk, enterprise=enterprise).first()
@@ -1143,7 +1141,14 @@ class NCMTransactionView(APIView):
         role = request.user.person.role
         if role != "Admin":
             return Response("Unauthorized")
-        ncm_transaction = NCMTransaction.objects.get(id=pk)
+        ncm_transaction = NCMTransaction.objects.filter(id=pk, enterprise=request.user.person.enterprise).first()
+        if not ncm_transaction:
+            return Response("NCM Transaction not found", status=status.HTTP_404_NOT_FOUND)
+        if ncm_transaction.all_sales_transaction_id:
+            return Response(
+                {"detail": "NCM transactions linked to sales transactions cannot be edited."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         serializer = NCMTransactionSerializer(ncm_transaction, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -2051,7 +2056,7 @@ class NCMReport(APIView):
         """
 
         enterprise = request.user.person.enterprise
-        ncm = NCM.objects.filter(enterprise=enterprise).first()
+        ncm = NCM.objects.filter(enterprise=enterprise, branch=branch).first()
         # if there is no NCM record for the enterprise we cannot proceed
         if not ncm:
             return Response("NCM not found", status=status.HTTP_404_NOT_FOUND)

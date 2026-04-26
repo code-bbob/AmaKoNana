@@ -205,8 +205,8 @@ export default function AllNCMTransactions() {
                   </div>
                 </CardContent>
                 <div className="p-4 text-white text-right">
-                    {tx.amount < 0 ? 'Received' : 'Debited'}:
-                  RS. {parseFloat(tx.amount).toLocaleString()}
+                    {tx.amount < 0 ? 'Amount Received' : 'Amount Credited'}:
+                  RS. {parseFloat(Math.abs(tx.amount)).toLocaleString()}
                 </div>
               </Card>
             ))

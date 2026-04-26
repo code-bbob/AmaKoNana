@@ -420,10 +420,7 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
         
         if transaction.is_ncm:
             # choose the NCM entry matching enterprise/branch if available
-            ncm_qs = NCM.objects.filter(enterprise=transaction.enterprise)
-            if transaction.branch:
-                ncm_qs = ncm_qs.filter(branch=transaction.branch)
-            ncm = ncm_qs.first() or NCM.objects.filter(enterprise=transaction.enterprise).first()
+            ncm = NCM.objects.filter(enterprise=transaction.enterprise, branch=transaction.branch).first()
             ncm_amount = transaction.cod_amount - transaction.delivery_charge
             if ncm_amount < transaction.total_amount:
                 desc += f"(Prepaid)"
@@ -1237,8 +1234,7 @@ class NCMTransactionSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         transaction = NCMTransaction.objects.create(**validated_data)
-        ncm = NCM.objects.first()
-        print("HEREEEE")
+        ncm = NCM.objects.filter(branch=transaction.branch).first()
         ncm.due = ncm.due + transaction.amount if ncm.due is not None else transaction.amount
         ncm.save()
         return transaction
@@ -1246,12 +1242,14 @@ class NCMTransactionSerializer(serializers.ModelSerializer):
     def get_branch_name(self, obj):
         return obj.branch.name if obj.branch else None
     
-    # @transaction.atomic
-    # def update(self, instance, validated_data):
-    #     old_delivery_charge = instance.delivery_charge or 0
-    #     old_cod_amount = instance.cod_amount or 0
+    @transaction.atomic
+    def update(self, instance, validated_data):
 
-    #     for attr, value in validated_data.items():
-    #         setattr(instance, attr, value)
-    #     instance.save()
-    #     instance.refresh_from_db()
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        instance.refresh_from_db()
+        ncm = NCM.objects.filter(branch=instance.branch).first()
+        ncm.due = ncm.due + instance.amount if ncm.due is not None else instance.amount
+        ncm.save()
+        return instance

@@ -38,10 +38,12 @@ export default function EditNCMTransactionForm() {
         const resp = await api.get(
           `alltransaction/ncmtransaction/${ncmTransactionId}/`
         );
+        const rawAmount = parseFloat(resp.data.amount);
+        const normalizedAmount = Number.isFinite(rawAmount) ? Math.abs(rawAmount) : "";
         setOriginalData(resp.data);
         setFormData({
           date: resp.data.date,
-          amount: resp.data.amount,
+          amount: normalizedAmount,
           desc: resp.data.desc || "",
           branch: branchId,
         });
@@ -61,11 +63,22 @@ export default function EditNCMTransactionForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSalesLinkedTransaction) {
+      setError("This NCM transaction is linked to a sales transaction and cannot be edited.");
+      return;
+    }
     setSubmitting(true);
     try {
+      const enteredAmount = parseFloat(formData.amount);
+      const normalizedAbsAmount = Math.abs(Number.isFinite(enteredAmount) ? enteredAmount : 0);
+      const payload = {
+        ...formData,
+        amount: isReceivedAmount ? -normalizedAbsAmount : normalizedAbsAmount,
+      };
+
       await api.patch(
         `alltransaction/ncmtransaction/${ncmTransactionId}/`,
-        formData
+        payload
       );
       navigate(`/ncm-transactions/branch/${branchId}`);
     } catch {
@@ -88,12 +101,24 @@ export default function EditNCMTransactionForm() {
 
   const hasChanged = () => {
     if (!originalData) return false;
+
+    const hasAmountChanged = isReceivedAmount
+      ? parseFloat(formData.amount) !== Math.abs(parseFloat(originalData.amount) || 0)
+      : false;
+
     return (
       formData.date !== originalData.date ||
-      parseFloat(formData.amount) !== parseFloat(originalData.amount) ||
+      hasAmountChanged ||
       formData.desc !== (originalData.desc || "")
     );
   };
+
+  const isReceivedAmount = (parseFloat(originalData?.amount) || 0) < 0;
+
+  const isSalesLinkedTransaction = Boolean(
+    originalData?.all_sales_transaction ||
+      (Array.isArray(originalData?.all_sales_transactions) && originalData.all_sales_transactions.length > 0)
+  );
 
   if (loading) return (
     <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
@@ -119,6 +144,11 @@ export default function EditNCMTransactionForm() {
             Edit NCM Transaction
           </h2>
           {error && <p className="text-red-400 mb-4">{error}</p>}
+          {isSalesLinkedTransaction && (
+            <p className="text-amber-300 mb-4">
+              This NCM transaction is linked to a sales transaction and cannot be edited.
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -133,13 +163,14 @@ export default function EditNCMTransactionForm() {
                   value={formData.date}
                   onChange={handleChange}
                   required
+                  disabled={isSalesLinkedTransaction}
                   className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
 
               <div className="flex flex-col">
                 <Label htmlFor="amount" className="text-sm font-medium text-white mb-2">
-                  Amount
+                  {isReceivedAmount ? "Amount Received" : "Amount Credited"}
                 </Label>
                 <Input
                   type="number"
@@ -148,6 +179,7 @@ export default function EditNCMTransactionForm() {
                   value={formData.amount}
                   onChange={handleChange}
                   required
+                  disabled={isSalesLinkedTransaction || !isReceivedAmount}
                   className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
@@ -163,13 +195,14 @@ export default function EditNCMTransactionForm() {
                 value={formData.desc}
                 onChange={handleChange}
                 placeholder="Enter description"
+                disabled={isSalesLinkedTransaction}
                 className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
               />
             </div>
 
             <Button
               type="submit"
-              disabled={!hasChanged() || submitting}
+              disabled={isSalesLinkedTransaction || !hasChanged() || submitting}
               className="w-full bg-green-600 hover:bg-green-700 text-white"
             >
               Update NCM Transaction
