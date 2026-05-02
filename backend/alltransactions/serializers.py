@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ClosingCash, Vendor, Purchase, PurchaseTransaction,PurchaseReturn, Sales, SalesTransaction, VendorTransactions, SalesReturn, Expenses
+from .models import ClosingCash, Vendor, Purchase, PurchaseTransaction,PurchaseReturn, Sales, SalesTransaction, VendorTransactions, SalesReturn, Expenses, Customer
 from django.db import transaction
 from allinventory.models import Product,Brand
 from alltransactions.models import Staff,StaffTransactions, Debtor, DebtorTransaction, StaffTransactionDetail, Withdrawal, ClosingCash, NCM, NCMTransaction
@@ -12,6 +12,11 @@ class VendorSerializer(serializers.ModelSerializer):
         model = Vendor
         fields = '__all__'
 
+
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ['phone_number', 'name', 'loyalty_points']
 
     
 class PurchaseSerializer(serializers.ModelSerializer):
@@ -627,6 +632,11 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
                     'enterprise': instance.enterprise,
                     'branch': instance.branch
             })
+        
+        elif not is_ncm and old_is_ncm:
+            ncm_transaction = NCMTransaction.objects.filter(all_sales_transaction=instance).first()
+            if ncm_transaction:
+                ncm_transaction.delete()
 
         return instance
 

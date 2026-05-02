@@ -31,8 +31,11 @@ import Sidebar from "./allsidebar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import NewProductDialog from "./newProductDialog";
 import { Checkbox } from "./ui/checkbox";
+import AllSalesTransactionForm from "./allsalestransactionform";
 
 export default function EditAllSalesTransactionForm() {
+  return <AllSalesTransactionForm isEdit />;
+
   const api = useAxios();
   const navigate = useNavigate();
   const { branchId, salesId } = useParams();
@@ -199,7 +202,7 @@ export default function EditAllSalesTransactionForm() {
       }
     }
     fetchData();
-  }, [salesId, branchId]);
+  }, []);
 
   // Fetch branch info
   useEffect(() => {

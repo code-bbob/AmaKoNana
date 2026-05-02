@@ -51,9 +51,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import NewProductDialog from "@/components/newProductDialog"; // Adjust the path as needed
 import { Checkbox } from "@/components/ui/checkbox";
 
-function AllSalesTransactionForm({ isExchange = false }) {
+function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
   const api = useAxios();
-  const { branchId } = useParams();
+  const { branchId, salesId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const exchangeContext = isExchange ? (location.state || {}) : {};
@@ -97,6 +97,8 @@ function AllSalesTransactionForm({ isExchange = false }) {
   const [customerTotal, setCustomerTotal] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerEligibleForDiscount, setCustomerEligibleForDiscount] = useState(false);
+  const [customerLoyaltyPoints, setCustomerLoyaltyPoints] = useState(0);
+  const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({
     customer_name: "",
@@ -135,6 +137,9 @@ function AllSalesTransactionForm({ isExchange = false }) {
   const exchangeExceededAmount = isExchange ? Math.max(0, totalAmount - previousBalance) : 0;
   const exchangeRemainingBalance = isExchange ? Math.max(0, previousBalance - totalAmount) : 0;
   const paymentTargetAmount = isExchange ? exchangeExceededAmount : totalAmount;
+  const loyaltyTargetAmount = parseFloat(totalAmount) || 0;
+  const loyaltyAmountIsWhole = Number.isInteger(loyaltyTargetAmount);
+  const loyaltyCanCoverTotal = !isExchange && !!formData.phone_number && loyaltyTargetAmount > 0 && loyaltyAmountIsWhole && loyaltyTargetAmount <= (parseFloat(customerLoyaltyPoints) || 0);
   const requiresPaymentInput = !isExchange || exchangeExceededAmount > 0;
 
   // Simplified writeoff: totalAmount - amount_paid (clamped at 0) for non-mixed/non-credit.
@@ -229,19 +234,93 @@ function AllSalesTransactionForm({ isExchange = false }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [productsResponse, brandsResponse, nextBillResponse, debtorResponse, vendorResponse] =
-          await Promise.all([
-            api.get("allinventory/product/branch/" + branchId + "/"),
-            api.get("allinventory/brand/branch/" + branchId + "/"),
-            api.get("alltransaction/next-bill-no/"),
-            api.get("alltransaction/debtors/branch/" + branchId + "/"), // Fetching debtors
-            api.get("alltransaction/vendor/branch/" + branchId + "/"), // Fetching vendors
-          ]);
-        setProducts(productsResponse.data);
-        setBrands(brandsResponse.data);
-        setNextBill(nextBillResponse.data.bill_no);
-        setDebtors(debtorResponse.data); // Setting debtors data
-        setVendors(vendorResponse.data); // Setting vendors data
+        if (isEdit) {
+          const [productsResponse, brandsResponse, saleResponse, debtorResponse, vendorResponse] =
+            await Promise.all([
+              api.get("allinventory/product/branch/" + branchId + "/"),
+              api.get("allinventory/brand/branch/" + branchId + "/"),
+              api.get(`alltransaction/salestransaction/${salesId}/`),
+              api.get("alltransaction/debtors/branch/" + branchId + "/"),
+              api.get("alltransaction/vendor/branch/" + branchId + "/"),
+            ]);
+
+          setProducts(productsResponse.data);
+          setBrands(brandsResponse.data);
+          setDebtors(debtorResponse.data);
+          setVendors(vendorResponse.data);
+
+          const data = saleResponse.data;
+          const mappedSales = data.sales.map((saleLine) => {
+            const quantity = parseFloat(saleLine.quantity) || 0;
+            const unitPrice = parseFloat(saleLine.unit_price) || 0;
+            const lineSubtotal = quantity * unitPrice;
+            const discountAmount = parseFloat(saleLine.discount) || 0;
+
+            let discountType = "percent";
+            let discountValue = "";
+
+            if (discountAmount > 0 && lineSubtotal > 0) {
+              const percent = (discountAmount * 100) / lineSubtotal;
+              const roundedPercent = Math.round(percent);
+              if (Math.abs(percent - roundedPercent) < 0.01) {
+                discountType = "percent";
+                discountValue = String(roundedPercent);
+              } else {
+                discountType = "amount";
+                discountValue = discountAmount.toString();
+              }
+            }
+
+            return {
+              product: saleLine.product?.toString() || "",
+              unit_price: saleLine.unit_price?.toString() || "",
+              quantity: saleLine.quantity?.toString() || "",
+              discount_type: discountType,
+              discount_value: discountValue,
+              line_subtotal: lineSubtotal ? lineSubtotal.toFixed(2) : "",
+              total_price: saleLine.total_price?.toString() || "",
+            };
+          });
+
+          setFormData((prev) => ({
+            ...prev,
+            date: data.date || prev.date,
+            phone_number: data.phone_number?.toString() || "",
+            bill_no: data.bill_no?.toString() || "",
+            branch: data.branch?.toString() || prev.branch,
+            sales: mappedSales.length
+              ? mappedSales
+              : [{ product: "", unit_price: "", quantity: "", discount_type: "percent", discount_value: "", line_subtotal: "", total_price: "" }],
+            method: data.method || "cash",
+            is_ncm: Boolean(data.is_ncm),
+            prepaid: Boolean(data.prepaid),
+            prepaid_target: data.prepaid_target || "online",
+            delivery_charge: data.delivery_charge?.toString() || "",
+            cod_amount: data.cod_amount?.toString() || "",
+            debtor: data.debtor ? data.debtor.toString() : "",
+            amount_paid: data.amount_paid?.toString() || "",
+            amount_received: data.amount_paid?.toString() || "",
+            credited_amount: data.credited_amount?.toString() || "",
+            cash_amount: data.cash_amount?.toString() || "",
+            card_amount: data.card_amount?.toString() || "",
+            online_amount: data.online_amount?.toString() || "",
+          }));
+          setOpenProduct(new Array(mappedSales.length || 1).fill(false));
+        } else {
+          const [productsResponse, brandsResponse, nextBillResponse, debtorResponse, vendorResponse] =
+            await Promise.all([
+              api.get("allinventory/product/branch/" + branchId + "/"),
+              api.get("allinventory/brand/branch/" + branchId + "/"),
+              api.get("alltransaction/next-bill-no/"),
+              api.get("alltransaction/debtors/branch/" + branchId + "/"), // Fetching debtors
+              api.get("alltransaction/vendor/branch/" + branchId + "/"), // Fetching vendors
+            ]);
+          setProducts(productsResponse.data);
+          setBrands(brandsResponse.data);
+          setNextBill(nextBillResponse.data.bill_no);
+          setDebtors(debtorResponse.data); // Setting debtors data
+          setVendors(vendorResponse.data); // Setting vendors data
+        }
         setLoading(false);
       } catch (error) {
         setError("Failed to fetch data");
@@ -250,17 +329,17 @@ function AllSalesTransactionForm({ isExchange = false }) {
     };
 
     fetchData();
-  }, []);
+  }, [branchId, isEdit, salesId]);
 
   // When nextBill is available, update the formData's bill_no
   useEffect(() => {
-    if (nextBill) {
+    if (!isEdit && nextBill) {
       setFormData((prevFormData) => ({
         ...prevFormData,
         bill_no: nextBill,
       }));
     }
-  }, [nextBill]);
+  }, [isEdit, nextBill]);
 
   //for credited amount calculation
 
@@ -430,6 +509,8 @@ const handleNewProductVendorChange = (ids) => {
       );
       setCustomerTotal(res.data.total_spent);
       setCustomerName(res.data.name);
+      setCustomerLoyaltyPoints(parseFloat(res.data.loyalty_points) || 0);
+      setUseLoyaltyPoints(false);
       
       // Apply 5% discount to all sales if customer total > 0
       const customerAmount = parseFloat(res.data.total_spent) || 0;
@@ -449,6 +530,8 @@ const handleNewProductVendorChange = (ids) => {
       if (error.response && error.response.status === 404) {
         // Customer not found, show dialog to create new customer
         setCustomerEligibleForDiscount(false);
+        setCustomerLoyaltyPoints(0);
+        setUseLoyaltyPoints(false);
         setNewCustomerData({
           customer_name: "",
           phone_number: phone_number
@@ -466,6 +549,8 @@ const handleNewProductVendorChange = (ids) => {
       const res = await api.post("alltransaction/customer/", newCustomerData);
       setCustomerTotal(res.data.total_spent);
       setCustomerName(res.data.name);
+      setCustomerLoyaltyPoints(parseFloat(res.data.loyalty_points) || 0);
+      setUseLoyaltyPoints(false);
       // New customer will have total_spent = 0, so no discount eligibility
       setCustomerEligibleForDiscount(false);
       setShowNewCustomerDialog(false);
@@ -480,7 +565,7 @@ const handleNewProductVendorChange = (ids) => {
     try {
       setSubLoading(true);
       // Validate amount paid (empty only) for non-mixed
-      if (formData.method !== 'mixed' && requiresPaymentInput && (formData.amount_paid === null || formData.amount_paid === '')) {
+      if (!useLoyaltyPoints && formData.method !== 'mixed' && requiresPaymentInput && (formData.amount_paid === null || formData.amount_paid === '')) {
         setPaymentToast('Please enter the amount paid before submitting.');
         setSubLoading(false);
         return;
@@ -535,6 +620,8 @@ const handleNewProductVendorChange = (ids) => {
         sales: preparedSales,
         subtotal: subtotal,
         total_amount: originalTotal,
+        use_loyalty_points: useLoyaltyPoints,
+        loyalty_points_used: useLoyaltyPoints ? originalTotal : 0,
         is_ncm: Boolean(formData.is_ncm),
         delivery_charge: formData.is_ncm ? (parseFloat(formData.delivery_charge) || 0) : 0,
         cod_amount: formData.is_ncm ? (parseFloat(formData.cod_amount) || 0) : 0,
@@ -550,6 +637,15 @@ const handleNewProductVendorChange = (ids) => {
           ? `Sales exchanged exceeding balance ${previousBalance.toFixed(2)}`
           : ''
       };
+
+      if (useLoyaltyPoints) {
+        payload.amount_paid = 0;
+        payload.cash_amount = 0;
+        payload.card_amount = 0;
+        payload.online_amount = 0;
+        payload.credited_amount = 0;
+        payload.method = 'cash';
+      }
 
       if (isExchange) {
         payload.cash_amount = 0;
@@ -602,10 +698,12 @@ const handleNewProductVendorChange = (ids) => {
 
 
       console.log("Submitting payload:", payload);
-      const response = await api.post(
-        "alltransaction/salestransaction/",
-        payload
-      );
+      const response = isEdit
+        ? await api.patch(`alltransaction/salestransaction/${salesId}/`, payload)
+        : await api.post(
+            "alltransaction/salestransaction/",
+            payload
+          );
       // navigate('/invoice/' + response.data.id);
       navigate("/sales/branch/" + branchId);
     } catch (error) {
@@ -709,7 +807,11 @@ const handleNewProductVendorChange = (ids) => {
       // If no current barcode word, open payment dialog instead of submitting directly
       if (currentWord.trim().length === 0){
         e.preventDefault();
-        setShowPaymentDialog(true);
+        if (useLoyaltyPoints) {
+          handleSubmit(e);
+        } else {
+          setShowPaymentDialog(true);
+        }
         return;
       }
       const scannedCode = currentWord.slice(-13, -1);
@@ -869,7 +971,17 @@ const handleNewProductVendorChange = (ids) => {
               </div>
 
             {error && <p className="text-red-600 mb-4">{error}</p>}
-            <form onSubmit={(e)=>{e.preventDefault(); setShowPaymentDialog(true);}} className="space-y-6">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (useLoyaltyPoints) {
+                  handleSubmit(e);
+                } else {
+                  setShowPaymentDialog(true);
+                }
+              }}
+              className="space-y-6"
+            >
               <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
                 <div className="flex flex-col col-span-3">
                   <Label
@@ -945,6 +1057,23 @@ const handleNewProductVendorChange = (ids) => {
                       Check
                     </Button>
                   </div>
+                  {formData.phone_number && customerLoyaltyPoints > 0 && (
+                    <div className="mt-2 text-xs text-indigo-300">
+                      Loyalty Points: {parseFloat(customerLoyaltyPoints || 0).toFixed(2)}
+                    </div>
+                  )}
+                  {loyaltyCanCoverTotal && (
+                    <div className="mt-3 flex items-center gap-2 rounded border border-indigo-500/40 bg-indigo-500/10 px-3 py-2">
+                      <Checkbox
+                        id="use_loyalty_points"
+                        checked={useLoyaltyPoints}
+                        onCheckedChange={(checked) => setUseLoyaltyPoints(checked === true)}
+                      />
+                      <Label htmlFor="use_loyalty_points" className="text-sm text-indigo-200 cursor-pointer">
+                        Use loyalty points for this sale (amount paid = 0)
+                      </Label>
+                    </div>
+                  )}
                 </div>
                 
               </div>
@@ -1099,7 +1228,7 @@ const handleNewProductVendorChange = (ids) => {
                 disabled={subLoading}
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
-                Proceed to Payment (Enter)
+                {useLoyaltyPoints ? "Submit with Loyalty Points (Enter)" : "Proceed to Payment (Enter)"}
               </Button>
             </form>
 

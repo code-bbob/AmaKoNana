@@ -18,7 +18,9 @@ import {
   X,
   Building,
   ChevronDown,
-  RefreshCw
+  RefreshCw,
+  Users,
+  Trophy
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -194,6 +196,15 @@ export default function Sidebar() {
       items: [
         { title: 'Debtors', icon: BookUser, path: 'debtors' },
         { title: 'Debtor Transactions', icon: BookUser, path: 'debtor-transactions' }
+      ]
+    },
+    {
+      label: 'Customers',
+      icon: Users,
+      mainPath: 'customers',
+      items: [
+        { title: 'Customers', icon: Users, path: 'customers' },
+        { title: 'Customer Lottery', icon: Trophy, path: 'customer-lottery' }
       ]
     },
     {

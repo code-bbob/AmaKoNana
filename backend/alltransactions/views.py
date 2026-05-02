@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from datetime import timedelta
 from rest_framework.response import Response
-from .serializers import PurchaseTransactionSerializer,PurchaseReturnSerializer,SalesTransactionSerializer,SalesReturnSerializer,VendorSerializer,VendorTransactionSerializer,StaffTransactionSerializer,StaffSerializer, ExpensesSerializer, WithdrawalSerializer, ClosingCashSerializer
+import random
+from .serializers import PurchaseTransactionSerializer,PurchaseReturnSerializer,SalesTransactionSerializer,SalesReturnSerializer,VendorSerializer,VendorTransactionSerializer,StaffTransactionSerializer,StaffSerializer, ExpensesSerializer, WithdrawalSerializer, ClosingCashSerializer, CustomerSerializer
 from enterprise.models import Branch
 from rest_framework.views import APIView
 from rest_framework import status
@@ -155,12 +156,57 @@ class SalesTransactionView(APIView):
     def post(self, request, format=None):
         user = request.user
         enterprise = user.person.enterprise
-        request.data['enterprise'] = enterprise.id
-        request.data['person'] = user.person
-        serializer = SalesTransactionSerializer(data=request.data)
+        data = request.data.copy()
+
+        use_loyalty_points = str(data.pop('use_loyalty_points', 'false')).lower() in ['true', '1', 'yes', 'on']
+        loyalty_points_used = float(data.pop('loyalty_points_used', 0) or 0)
+
+        data['enterprise'] = enterprise.id
+        data['person'] = user.person
+
+        customer_for_loyalty = None
+        total_amount = float(data.get('total_amount', 0) or 0)
+
+        if use_loyalty_points:
+            phone_number = data.get('phone_number')
+            if not phone_number:
+                return Response({'error': 'Customer phone number is required when using loyalty points.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            customer_for_loyalty = Customer.objects.filter(
+                enterprise=enterprise,
+                phone_number=phone_number
+            ).first()
+
+            if not customer_for_loyalty:
+                return Response({'error': 'Customer not found for loyalty points usage.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            points_required = loyalty_points_used if loyalty_points_used > 0 else total_amount
+            if points_required <= 0:
+                return Response({'error': 'Invalid sale amount for loyalty points usage.'}, status=status.HTTP_400_BAD_REQUEST)
+            if int(points_required) != points_required:
+                return Response({'error': 'Loyalty-point payment requires a whole-number sale amount.'}, status=status.HTTP_400_BAD_REQUEST)
+            points_required = int(points_required)
+
+            current_points = float(customer_for_loyalty.loyalty_points or 0)
+            if points_required > current_points:
+                return Response({'error': 'Insufficient loyalty points for this sale.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            data['amount_paid'] = 0
+            data['cash_amount'] = 0
+            data['card_amount'] = 0
+            data['online_amount'] = 0
+            data['credited_amount'] = 0
+
+        serializer = SalesTransactionSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            with transaction.atomic():
+                sale = serializer.save()
+                if use_loyalty_points and customer_for_loyalty:
+                    points_required = loyalty_points_used if loyalty_points_used > 0 else total_amount
+                    points_required = int(points_required)
+                    customer_for_loyalty.loyalty_points = max(0, int(customer_for_loyalty.loyalty_points or 0) - points_required)
+                    customer_for_loyalty.save(update_fields=['loyalty_points'])
+            return Response(SalesTransactionSerializer(sale).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
     def get(self, request,pk=None,branch=None, format=None):
@@ -878,6 +924,149 @@ class CustomerView(APIView):
             for sale in sales:
                 total_spent += sale.total_amount
             return Response({"name": customer.name, "phone_number": customer.phone_number, "total_spent": total_spent})
+
+
+class ListCustomerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """List enterprise customers using backend pagination (100/page)."""
+        enterprise = request.user.person.enterprise
+        customers = Customer.objects.filter(enterprise=enterprise)
+
+        search = (request.GET.get('search') or '').strip()
+        if search:
+            customers = customers.filter(
+                Q(name__icontains=search) |
+                Q(phone_number__icontains=search)
+            )
+
+        customers = customers.order_by('-loyalty_points', 'name')
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 100
+        paginator.page_size_query_param = None
+        paginator.max_page_size = 100
+
+        paginated_customers = paginator.paginate_queryset(customers, request)
+        serializer = CustomerSerializer(paginated_customers, many=True)
+        response = paginator.get_paginated_response(serializer.data)
+        response.data['page'] = paginator.page.number
+        response.data['page_size'] = paginator.page_size
+        response.data['total_pages'] = paginator.page.paginator.num_pages
+        return response
+
+
+class CustomerLotteryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """Draw X random winners from customers based on optional date range and loyalty weighting.
+        
+        Request body:
+        {
+            "num_winners": int,
+            "use_loyalty_points": bool (default=True),
+            "start_date": "YYYY-MM-DD" (optional),
+            "end_date": "YYYY-MM-DD" (optional)
+        }
+        
+        If date range provided: only customers with sales in that range are eligible.
+        If use_loyalty_points=True: weighted by loyalty_points.
+        If use_loyalty_points=False: all eligible customers have equal probability.
+        """
+        from datetime import datetime
+        from alltransactions.models import SalesTransaction
+        
+        enterprise = request.user.person.enterprise
+        num_winners = int(request.data.get('num_winners', 1))
+        use_loyalty_points = request.data.get('use_loyalty_points', True)
+        start_date_str = request.data.get('start_date')
+        end_date_str = request.data.get('end_date')
+        
+        if num_winners < 1:
+            return Response(
+                {'error': 'num_winners must be at least 1'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Determine eligible customers
+        eligible_customers = set()
+        
+        if start_date_str and end_date_str:
+            # Filter by sales within date range
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return Response(
+                    {'error': 'Invalid date format. Use YYYY-MM-DD'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            sales_in_range = SalesTransaction.objects.filter(
+                enterprise=enterprise,
+                date__gte=start_date,
+                date__lte=end_date
+            )
+            
+            for sale in sales_in_range:
+                if sale.phone_number:
+                    eligible_customers.add(sale.phone_number)
+        else:
+            # No date range: all customers are eligible
+            all_customers = Customer.objects.filter(enterprise=enterprise)
+            eligible_customers = {c.phone_number for c in all_customers}
+        
+        if not eligible_customers:
+            return Response(
+                {'error': 'No eligible customers found for the specified criteria'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get customer objects for eligible customers
+        customers = Customer.objects.filter(
+            enterprise=enterprise,
+            phone_number__in=eligible_customers
+        )
+        
+        # Build lottery pool
+        lottery_pool = []
+        
+        if use_loyalty_points:
+            # Weighted by loyalty points
+            for customer in customers:
+                points = max(0, customer.loyalty_points or 0)
+                entries = max(1, points)  # minimum 1 entry per customer
+                lottery_pool.extend([customer] * entries)
+        else:
+            # Fair spin: each customer has exactly 1 entry
+            lottery_pool = list(customers)
+        
+        if not lottery_pool:
+            return Response(
+                {'error': 'No customers available for lottery'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Draw winners (with replacement possible - same customer can win multiple times)
+        available_winners = min(num_winners, len(lottery_pool))
+        winners_list = random.sample(lottery_pool, available_winners)
+        
+        # Keep all winners including duplicates - each entry is a separate win
+        serializer = CustomerSerializer(winners_list, many=True)
+        return Response({
+            'num_winners_requested': num_winners,
+            'num_winners_drawn': len(winners_list),
+            'use_loyalty_points': use_loyalty_points,
+            'date_range': {
+                'start_date': start_date_str,
+                'end_date': end_date_str
+            } if start_date_str and end_date_str else None,
+            'eligible_customers_count': len(eligible_customers),
+            'winners': serializer.data
+        }, status=status.HTTP_200_OK)
+
 
 class SalesReturnView(APIView):
 
@@ -1794,7 +1983,9 @@ class IncomeExpenseReportView(APIView):
         closing_cash = closing_cash.order_by('-date', '-id')  # Get the latest closing cash before the report start date
         if closing_cash.exists() == False:
             closing_cash = ClosingCash.objects.filter(enterprise=enterprise,branch=branch, date__lte=report_start_date).order_by('-date').first()
-            if closing_cash:
+            if closing_cash and closing_cash.date == report_start_date:
+                message =f"Your cash was already closed for the report start date of {report_start_date}."
+            elif closing_cash:
                 required_date = closing_cash.date + timedelta(days=1)
                 message= f"Your closing cash for the previous date was not set. Now using the last closing cash of {closing_cash.date} to generate the report. The generated report will start from {required_date}."
                 report_start_date = required_date

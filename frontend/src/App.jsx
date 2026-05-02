@@ -8,6 +8,7 @@ import BranchProtectedRoute from "./redux/BranchProtectedRoute";
 import UserRegister from "./pages/userRegister";
 import InitialBranchSelection from "./pages/InitialBranchSelection";
 import AllLandingPage from "./pages/allLandingPage";
+import CustomerLotteryPage from "./pages/customer_lottery";
 import AllPurchaseTransactions from "./pages/allPurchase";
 import AllPurchaseTransactionForm from "./components/allpurchasetransactionform";
 import EditAllPurchaseTransactionForm from "./components/editallpurchase";
@@ -20,6 +21,7 @@ import AllSalesTransactions from "./pages/allSales";
 import AllSalesTransactionForm from "./components/allsalestransactionform";
 import useGlobalKeyPress from "./hooks/globalKeyPress";
 import AllVendorPage  from "./pages/allvendors";
+import AllCustomersPage from "./pages/allCustomers";
 import EditAllSalesTransactionForm from "./components/editallsales";
 import AllVendorTransactions from "./pages/allvendortransactions";
 import AllVendorTransactionForm from "./pages/allvendortransactionform";
@@ -130,6 +132,10 @@ function App() {
 
           <Route path="vendors/branch/:branchId" element={<AllVendorPage />} />
           <Route path="vendors/statement/:vendorId" element={<AllVendorStatementPage />} />
+          <Route path="customers" element={<AllCustomersPage />} />
+          <Route path="customers/branch/:branchId" element={<AllCustomersPage />} />
+          <Route path="customer-lottery" element={<CustomerLotteryPage />} />
+          <Route path="customer-lottery/branch/:branchId" element={<CustomerLotteryPage />} />
           <Route path="staff/branch/:branchId/statement/:staffId" element={<StaffStatementPage />} />
 
           <Route path="vendor-transactions/branch/:branchId" element={<AllVendorTransactions />}/>
