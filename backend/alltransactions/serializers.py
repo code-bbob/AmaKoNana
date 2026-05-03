@@ -14,6 +14,8 @@ class VendorSerializer(serializers.ModelSerializer):
 
 
 class CustomerSerializer(serializers.ModelSerializer):
+    loyalty_points = serializers.DecimalField(max_digits=12, decimal_places=2)
+
     class Meta:
         model = Customer
         fields = ['phone_number', 'name', 'loyalty_points']

@@ -255,7 +255,7 @@ export default function AllSalesReturns() {
                     <div>
                       <p>{returnItem.sales_transaction.name}</p>
                       <p className="text-sm text-gray-400">
-                        Bill No: {returnItem.sales_transaction.bill_no}
+                        {/* Bill No: {returnItem.sales_transaction.bill_no} */}
                       </p>
                     </div>
                     <span className="mt-2 lg:mt-0 text-sm lg:text-base">
@@ -274,7 +274,8 @@ export default function AllSalesReturns() {
                         );
                       }}
                     >
-                      Original Transaction: {returnItem.sales_transaction.id}
+                      {/* Remove this after vat */}
+                      {/* Original Transaction: {returnItem.sales_transaction.id} */}
                     </p>
                     <div className="flex justify-between items-center text-sm mt-1 text-slate-300">
                       <p className="text-white">

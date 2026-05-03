@@ -92,7 +92,7 @@ class SalesTransaction(models.Model):
     bill_no = models.IntegerField()
     branch = models.ForeignKey(Branch,related_name='sales_transaction',on_delete=models.CASCADE, null=True, blank=True)
     subtotal = models.FloatField(null=True,blank=True)
-    method = models.CharField(max_length=20,choices=(('cash','cash'),('online','online'),('card','card'),('credit','credit'),('mixed','mixed'),('transfer','transfer')),default='cash')
+    method = models.CharField(max_length=20,choices=(('cash','cash'),('online','online'),('card','card'),('credit','credit'),('mixed','mixed'),('transfer','transfer'), ('loyalty','loyalty')),default='cash')
     cash_amount = models.FloatField(null=True,blank=True,default=0)
     online_amount = models.FloatField(null=True,blank=True,default=0)
     card_amount = models.FloatField(null=True,blank=True,default=0)
@@ -107,6 +107,7 @@ class SalesTransaction(models.Model):
     is_sale_exchange = models.BooleanField(default=False)
     exchange_previous_balance = models.FloatField(null=True, blank=True, default=0)
     exchange_exceeded_amount = models.FloatField(null=True, blank=True, default=0)
+    hidden = models.BooleanField(default=False)
     
     def __str__(self):
         return f"Sales Transaction {self.pk} of {self.enterprise.name}"
@@ -234,7 +235,8 @@ class Customer(models.Model):
     phone_number = models.CharField(primary_key=True,max_length=10,blank=True)
     total_spent = models.FloatField(null=True,blank=True,default=0)
     enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE,related_name='customers')
-    loyalty_points = models.IntegerField(null=True, blank=True, default=0)
+    from decimal import Decimal
+    loyalty_points = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=Decimal('0.00'))
 
     def __str__(self):
         return self.name

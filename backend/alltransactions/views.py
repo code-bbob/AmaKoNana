@@ -2,6 +2,7 @@ from django.shortcuts import render
 from datetime import timedelta
 from rest_framework.response import Response
 import random
+from decimal import Decimal
 from .serializers import PurchaseTransactionSerializer,PurchaseReturnSerializer,SalesTransactionSerializer,SalesReturnSerializer,VendorSerializer,VendorTransactionSerializer,StaffTransactionSerializer,StaffSerializer, ExpensesSerializer, WithdrawalSerializer, ClosingCashSerializer, CustomerSerializer
 from enterprise.models import Branch
 from rest_framework.views import APIView
@@ -165,17 +166,21 @@ class SalesTransactionView(APIView):
         data['person'] = user.person
 
         customer_for_loyalty = None
+        sale_customer = None
         total_amount = float(data.get('total_amount', 0) or 0)
+        phone_number = data.get('phone_number')
+
+        if phone_number:
+            sale_customer = Customer.objects.filter(
+                enterprise=enterprise,
+                phone_number=phone_number,
+            ).first()
 
         if use_loyalty_points:
-            phone_number = data.get('phone_number')
             if not phone_number:
                 return Response({'error': 'Customer phone number is required when using loyalty points.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            customer_for_loyalty = Customer.objects.filter(
-                enterprise=enterprise,
-                phone_number=phone_number
-            ).first()
+            customer_for_loyalty = sale_customer
 
             if not customer_for_loyalty:
                 return Response({'error': 'Customer not found for loyalty points usage.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -183,12 +188,11 @@ class SalesTransactionView(APIView):
             points_required = loyalty_points_used if loyalty_points_used > 0 else total_amount
             if points_required <= 0:
                 return Response({'error': 'Invalid sale amount for loyalty points usage.'}, status=status.HTTP_400_BAD_REQUEST)
-            if int(points_required) != points_required:
-                return Response({'error': 'Loyalty-point payment requires a whole-number sale amount.'}, status=status.HTTP_400_BAD_REQUEST)
-            points_required = int(points_required)
 
-            current_points = float(customer_for_loyalty.loyalty_points or 0)
-            if points_required > current_points:
+            # Allow fractional totals; compare as Decimals and deduct precisely.
+            current_points = Decimal(str(customer_for_loyalty.loyalty_points or '0'))
+            req_points = Decimal(str(points_required))
+            if req_points > current_points:
                 return Response({'error': 'Insufficient loyalty points for this sale.'}, status=status.HTTP_400_BAD_REQUEST)
 
             data['amount_paid'] = 0
@@ -203,9 +207,21 @@ class SalesTransactionView(APIView):
                 sale = serializer.save()
                 if use_loyalty_points and customer_for_loyalty:
                     points_required = loyalty_points_used if loyalty_points_used > 0 else total_amount
-                    points_required = int(points_required)
-                    customer_for_loyalty.loyalty_points = max(0, int(customer_for_loyalty.loyalty_points or 0) - points_required)
+                    deduction = Decimal(str(points_required))
+                    current_points = Decimal(str(customer_for_loyalty.loyalty_points or '0'))
+                    new_points = current_points - deduction
+                    if new_points < Decimal('0'):
+                        new_points = Decimal('0')
+                    # Store with two decimal places
+                    customer_for_loyalty.loyalty_points = new_points.quantize(Decimal('0.01'))
                     customer_for_loyalty.save(update_fields=['loyalty_points'])
+
+                if sale_customer and not use_loyalty_points:
+                    earned_points = (Decimal(str(sale.amount_paid)) * Decimal('0.025')).quantize(Decimal('0.01'))
+                    if earned_points > Decimal('0'):
+                        current_points = Decimal(str(sale_customer.loyalty_points or '0'))
+                        sale_customer.loyalty_points = (current_points + earned_points).quantize(Decimal('0.01'))
+                        sale_customer.save(update_fields=['loyalty_points'])
             return Response(SalesTransactionSerializer(sale).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
@@ -215,20 +231,33 @@ class SalesTransactionView(APIView):
         search = request.GET.get('search')
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
-        transactions = SalesTransaction.objects.filter(enterprise=enterprise)
+        is_return = False
+        import re
+        if search:
+            pattern = r'\breturn(ed)?\b'
+
+            is_return = bool(re.search(pattern, search, re.IGNORECASE))
+            search = re.sub(pattern, '', search, flags=re.IGNORECASE).strip()
+        
+        transactions = SalesTransaction.objects.filter(enterprise=enterprise, hidden=False)
 
         if pk:
             sales_transaction = SalesTransaction.objects.get(id=pk)
             serializer = SalesTransactionSerializer(sales_transaction)
             return Response(serializer.data)
         
-        if branch:
+        if branch and not is_return:
+            transactions = SalesTransaction.objects.filter(enterprise=enterprise,branch=branch, hidden=False)
+        elif branch and is_return:
             transactions = SalesTransaction.objects.filter(enterprise=enterprise,branch=branch)
+            print("Return")
+
         
         if search:
             product_transactions = transactions.filter(sales__product__name__istartswith = search)
             customer_transactions = transactions.filter(name__icontains = search)
             phone_transactions = transactions.filter(phone_number__icontains = search)
+            print(phone_transactions)
             bill_transactions = transactions.filter(bill_no__iexact = search)
             transactions = product_transactions.union(customer_transactions,phone_transactions,bill_transactions)
         
@@ -239,7 +268,8 @@ class SalesTransactionView(APIView):
         if start_date and end_date:
             
             transactions = SalesTransaction.objects.filter(
-                date__range=(start_date, end_date)
+                date__range=(start_date, end_date),
+                hidden=False
             )
 
         transactions = transactions.order_by('-date','-id')
@@ -264,18 +294,104 @@ class SalesTransactionView(APIView):
         except SalesTransaction.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        serializer = SalesTransactionSerializer(sales_transaction,data=data,partial=True)
-        #print("asdmnb",serializer)
+        # Keep original values to adjust loyalty points correctly
+        orig_method = sales_transaction.method
+        orig_amount_paid = sales_transaction.amount_paid if sales_transaction.amount_paid else 0
+        orig_phone = sales_transaction.phone_number
+
+        # Prepare and validate loyalty usage before saving
+        new_data = data.copy()
+        use_loyalty_points = str(new_data.pop('use_loyalty_points', 'false')).lower() in ['true', '1', 'yes', 'on']
+        loyalty_points_used = float(new_data.pop('loyalty_points_used', 0) or 0)
+
+        phone_number = new_data.get('phone_number') or orig_phone
+        enterprise = request.user.person.enterprise
+        customer_for_loyalty = None
+        if phone_number:
+            customer_for_loyalty = Customer.objects.filter(
+                enterprise=enterprise,
+                phone_number=phone_number,
+            ).first()
+
+        if use_loyalty_points:
+            if not phone_number:
+                return Response({'error': 'Customer phone number is required when using loyalty points.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not customer_for_loyalty:
+                return Response({'error': 'Customer not found for loyalty points usage.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            points_required = loyalty_points_used if loyalty_points_used > 0 else float(new_data.get('total_amount') or sales_transaction.total_amount or 0)
+            if points_required <= 0:
+                return Response({'error': 'Invalid sale amount for loyalty points usage.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            current_points = Decimal(str(customer_for_loyalty.loyalty_points or '0'))
+            req_points = Decimal(str(points_required))
+            if req_points > current_points:
+                return Response({'error': 'Insufficient loyalty points for this sale.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Force amounts to zero when using loyalty points
+            new_data['amount_paid'] = 0
+            new_data['cash_amount'] = 0
+            new_data['card_amount'] = 0
+            new_data['online_amount'] = 0
+            new_data['credited_amount'] = 0
+            new_data['method'] = 'loyalty'
+
+        serializer = SalesTransactionSerializer(sales_transaction, data=new_data, partial=True)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors)
+            with transaction.atomic():
+                sale = serializer.save()
+
+                # Determine customers before/after update
+                orig_customer = Customer.objects.filter(phone_number=orig_phone, enterprise=enterprise).first() if orig_phone else None
+                new_customer = Customer.objects.filter(phone_number=sale.phone_number, enterprise=enterprise).first() if sale.phone_number else None
+
+                # Reverse effects of original transaction on orig_customer
+                if orig_customer:
+                    if orig_method == 'loyalty':
+                        points_to_restore = Decimal(str(orig_amount_paid)) if orig_amount_paid > 0 else Decimal('0')
+                        current_points = Decimal(str(orig_customer.loyalty_points or '0'))
+                        orig_customer.loyalty_points = (current_points + points_to_restore).quantize(Decimal('0.01'))
+                        orig_customer.save(update_fields=['loyalty_points'])
+                    else:
+                        earned_points = (Decimal(str(orig_amount_paid)) * Decimal('0.025')).quantize(Decimal('0.01'))
+                        if earned_points > Decimal('0'):
+                            current_points = Decimal(str(orig_customer.loyalty_points or '0'))
+                            orig_customer.loyalty_points = (current_points - earned_points).quantize(Decimal('0.01'))
+                            orig_customer.save(update_fields=['loyalty_points'])
+
+                # Apply effects of the updated transaction to the (new) customer
+                # If loyalty was used in this update, deduct points
+                if (sale.method == 'loyalty') and customer_for_loyalty:
+                    points_required = Decimal(str(loyalty_points_used)) if loyalty_points_used > 0 else Decimal(str(sale.total_amount or 0))
+                    deduction = points_required
+                    current_points = Decimal(str(customer_for_loyalty.loyalty_points or '0'))
+                    new_points = current_points - deduction
+                    if new_points < Decimal('0'):
+                        new_points = Decimal('0')
+                    customer_for_loyalty.loyalty_points = new_points.quantize(Decimal('0.01'))
+                    customer_for_loyalty.save(update_fields=['loyalty_points'])
+                else:
+                    # Award points for paid amount on non-loyalty transactions
+                    if new_customer and sale.method != 'loyalty':
+                        earned_points = (Decimal(str(sale.amount_paid or 0)) * Decimal('0.025')).quantize(Decimal('0.01'))
+                        if earned_points > Decimal('0'):
+                            current_points = Decimal(str(new_customer.loyalty_points or '0'))
+                            new_customer.loyalty_points = (current_points + earned_points).quantize(Decimal('0.01'))
+                            new_customer.save(update_fields=['loyalty_points'])
+
+            return Response(SalesTransactionSerializer(sale).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
     @transaction.atomic
     def delete(self, request, pk, format=None):
         sales_transaction = SalesTransaction.objects.get(id=pk)
         role = request.user.person.role
         modify_stock = request.GET.get('flag')
+        amt_paid = sales_transaction.amount_paid if sales_transaction.amount_paid else 0
+        customer = Customer.objects.filter(phone_number=sales_transaction.phone_number, enterprise=sales_transaction.enterprise).first()
+        #if it was a loyalty points transaction, we need to restore the points to the customer
+        use_loyalty_points = sales_transaction.method == "loyalty"
         for sale in sales_transaction.sales.all():
             if sale.returned:
                 # Handle returned sales
@@ -331,6 +447,20 @@ class SalesTransactionView(APIView):
             ncmt.delete()
 
         sales_transaction.delete()
+
+        if customer:
+            if not use_loyalty_points:
+                earned_points = (Decimal(str(amt_paid)) * Decimal('0.025')).quantize(Decimal('0.01'))
+                current_points = Decimal(str(customer.loyalty_points or '0'))
+                customer.loyalty_points = (current_points - earned_points).quantize(Decimal('0.01'))
+                customer.save(update_fields=['loyalty_points'])
+            else:
+                # If it was a loyalty points transaction, restore the points
+                points_to_restore = Decimal(str(amt_paid)) if amt_paid > 0 else Decimal('0')
+                current_points = Decimal(str(customer.loyalty_points or '0'))
+                customer.loyalty_points = (current_points + points_to_restore).quantize(Decimal('0.01'))
+                customer.save(update_fields=['loyalty_points'])
+
         return Response("Deleted")
 
         
@@ -665,7 +795,7 @@ class SalesReportView(APIView):
         end_date = request.GET.get('end_date')
         product = request.GET.get('product')
 
-        sales = Sales.objects.filter(sales_transaction__enterprise = request.user.person.enterprise,returned = False)
+        sales = Sales.objects.filter(sales_transaction__enterprise = request.user.person.enterprise, returned = False, sales_transaction__hidden = False)
         if branch:
             sales = sales.filter(sales_transaction__branch = branch)
         if search:
@@ -802,7 +932,7 @@ class PurchaseReportView(APIView):
 class NextBillNo(APIView):
     def get(self,request):
         max_bill_no = SalesTransaction.objects.filter(
-            enterprise=request.user.person.enterprise
+            enterprise=request.user.person.enterprise,
         ).aggregate(max_bill_no=Max('bill_no'))['max_bill_no']
         
         if max_bill_no is None:
@@ -908,7 +1038,7 @@ class CustomerView(APIView):
             total_amount = 0
             for sale in sales:
                 total_amount += sale.total_amount
-            return Response({"name": customer.name, "phone_number": customer.phone_number, "total_spent": total_amount})
+            return Response({"name": customer.name, "phone_number": customer.phone_number, "total_spent": total_amount, "loyalty_points": customer.loyalty_points})
         else:
             return Response("Customer not found", status=status.HTTP_404_NOT_FOUND)
 

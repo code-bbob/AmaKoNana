@@ -110,6 +110,9 @@ export default function AllExpensesPage() {
     }
   }
 
+  // remove withdrawals from the list
+  const filteredRows = rows.filter(row => row.type === 'Expense')
+
   if (loading) {
     return (<div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">Loading...</div>)
   }
@@ -160,8 +163,8 @@ export default function AllExpensesPage() {
         </div>
 
         <div className="space-y-6">
-          {rows.length > 0 ? (
-            rows.map((exp) => (
+          {filteredRows.length > 0 ? (
+            filteredRows.map((exp) => (
               <Card key={`${exp.id}-${exp.date}-${exp.type}`} onClick={() => {
                 if (exp.type === 'Expense') {
                   navigate(`/expenses/branch/${branchId}/edit/${exp.id}`)
