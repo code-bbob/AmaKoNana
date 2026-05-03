@@ -258,16 +258,9 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
   useEffect(() => {
     if (!formData.is_ncm) return;
 
-    const enteredAmountPaid = parseFloat(
-      formData.amountPaid ?? formData.amount_paid,
-    );
-    const hasEnteredAmountPaid =
-      Number.isFinite(enteredAmountPaid) && enteredAmountPaid > 0;
     const prepaidAmount = formData.prepaid
-      ? hasEnteredAmountPaid
-        ? enteredAmountPaid
-        : (parseFloat(totalAmount) || 0) +
-          (parseFloat(formData.delivery_charge) || 0)
+      ? (parseFloat(totalAmount) || 0) +
+        (parseFloat(formData.delivery_charge) || 0)
       : 0;
     const target = formData.prepaid_target || "online";
     const targetMethod = target === "credit" ? "credit" : target;

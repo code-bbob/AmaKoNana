@@ -835,7 +835,8 @@ class SalesReportView(APIView):
         rows = []
         for sale in sales:
             if sale.sales_transaction.id not in st:
-                write_off += sale.sales_transaction.total_amount - sale.sales_transaction.amount_paid
+                if sale.sales_transaction.is_ncm == False:
+                    write_off += sale.sales_transaction.total_amount - sale.sales_transaction.amount_paid
                 st.append(sale.sales_transaction.id)
                 cash_sales += sale.sales_transaction.cash_amount
                 card_sales += sale.sales_transaction.card_amount

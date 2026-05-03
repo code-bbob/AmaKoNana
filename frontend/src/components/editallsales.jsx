@@ -285,7 +285,8 @@ export default function EditAllSalesTransactionForm() {
     if (!formData.is_ncm) return;
 
     const prepaidAmount = formData.prepaid
-      ? ((parseFloat(totalAmount) || 0) + (parseFloat(formData.delivery_charge) || 0))
+      ? (parseFloat(totalAmount) || 0) +
+        (parseFloat(formData.delivery_charge) || 0)
       : 0;
     const target = formData.prepaid_target || "online";
     const targetMethod = target === "credit" ? "credit" : target;
