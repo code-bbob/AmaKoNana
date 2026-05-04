@@ -217,7 +217,7 @@ class SalesTransactionView(APIView):
                     customer_for_loyalty.save(update_fields=['loyalty_points'])
 
                 if sale_customer and not use_loyalty_points:
-                    earned_points = (Decimal(str(sale.amount_paid)) * Decimal('0.025')).quantize(Decimal('0.01'))
+                    earned_points = (Decimal(str(sale.amount_paid)) * Decimal('1')).quantize(Decimal('0.01'))
                     if earned_points > Decimal('0'):
                         current_points = Decimal(str(sale_customer.loyalty_points or '0'))
                         sale_customer.loyalty_points = (current_points + earned_points).quantize(Decimal('0.01'))
@@ -354,7 +354,7 @@ class SalesTransactionView(APIView):
                         orig_customer.loyalty_points = (current_points + points_to_restore).quantize(Decimal('0.01'))
                         orig_customer.save(update_fields=['loyalty_points'])
                     else:
-                        earned_points = (Decimal(str(orig_amount_paid)) * Decimal('0.025')).quantize(Decimal('0.01'))
+                        earned_points = (Decimal(str(orig_amount_paid)) * Decimal('1')).quantize(Decimal('0.01'))
                         if earned_points > Decimal('0'):
                             current_points = Decimal(str(orig_customer.loyalty_points or '0'))
                             orig_customer.loyalty_points = (current_points - earned_points).quantize(Decimal('0.01'))
@@ -374,7 +374,7 @@ class SalesTransactionView(APIView):
                 else:
                     # Award points for paid amount on non-loyalty transactions
                     if new_customer and sale.method != 'loyalty':
-                        earned_points = (Decimal(str(sale.amount_paid or 0)) * Decimal('0.025')).quantize(Decimal('0.01'))
+                        earned_points = (Decimal(str(sale.amount_paid or 0)) * Decimal('1')).quantize(Decimal('0.01'))
                         if earned_points > Decimal('0'):
                             current_points = Decimal(str(new_customer.loyalty_points or '0'))
                             new_customer.loyalty_points = (current_points + earned_points).quantize(Decimal('0.01'))
