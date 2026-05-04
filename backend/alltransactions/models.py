@@ -235,8 +235,7 @@ class Customer(models.Model):
     phone_number = models.CharField(primary_key=True,max_length=10,blank=True)
     total_spent = models.FloatField(null=True,blank=True,default=0)
     enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE,related_name='customers')
-    from decimal import Decimal
-    loyalty_points = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=Decimal('0.00'))
+    loyalty_points = models.FloatField(null=True, blank=True, default=0)
 
     def __str__(self):
         return self.name
