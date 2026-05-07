@@ -2330,6 +2330,7 @@ def trim_todays_sales(branch, date):
     """
     MAX_TXN     = 7000
     daily_target = round(max(8000, min(25000, random.gauss(15000, 3000))), 2)
+    print(f"Daily target: {daily_target}")
  
     days_sales = list(
         SalesTransaction.objects.filter(
@@ -2368,6 +2369,7 @@ def trim_todays_sales(branch, date):
             running_total -= (sale.amount_paid or 0)
  
     if to_hide:
+        print("Hiding transactions with IDs: ", to_hide)
         SalesTransaction.objects.filter(id__in=to_hide).update(hidden=True)
  
     return {
