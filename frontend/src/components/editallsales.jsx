@@ -34,7 +34,7 @@ import { Checkbox } from "./ui/checkbox";
 import AllSalesTransactionForm from "./allsalestransactionform";
 
 export default function EditAllSalesTransactionForm() {
-  return <AllSalesTransactionForm isEdit />;
+  // return <AllSalesTransactionForm isEdit />;
 
   const api = useAxios();
   const navigate = useNavigate();
