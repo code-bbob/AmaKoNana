@@ -20,6 +20,7 @@ export const saveSelectedBranch = (branch) => {
 export const getSelectedBranch = () => {
   try {
     const branchData = localStorage.getItem(BRANCH_STORAGE_KEY);
+    console.log(branchData)
     return branchData ? JSON.parse(branchData) : null;
   } catch (error) {
     console.error('Error getting branch from localStorage:', error);

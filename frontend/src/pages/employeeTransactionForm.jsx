@@ -33,24 +33,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-function StaffTransactionForm() {
+function EmployeeTransactionForm() {
   const api = useAxios();
   const navigate = useNavigate();
   const { branchId } = useParams();
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
-    staff: "",
+    employee: "",
     amount: "",
     desc: "",
     branch: branchId,
-    staff_type: "salary",
+    employee_type: "salary",
     transaction_type: "Payment",
   });
-  const [staffMembers, setStaffMembers] = useState([]);
+  const [employeeMembers, setEmployeeMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [openStaff, setOpenStaff] = useState(false);
+  const [openEmployee, setOpenEmployee] = useState(false);
   const [subLoading, setSubLoading] = useState(false);
   console.log(formData)
 
@@ -65,7 +65,7 @@ function StaffTransactionForm() {
 
   // Auto-calc amount for incentive type
   useEffect(() => {
-    if (formData.staff_type === "incentive") {
+    if (formData.employee_type === "incentive") {
         const total = entries.reduce((sum, e) => {
           const q = parseFloat(e.quantity) || 0;
           const r = parseFloat(e.rate) || 0;
@@ -74,21 +74,21 @@ function StaffTransactionForm() {
       setFormData((prev) => ({ ...prev, amount: total }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, formData.staff_type]);
+  }, [entries, formData.employee_type]);
 
   useEffect(() => {
-    if (formData.staff_type === "incentive" && formData.transaction_type !== "Salary Credited") {
+    if (formData.employee_type === "incentive" && formData.transaction_type !== "Salary Credited") {
       setFormData((prev) => ({ ...prev, transaction_type: "Salary Credited" }));
     }
-  }, [formData.staff_type, formData.transaction_type]);
+  }, [formData.employee_type, formData.transaction_type]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Adjust this endpoint to match your API for staff retrieval
-  const staffResponse = await api.get(`alltransaction/staff/branch/${branchId}/`);
+        // Adjust this endpoint to match your API for employee retrieval
+  const employeeResponse = await api.get(`alltransaction/employee/branch/${branchId}/`);
   const productRes = await api.get(`allinventory/incentiveproduct/branch/${branchId}/`);
-        setStaffMembers(staffResponse.data);
+        setEmployeeMembers(employeeResponse.data);
   setProducts(productRes.data?.results ?? productRes.data ?? []);
         setLoading(false);
       } catch (err) {
@@ -107,24 +107,24 @@ function StaffTransactionForm() {
     setFormData((prevState) => ({ ...prevState, [name]: value }));
   };
 
-  const handleStaffChange = (value) => {
+  const handleEmployeeChange = (value) => {
     if (error) setError(null);
     setFormData((prevState) => ({
       ...prevState,
-      staff: value,
+      employee: value,
     }));
-    setOpenStaff(false);
+    setOpenEmployee(false);
   };
 
   // Validation helper
   const isFormValid = () => {
     if (!formData.date?.trim()) return false;
-    if (!formData.staff?.trim()) return false;
+    if (!formData.employee?.trim()) return false;
     if (!formData.amount || parseFloat(formData.amount) <= 0) return false;
-    if (!formData.staff_type?.trim()) return false;
+    if (!formData.employee_type?.trim()) return false;
     if (!formData.transaction_type?.trim()) return false;
     
-    if (formData.staff_type === "incentive") {
+    if (formData.employee_type === "incentive") {
       const hasValidEntry = entries.some(
         (e) => e.product && e.quantity && e.rate && 
                parseFloat(e.quantity) > 0 && parseFloat(e.rate) > 0
@@ -143,16 +143,16 @@ function StaffTransactionForm() {
       setError("Date is required");
       return;
     }
-    if (!formData.staff.trim()) {
-      setError("Staff member is required");
+    if (!formData.employee.trim()) {
+      setError("Employee member is required");
       return;
     }
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       setError("Amount is required and must be greater than 0");
       return;
     }
-    if (!formData.staff_type.trim()) {
-      setError("Staff Type is required");
+    if (!formData.employee_type.trim()) {
+      setError("Employee Type is required");
       return;
     }
     if (!formData.transaction_type.trim()) {
@@ -161,7 +161,7 @@ function StaffTransactionForm() {
     }
     
     // For incentive type, validate that at least one entry has all fields filled
-    if (formData.staff_type === "incentive") {
+    if (formData.employee_type === "incentive") {
       const hasValidEntry = entries.some(
         (e) => e.product && e.quantity && e.rate && 
                parseFloat(e.quantity) > 0 && parseFloat(e.rate) > 0
@@ -177,7 +177,7 @@ function StaffTransactionForm() {
       setError(null);
       // Build payload, including incentive details when applicable
       const payload = { ...formData, desc: formData.desc?.trim() || "" };
-      if (formData.staff_type === "incentive") {
+      if (formData.employee_type === "incentive") {
         payload.transaction_type = "Salary Credited";
         const details = entries
           .filter((e) => (e.product || e.quantity || e.rate))
@@ -192,14 +192,14 @@ function StaffTransactionForm() {
               total: quantity * rate,
             };
           });
-        payload.staff_transaction_details = details;
+        payload.employee_transaction_details = details;
       }
-      const response = await api.post("alltransaction/stafftransaction/", payload);
+      const response = await api.post("alltransaction/employeetransaction/", payload);
       console.log("Response:", response.data);
-      navigate("/staff-transactions/branch/" + branchId);
+      navigate("/employee-transactions/branch/" + branchId);
     } catch (err) {
       console.error("Error posting data:", err);
-      setError("Failed to submit staff transaction. Please try again.");
+      setError("Failed to submit employee transaction. Please try again.");
     } finally {
       setSubLoading(false);
     }
@@ -242,17 +242,17 @@ function StaffTransactionForm() {
       <div className="flex-grow p-4 lg:p-6 lg:ml-64 overflow-auto">
         <div className="max-w-4xl mx-auto">
           <Button
-            onClick={() => navigate("/staff-transactions/branch/" + branchId)}
+            onClick={() => navigate("/employee-transactions/branch/" + branchId)}
             variant="outline"
             className="mb-6 px-4 py-2 text-black border-white hover:bg-gray-700 hover:text-white"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Staff Transactions
+            Back to Employee Transactions
           </Button>
 
           <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
             <h2 className="text-2xl lg:text-3xl font-bold mb-6 text-white">
-              Add Staff Transaction
+              Add Employee Transaction
             </h2>
             {error && <p className="text-red-400 mb-4">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -272,44 +272,44 @@ function StaffTransactionForm() {
                   />
                 </div>
                 <div className="flex flex-col">
-                  <Label htmlFor="staff" className="text-sm font-medium text-white mb-2">
-                    Staff
+                  <Label htmlFor="employee" className="text-sm font-medium text-white mb-2">
+                    Employee
                   </Label>
-                  <Popover open={openStaff} onOpenChange={setOpenStaff}>
+                  <Popover open={openEmployee} onOpenChange={setOpenEmployee}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         role="combobox"
-                        aria-expanded={openStaff}
+                        aria-expanded={openEmployee}
                         className="w-full justify-between bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
                       >
-                        {formData.staff
-                          ? staffMembers.find(
-                            (staff) => staff.id.toString() === formData.staff
+                        {formData.employee
+                          ? employeeMembers.find(
+                            (employee) => employee.id.toString() === formData.employee
                           )?.name
-                          : "Select a staff..."}
+                          : "Select a employee..."}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0 bg-slate-800 border-slate-700">
                       <Command className="bg-slate-700 border-slate-600">
-                        <CommandInput placeholder="Search staff..." className="bg-slate-700 text-white" />
+                        <CommandInput placeholder="Search employee..." className="bg-slate-700 text-white" />
                         <CommandList>
-                          <CommandEmpty>No staff found.</CommandEmpty>
+                          <CommandEmpty>No employee found.</CommandEmpty>
                           <CommandGroup>
-                            {staffMembers.map((staff) => (
+                            {employeeMembers.map((employee) => (
                               <CommandItem
-                                key={staff.id}
-                                onSelect={() => handleStaffChange(staff.id.toString())}
+                                key={employee.id}
+                                onSelect={() => handleEmployeeChange(employee.id.toString())}
                                 className="text-white hover:bg-slate-600"
                               >
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    formData.staff === staff.id.toString() ? "opacity-100" : "opacity-0"
+                                    formData.employee === employee.id.toString() ? "opacity-100" : "opacity-0"
                                   )}
                                 />
-                                {staff.name}
+                                {employee.name}
                               </CommandItem>
                             ))}
                           </CommandGroup>
@@ -319,10 +319,10 @@ function StaffTransactionForm() {
                   </Popover>
                 </div>
                 <div className="flex flex-col">
-                  <Label htmlFor="staff_type" className="text-sm font-medium text-white mb-2">
+                  <Label htmlFor="employee_type" className="text-sm font-medium text-white mb-2">
                     Type
                   </Label>
-                  <Select value={formData.staff_type} onValueChange={(value) => handleChange({ target: { name: "staff_type", value } })}>
+                  <Select value={formData.employee_type} onValueChange={(value) => handleChange({ target: { name: "employee_type", value } })}>
                     <SelectTrigger className=" bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500">
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
@@ -339,13 +339,13 @@ function StaffTransactionForm() {
                   <Select
                     value={formData.transaction_type}
                     onValueChange={(value) => handleChange({ target: { name: "transaction_type", value } })}
-                    disabled={formData.staff_type === "incentive"}
+                    disabled={formData.employee_type === "incentive"}
                   >
                     <SelectTrigger className=" bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500">
                       <SelectValue placeholder="Transaction Type" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-700 border-slate-600 text-white">
-                      {formData.staff_type !== "incentive" && <SelectItem value="Payment">Payment</SelectItem>}
+                      {formData.employee_type !== "incentive" && <SelectItem value="Payment">Payment</SelectItem>}
                       <SelectItem value="Salary Credited">Salary Credited</SelectItem>
                     </SelectContent>
                   </Select>
@@ -366,7 +366,7 @@ function StaffTransactionForm() {
                 />
               </div>
 
-              {formData.staff_type === "incentive" && (
+              {formData.employee_type === "incentive" && (
                 <div className="space-y-4">
                   {entries.map((entry, idx) => (
                     <div key={idx} className="bg-slate-700 text-white p-4 rounded-md shadow mb-4">
@@ -548,7 +548,7 @@ function StaffTransactionForm() {
                 disabled={subLoading}
                 className="w-full bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-600 disabled:cursor-not-allowed"
               >
-                {subLoading ? "Submitting..." : "Submit Staff Transaction"}
+                {subLoading ? "Submitting..." : "Submit Employee Transaction"}
               </Button>
             </form>
           </div>
@@ -582,6 +582,6 @@ function StaffTransactionForm() {
   );
 }
 
-export default StaffTransactionForm;
+export default EmployeeTransactionForm;
 
 // New Incentive Dialog (mounted within the page tree)

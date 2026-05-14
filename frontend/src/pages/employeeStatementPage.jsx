@@ -36,8 +36,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
-const StaffStatementPage = () => {
-  const { staffId, branchId } = useParams();
+const EmployeeStatementPage = () => {
+  const { employeeId, branchId } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,19 +48,19 @@ const StaffStatementPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchStaffStatement();
-  }, [staffId]);
+    fetchEmployeeStatement();
+  }, [employeeId]);
 
-  const fetchStaffStatement = async (params = {}) => {
+  const fetchEmployeeStatement = async (params = {}) => {
     setLoading(true);
     try {
       const queryString = new URLSearchParams(params).toString();
       const response = await api.get(
-        `alltransaction/staff/statement/${staffId}/?${queryString}`
+        `alltransaction/employee/statement/${employeeId}/?${queryString}`
       );
       setData(response.data);
     } catch (err) {
-      setError("Failed to fetch staff statement");
+      setError("Failed to fetch employee statement");
     } finally {
       setLoading(false);
     }
@@ -71,14 +71,14 @@ const StaffStatementPage = () => {
     const params = { search: searchTerm };
     if (startDate) params.start_date = startDate;
     if (endDate) params.end_date = endDate;
-    fetchStaffStatement(params);
+    fetchEmployeeStatement(params);
   };
 
   const handleDateSearch = async (e) => {
     e.preventDefault();
     const params = { start_date: startDate, end_date: endDate };
     if (searchTerm) params.search = searchTerm;
-    fetchStaffStatement(params);
+    fetchEmployeeStatement(params);
   };
 
   const handlePrint = () => {
@@ -86,10 +86,10 @@ const StaffStatementPage = () => {
   };
 
   const calculateRunningBalance = (transactions) => {
-    let running = Number(data.staff_data.previous_due) || 0;
+    let running = Number(data.employee_data.previous_due) || 0;
     return transactions.map((transaction) => {
       const amt = Number(transaction.amount) || 0;
-      // Positive amounts are payments to staff (reduce payable to staff); negative increase due
+      // Positive amounts are payments to employee (reduce payable to employee); negative increase due
       running += amt;
       return { ...transaction, due: running };
     });
@@ -100,11 +100,11 @@ const StaffStatementPage = () => {
   };
 
   const formatDescriptionWithDetails = (tx) => {
-    if (!tx.staff_transaction_details || tx.staff_transaction_details.length === 0) {
+    if (!tx.employee_transaction_details || tx.employee_transaction_details.length === 0) {
       return tx.desc || "No description";
     }
 
-    const details = tx.staff_transaction_details;
+    const details = tx.employee_transaction_details;
     const detailLines = details.map((detail) => {
       const productName = detail.product_name || "Unknown";
       const rate = detail.rate || 0;
@@ -143,10 +143,10 @@ const StaffStatementPage = () => {
       csvContent += row.map(escapeField).join(",") + "\n";
     });
 
-    csvContent += "\n" + escapeField("Staff Information:") + "\n";
+    csvContent += "\n" + escapeField("Employee Information:") + "\n";
     csvContent += [
-      ["Name:", data.staff_data.name],
-      ["Phone:", data.staff_data.phone_number || "N/A"],
+      ["Name:", data.employee_data.name],
+      ["Phone:", data.employee_data.phone_number || "N/A"],
       [
         "Current Due:",
         `NPR ${
@@ -163,7 +163,7 @@ const StaffStatementPage = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `Staff_Statement_${data.staff_data.name}.csv`);
+    link.setAttribute("download", `Employee_Statement_${data.employee_data.name}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -178,7 +178,7 @@ const StaffStatementPage = () => {
     doc.setFont("times", "italic");
     doc.setFontSize(20);
     doc.setTextColor(33, 33, 33);
-    doc.text(`Staff Statement - ${data.staff_data.name}`, 15, 22);
+    doc.text(`Employee Statement - ${data.employee_data.name}`, 15, 22);
 
     doc.setFont("times", "italic");
     doc.setFontSize(11);
@@ -202,13 +202,13 @@ const StaffStatementPage = () => {
       alternateRowStyles: { fillColor: [245, 245, 245] },
     });
 
-    const totalCount = data.staff_transactions.length;
+    const totalCount = data.employee_transactions.length;
     const totalDebit = Math.abs(
-      data.staff_transactions
+      data.employee_transactions
         .filter((t) => t.amount < 0)
         .reduce((sum, t) => sum + t.amount, 0)
     );
-    const totalPaid = data.staff_transactions
+    const totalPaid = data.employee_transactions
       .filter((t) => t.amount > 0)
       .reduce((sum, t) => sum + t.amount, 0);
     const currentDue = transactionsWithBalance[transactionsWithBalance.length - 1]?.due || 0;
@@ -234,13 +234,13 @@ const StaffStatementPage = () => {
     yPosition += lineHeight;
     doc.text(`Current Due: NPR ${currentDue.toLocaleString()}`, rightX, yPosition, { align: "right" });
 
-    doc.save(`Staff_Statement_${data.staff_data.name}.pdf`);
+    doc.save(`Employee_Statement_${data.employee_data.name}.pdf`);
   };
 
   if (loading)
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
-        Loading staff statement...
+        Loading employee statement...
       </div>
     );
   if (error)
@@ -252,11 +252,11 @@ const StaffStatementPage = () => {
   if (!data) return null;
 
   const previousDue =
-    data.staff_data && data.staff_data.previous_due !== undefined
-      ? Number(data.staff_data.previous_due)
+    data.employee_data && data.employee_data.previous_due !== undefined
+      ? Number(data.employee_data.previous_due)
       : 0;
   const transactionsWithBalance = calculateRunningBalance(
-    data.staff_transactions,
+    data.employee_transactions,
     previousDue
   );
   const computedCurrentDue = transactionsWithBalance.length
@@ -264,8 +264,8 @@ const StaffStatementPage = () => {
     : previousDue;
 
   const handleRowClick = (tx) => {
-    // navigate to edit staff transaction page
-    navigate(`/staff-transactions/branch/${branchId}/editform/${tx.id}`);
+    // navigate to edit employee transaction page
+    navigate(`/employee-transactions/branch/${branchId}/editform/${tx.id}`);
   };
 
   return (
@@ -283,7 +283,7 @@ const StaffStatementPage = () => {
         <CardHeader className="border-b border-slate-700 print:border-gray-200">
           <CardTitle className="text-2xl lg:text-3xl font-bold text-white print:text-black flex items-center gap-3">
             <User className="h-8 w-8" />
-            Staff Statement - {data.staff_data.name}
+            Employee Statement - {data.employee_data.name}
           </CardTitle>
           <p className="text-sm text-gray-400 print:text-gray-600">
             Statement Date: {format(new Date(), "MMMM d, yyyy")}
@@ -294,15 +294,15 @@ const StaffStatementPage = () => {
                 <div className="flex items-center gap-2">
                   <User className="h-5 w-5 text-blue-400" />
                   <div>
-                    <p className="text-sm text-gray-400 print:text-gray-600">Staff Name</p>
-                    <p className="font-semibold text-lg text-white print:text-black">{data.staff_data.name}</p>
+                    <p className="text-sm text-gray-400 print:text-gray-600">Employee Name</p>
+                    <p className="font-semibold text-lg text-white print:text-black">{data.employee_data.name}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="h-5 w-5 text-purple-400" />
                   <div>
                     <p className="text-sm text-gray-400 print:text-gray-600">Phone</p>
-                    <p className="text-lg text-white print:text-black">{data.staff_data.phone_number || "N/A"}</p>
+                    <p className="text-lg text-white print:text-black">{data.employee_data.phone_number || "N/A"}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -421,13 +421,13 @@ const StaffStatementPage = () => {
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400 print:text-gray-600">Total Transactions:</span>
-                  <span className="font-semibold text-white print:text-black">{data.staff_transactions.length}</span>
+                  <span className="font-semibold text-white print:text-black">{data.employee_transactions.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400 print:text-gray-600">Total Credited Amount:</span>
                   <span className="font-semibold text-green-400 print:text-green-600">
 
-                    NPR {data.staff_transactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
+                    NPR {data.employee_transactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
                     
                   </span>
                 </div>
@@ -435,7 +435,7 @@ const StaffStatementPage = () => {
                   <span className="text-gray-400 print:text-gray-600">Total Paid Amount:</span>
                   <span className="font-semibold text-red-400 print:text-red-600">
                     NPR {Math.abs(
-                      data.staff_transactions.filter((t) => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)
+                      data.employee_transactions.filter((t) => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)
                     ).toLocaleString()}
                   </span>
                 </div>
@@ -458,4 +458,4 @@ const StaffStatementPage = () => {
   );
 };
 
-export default StaffStatementPage;
+export default EmployeeStatementPage;

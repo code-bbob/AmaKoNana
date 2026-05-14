@@ -1289,7 +1289,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                   <TableBody>
                     {formData.sales.map((sale, index) => (
                       <TableRow key={index} className="border-slate-600">
-                        <TableCell className="text-slate-200">
+                        <TableCell className="w-12 text-slate-200">
                           {index + 1}
                         </TableCell>
                         <TableCell className="w-[360px]">

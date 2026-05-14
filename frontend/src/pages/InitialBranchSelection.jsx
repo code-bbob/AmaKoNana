@@ -21,11 +21,13 @@ export default function InitialBranchSelection() {
     fetchBranches, 
     selectBranch 
   } = useBranchManagement();
+  console.log("Branches in component:", branches);
   
   const [filteredBranches, setFilteredBranches] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
+    console.log("Fetching branches on mount");
     fetchBranches();
   }, []);
 

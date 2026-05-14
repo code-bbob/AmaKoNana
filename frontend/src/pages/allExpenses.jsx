@@ -190,7 +190,7 @@ export default function AllExpensesPage() {
                     <div className="text-white font-medium">{exp.desc || 'No description'}</div>
                     <div className="flex justify-between items-center text-sm text-slate-300 mt-2">
                       <span className={`font-bold text-l ${exp.type === 'Withdrawal' ? 'text-yellow-400' : 'text-green-400'}`}>Amount: RS. {exp.amount?.toLocaleString()}</span>
-                      <span className="text-white">Posted by {exp?.person_name || '—'}</span>
+                      <span className="text-white">Posted by {exp?.employee_name || '—'}</span>
                     </div>
                     <div className="mt-3 flex justify-end">
                     </div>

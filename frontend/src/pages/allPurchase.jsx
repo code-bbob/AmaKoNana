@@ -222,7 +222,7 @@ export default function AllPurchaseTransactions() {
                     </div>
                   ))}
                   <div className="flex justify-between items-center mt-4">
-                    <div className='mt-4 text-white font-bold'>Posted by {transaction?.person_name}</div>
+                    <div className='mt-4 text-white font-bold'>Posted by {transaction?.employee_name}</div>
                   <div className="mt-4 text-right text-white font-bold">
                     Total Amount: RS. {transaction?.total_amount?.toLocaleString()}
                   </div>

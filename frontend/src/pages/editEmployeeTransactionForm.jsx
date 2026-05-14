@@ -25,23 +25,23 @@ import Sidebar from "@/components/allsidebar";
 import { Dialog, DialogTrigger,DialogContent,DialogHeader,DialogDescription,DialogTitle,DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-function StaffTransactionEditForm() {
+function EmployeeTransactionEditForm() {
   const api = useAxios();
   const navigate = useNavigate();
   const { id, branchId } = useParams(); // Get the transaction ID from the URL
 
   const [formData, setFormData] = useState({
     date: "",
-    staff: "",
+    employee: "",
     amount: "",
     desc: "",
-    staff_type: "",
+    employee_type: "",
     transaction_type: "Payment",
   });
-  const [staffMembers, setStaffMembers] = useState([]);
+  const [employeeMembers, setEmployeeMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [openStaff, setOpenStaff] = useState(false);
+  const [openEmployee, setOpenEmployee] = useState(false);
   const [subLoading, setSubLoading] = useState(false);
   const [entries, setEntries] = useState([]);
   const [products, setProducts] = useState([]);
@@ -55,11 +55,11 @@ function StaffTransactionEditForm() {
     try {
       setSubLoading(true);
       // Use DELETE to delete the transaction
-      const response = await api.delete(`alltransaction/stafftransaction/${id}/`);
-      navigate("/staff-transactions/branch/" + branchId);
+      const response = await api.delete(`alltransaction/employeetransaction/${id}/`);
+      navigate("/employee-transactions/branch/" + branchId);
     } catch (err) {
       console.error("Error deleting data:", err);
-      setError("Failed to delete staff transaction. Please try again.");
+      setError("Failed to delete employee transaction. Please try again.");
     } finally {
       setSubLoading(false);
     }
@@ -69,23 +69,23 @@ function StaffTransactionEditForm() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch staff members and incentive products
-        const staffResponse = await api.get(`alltransaction/staff/`);
+        // Fetch employee members and incentive products
+        const employeeResponse = await api.get(`alltransaction/employee/`);
         const productRes = await api.get(`allinventory/incentiveproduct/branch/${branchId}/`);
-        setStaffMembers(staffResponse.data);
+        setEmployeeMembers(employeeResponse.data);
         setProducts(productRes.data?.results ?? productRes.data ?? []);
 
         // Fetch the transaction data by id
-        const transactionResponse = await api.get(`alltransaction/stafftransaction/${id}/`);
+        const transactionResponse = await api.get(`alltransaction/employeetransaction/${id}/`);
         setFormData({
           date: transactionResponse.data.date,
-          staff: transactionResponse.data.staff.toString(),
+          employee: transactionResponse.data.employee.toString(),
           amount: transactionResponse.data.amount,
           desc: transactionResponse.data.desc || "",
-          staff_type: transactionResponse.data.staff_type || "",
+          employee_type: transactionResponse.data.employee_type || "",
           transaction_type: transactionResponse.data.transaction_type || "Payment",
         });
-        const details = transactionResponse.data.staff_transaction_details || [];
+        const details = transactionResponse.data.employee_transaction_details || [];
         setEntries(details.map(d => ({
           id: d.id,
           bill_no: d.bill_no || "",
@@ -111,12 +111,12 @@ function StaffTransactionEditForm() {
     setFormData((prevState) => ({ ...prevState, [name]: value }));
   };
 
-  const handleStaffChange = (value) => {
+  const handleEmployeeChange = (value) => {
     setFormData((prevState) => ({
       ...prevState,
-      staff: value,
+      employee: value,
     }));
-    setOpenStaff(false);
+    setOpenEmployee(false);
   };
 
   const handleSubmit = async (e) => {
@@ -125,11 +125,11 @@ function StaffTransactionEditForm() {
       setSubLoading(true);
       // Build payload, include details
       const payload = { ...formData, desc: formData.desc?.trim() || "" };
-      if (formData.staff_type === "incentive") {
+      if (formData.employee_type === "incentive") {
         payload.transaction_type = "Salary Credited";
       }
       if (entries && entries.length) {
-        payload.staff_transaction_details = entries.map(e => ({
+        payload.employee_transaction_details = entries.map(e => ({
           bill_no: e.bill_no?.trim() || "",
           product: e.product ? Number(e.product) : null,
           quantity: parseFloat(e.quantity) || 0,
@@ -138,12 +138,12 @@ function StaffTransactionEditForm() {
         }));
       }
       // Use PATCH to update the transaction
-      const response = await api.patch(`alltransaction/stafftransaction/${id}/`, payload);
+      const response = await api.patch(`alltransaction/employeetransaction/${id}/`, payload);
       console.log("Response:", response.data);
-      navigate("/staff-transactions/branch/" + branchId);
+      navigate("/employee-transactions/branch/" + branchId);
     } catch (err) {
       console.error("Error updating data:", err);
-      setError("Failed to update staff transaction. Please try again.");
+      setError("Failed to update employee transaction. Please try again.");
     } finally {
       setSubLoading(false);
     }
@@ -162,10 +162,10 @@ function StaffTransactionEditForm() {
   }, [entries]);
 
   useEffect(() => {
-    if (formData.staff_type === "incentive" && formData.transaction_type !== "Salary Credited") {
+    if (formData.employee_type === "incentive" && formData.transaction_type !== "Salary Credited") {
       setFormData((prev) => ({ ...prev, transaction_type: "Salary Credited" }));
     }
-  }, [formData.staff_type, formData.transaction_type]);
+  }, [formData.employee_type, formData.transaction_type]);
 
   const saveNewIncentive = async () => {
     if (!newIncentive.name?.trim() || isNaN(parseFloat(newIncentive.rate))) return;
@@ -212,17 +212,17 @@ function StaffTransactionEditForm() {
       <div className="flex-grow p-4 lg:p-6 lg:ml-64 overflow-auto">
         <div className="max-w-4xl mx-auto">
           <Button
-            onClick={() => navigate("/staff-transactions/branch/" + branchId)}
+            onClick={() => navigate("/employee-transactions/branch/" + branchId)}
             variant="outline"
             className="mb-6 px-4 py-2 text-black border-white hover:bg-gray-700 hover:text-white"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Staff Transactions
+            Back to Employee Transactions
           </Button>
 
           <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
             <h2 className="text-2xl lg:text-3xl font-bold mb-6 text-white">
-              Edit Staff Transaction
+              Edit Employee Transaction
             </h2>
             {error && <p className="text-red-400 mb-4">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -242,44 +242,44 @@ function StaffTransactionEditForm() {
                   />
                 </div>
                 <div className="flex flex-col">
-                  <Label htmlFor="staff" className="text-sm font-medium text-white mb-2">
-                    Staff
+                  <Label htmlFor="employee" className="text-sm font-medium text-white mb-2">
+                    Employee
                   </Label>
-                  <Popover open={openStaff} onOpenChange={setOpenStaff}>
+                  <Popover open={openEmployee} onOpenChange={setOpenEmployee}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         role="combobox"
-                        aria-expanded={openStaff}
+                        aria-expanded={openEmployee}
                         className="w-full justify-between bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
                       >
-                        {formData.staff
-                          ? staffMembers.find(
-                              (staff) => staff.id.toString() === formData.staff
+                        {formData.employee
+                          ? employeeMembers.find(
+                              (employee) => employee.id.toString() === formData.employee
                             )?.name
-                          : "Select a staff..."}
+                          : "Select a employee..."}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0 bg-slate-800 border-slate-700">
                       <Command className="bg-slate-700 border-slate-600">
-                        <CommandInput placeholder="Search staff..." className="bg-slate-700 text-white" />
+                        <CommandInput placeholder="Search employee..." className="bg-slate-700 text-white" />
                         <CommandList>
-                          <CommandEmpty>No staff found.</CommandEmpty>
+                          <CommandEmpty>No employee found.</CommandEmpty>
                           <CommandGroup>
-                            {staffMembers.map((staff) => (
+                            {employeeMembers.map((employee) => (
                               <CommandItem
-                                key={staff.id}
-                                onSelect={() => handleStaffChange(staff.id.toString())}
+                                key={employee.id}
+                                onSelect={() => handleEmployeeChange(employee.id.toString())}
                                 className="text-white hover:bg-slate-600"
                               >
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    formData.staff === staff.id.toString() ? "opacity-100" : "opacity-0"
+                                    formData.employee === employee.id.toString() ? "opacity-100" : "opacity-0"
                                   )}
                                 />
-                                {staff.name}
+                                {employee.name}
                               </CommandItem>
                             ))}
                           </CommandGroup>
@@ -295,13 +295,13 @@ function StaffTransactionEditForm() {
                   <Select
                     value={formData.transaction_type}
                     onValueChange={(value) => handleChange({ target: { name: "transaction_type", value } })}
-                    disabled={formData.staff_type === "incentive"}
+                    disabled={formData.employee_type === "incentive"}
                   >
                     <SelectTrigger className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500">
                       <SelectValue placeholder="Transaction Type" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-700 border-slate-600 text-white">
-                      {formData.staff_type !== "incentive" && <SelectItem value="Payment">Payment</SelectItem>}
+                      {formData.employee_type !== "incentive" && <SelectItem value="Payment">Payment</SelectItem>}
                       <SelectItem value="Salary Credited">Salary Credited</SelectItem>
                     </SelectContent>
                   </Select>
@@ -524,7 +524,7 @@ function StaffTransactionEditForm() {
                 disabled={subLoading}
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
-                Update Staff Transaction
+                Update Employee Transaction
               </Button>
             </form>
           </div>
@@ -558,4 +558,4 @@ function StaffTransactionEditForm() {
   );
 }
 
-export default StaffTransactionEditForm;
+export default EmployeeTransactionEditForm;

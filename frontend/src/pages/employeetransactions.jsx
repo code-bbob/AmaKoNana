@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom'
 import Sidebar from '@/components/allsidebar'
 import { useParams } from 'react-router-dom';
 
-export default function StaffTransactions() {
+export default function EmployeeTransactions() {
   const api = useAxios()
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -58,7 +58,7 @@ export default function StaffTransactions() {
   const fetchInitData = async () => {
     try {
       if (id !== undefined){
-        const response = await api.get(`alltransaction/stafftransaction/staff/${id}/`)
+        const response = await api.get(`alltransaction/employeetransaction/employee/${id}/`)
         const roleResponse = await api.get('enterprise/role/')
         setTransactions(response.data.results)
       // console.log(response.data.results)
@@ -72,7 +72,7 @@ export default function StaffTransactions() {
       setRole(roleResponse.data)
 
       }else{
-      const response = await api.get("alltransaction/stafftransaction/branch/"+branchId+"/");
+      const response = await api.get("alltransaction/employeetransaction/branch/"+branchId+"/");
       const roleResponse = await api.get('enterprise/role/');
       setTransactions(response.data.results)
       // console.log(response.data.results)
@@ -102,7 +102,7 @@ export default function StaffTransactions() {
     setLoading(true)
     try {
       if (id !== undefined){
-        const response = await api.get(`alltransaction/stafftransaction/staff/${id}/?search=${localSearchTerm}`)
+        const response = await api.get(`alltransaction/employeetransaction/employee/${id}/?search=${localSearchTerm}`)
         setTransactions(response.data.results)
         setMetadata({
           next: response.data.next,
@@ -112,7 +112,7 @@ export default function StaffTransactions() {
         setTotalPages(Math.ceil(response.data.count / 10)) // Assuming 10 items per page
         setCurrentPage(1)
       }else{
-      const response = await api.get(`alltransaction/stafftransaction/branch/${branchId}/?search=${localSearchTerm}`)
+      const response = await api.get(`alltransaction/employeetransaction/branch/${branchId}/?search=${localSearchTerm}`)
       setTransactions(response.data.results)
       setMetadata({
         next: response.data.next,
@@ -135,10 +135,10 @@ export default function StaffTransactions() {
     try {
       let url;
       if (id !== undefined){
-      url = `alltransaction/stafftransaction/staff/${id}/`
+      url = `alltransaction/employeetransaction/employee/${id}/`
     }
       else{
-        url = `alltransaction/stafftransaction/branch/${branchId}/`
+        url = `alltransaction/employeetransaction/branch/${branchId}/`
       }
          url =url + `?start_date=${startDate}&end_date=${endDate}`
         if (localSearchTerm){
@@ -173,7 +173,7 @@ export default function StaffTransactions() {
       )
     }
 
-  if (role === 'Staff') {
+  if (role === 'Employee') {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-red-500">
         You do not have permission to view this page.
@@ -199,7 +199,7 @@ export default function StaffTransactions() {
           transition={{ duration: 0.5 }}
           className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6"
         >
-          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-4 lg:mb-0">Staff Transactions</h1>
+          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-4 lg:mb-0">Employee Transactions</h1>
           <Button
             onClick={() => navigate('/')}
             variant="outline"
@@ -259,7 +259,7 @@ export default function StaffTransactions() {
                 <CardHeader className="border-b border-slate-700">
                   <CardTitle className="text-lg lg:text-xl font-medium text-white flex flex-col lg:flex-row justify-between items-start lg:items-center">
                     
-                    <span className="mt-2 lg:mt-0">{transaction.staff_name}</span>
+                    <span className="mt-2 lg:mt-0">{transaction.employee_name}</span>
                     <span className="mt-2 lg:mt-0 text-sm lg:text-lg ">{format(new Date(transaction.date), 'dd MMM yyyy')}</span>
                   </CardTitle>
                 </CardHeader>
@@ -267,9 +267,9 @@ export default function StaffTransactions() {
                   <div className="mb-4 last:mb-0 p-3 lg:p-4 bg-slate-800 rounded-lg hover:bg-slate-750 transition-colors duration-300">
                     <div className="flex flex-col gap-2">
                       <span className='text-blue-400'>{transaction.desc}</span>
-                      {Array.isArray(transaction.staff_transaction_details) && transaction.staff_transaction_details.length > 0 && (
+                      {Array.isArray(transaction.employee_transaction_details) && transaction.employee_transaction_details.length > 0 && (
                         <div className="text-slate-300 text-sm space-y-1">
-                          {transaction.staff_transaction_details.map((d) => (
+                          {transaction.employee_transaction_details.map((d) => (
                             <div key={d.id} className="flex justify-between">
                               
                               <span>#{d.bill_no} : {d.product_name || 'Item'} × {d.quantity}</span>
@@ -313,7 +313,7 @@ export default function StaffTransactions() {
       </div>
       <Button
         className="fixed bottom-8 right-8 rounded-full w-14 h-14 lg:w-16 lg:h-16 shadow-lg bg-purple-600 hover:bg-purple-700 text-white"
-        onClick={() => navigate(`/staff-transactions/branch/${branchId}/form/`)}
+        onClick={() => navigate(`/employee-transactions/branch/${branchId}/form/`)}
       >
         <Plus className="w-6 h-6 lg:w-8 lg:h-8" />
       </Button>

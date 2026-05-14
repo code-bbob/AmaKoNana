@@ -171,13 +171,22 @@ export default function Sidebar() {
       ]
     },
     {
-      label: 'Staff',
+      label: 'Employee',
       icon: Shield,
-      mainPath: 'staff',
+      mainPath: 'employee',
       items: [
-        { title: 'Staffs', icon: TrendingUp, path: 'staff' },
-        { title: 'Staff Transaction', icon: TrendingUp, path: 'staff-transactions' },
-        { title: 'Product Incentives', icon: Container, path: 'staff/product-incentives' }
+        { title: 'Employees', icon: TrendingUp, path: 'employee' },
+        { title: 'Employee Transaction', icon: TrendingUp, path: 'employee-transactions' },
+        { title: 'Product Incentives', icon: Container, path: 'employee/product-incentives' }
+      ]
+    },
+    {
+      label: 'Attendance',
+      icon: Shield,
+      mainPath: 'attendance',
+      items: [
+        { title: 'Attendance', icon: Shield, path: 'attendance' },
+        { title: 'Attendance Report', icon: Shield, path: 'attendance-report', externalReport: true }
       ]
     },
     {

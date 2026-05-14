@@ -176,7 +176,7 @@ export default function AllWithdrawalsPage() {
                   <div className="mb-2 p-3 lg:p-4 bg-slate-800 rounded-lg">
                     <div className="flex justify-between items-center text-sm text-slate-300">
                       <span className='font-bold text-green-400 text-l'>Amount: RS. {wd.amount?.toLocaleString()}</span>
-                      <span className="text-white">Posted by {wd?.person_name || '—'}</span>
+                      <span className="text-white">Posted by {wd?.employee_name || '—'}</span>
                     </div>
                   </div>
                 </CardContent>

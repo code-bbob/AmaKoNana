@@ -60,8 +60,8 @@ const AllWithdrawalsReport = () => {
 
   const handleDownloadCSV = () => {
     if (!data || !data.items.length) return;
-    let csv = "Date,Person,Amount\n";
-    data.items.forEach(item => { csv += `${item.date},"${(item.person_name||'').replace(/"/g,'\"')}",${item.amount}` + "\n"; });
+    let csv = "Date,Employee,Amount\n";
+    data.items.forEach(item => { csv += `${item.date},"${(item.employee_name||'').replace(/"/g,'\"')}",${item.amount}` + "\n"; });
     csv += `\nTotal Withdrawals: ,,${data.total_withdrawals}\nTransactions: ,,${data.count}\n`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -77,8 +77,8 @@ const AllWithdrawalsReport = () => {
     if (!data || !data.items.length) return;
     const doc = new jsPDF();
     doc.text("Withdrawals Report", 14, 10);
-    const headers = [["Date","Person","Amount"]];
-    const tableData = data.items.map(item => [item.date, item.person_name || '', item.amount]);
+    const headers = [["Date","Employee","Amount"]];
+    const tableData = data.items.map(item => [item.date, item.employee_name || '', item.amount]);
     tableData.push(["","Total", data.total_withdrawals]);
     tableData.push(["","Transactions", data.count]);
     doc.autoTable({ head: headers, body: tableData, startY: 20 });
@@ -144,7 +144,7 @@ const AllWithdrawalsReport = () => {
               {data.items.map((item, idx) => (
                 <TableRow key={idx}>
                   <TableCell className="font-medium text-white print:text-black">{item.date}</TableCell>
-                  <TableCell className="text-white print:text-black">{item.person_name || '—'}</TableCell>
+                  <TableCell className="text-white print:text-black">{item.employee_name || '—'}</TableCell>
                   <TableCell className="text-right text-white print:text-black">{(item.amount||0).toLocaleString("en-US")}</TableCell>
                 </TableRow>
               ))}

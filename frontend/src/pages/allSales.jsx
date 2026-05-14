@@ -379,7 +379,7 @@ export default function AllSalesTransactions() {
                   ))}
                   <div className="mt-4 flex justify-between text-white font-bold">
                     {/* <Button onClick={(e)=> handleInvoice(e,transaction.id)} className="bg-purple-600 hover:bg-purple-700 text-white">View Invoice</Button> */}
-                    <div>Posted by {transaction?.person_name}</div>
+                    <div>Posted by {transaction?.employee_name}</div>
                     <div>Amount Received: RS. {transaction?.amount_paid?.toLocaleString()}</div>
                   </div>
                 </CardContent>

@@ -32,7 +32,7 @@ import AllPurchaseReturns from "./pages/allPurchaseReturn";
 import InvoicePage from "./pages/invoicePage";
 import EditProductForm from "./components/editProductForm";
 import AllSalesReturns from "./pages/allSalesReturn";
-import StaffPage from "./pages/staffs";
+import EmployeePage from "./pages/employees";
 import AllExpensesPage from "./pages/allExpenses";
 import AllExpenseForm from "./components/allexpenseform";
 import EditAllExpense from "./components/editallexpense";
@@ -43,16 +43,16 @@ import EditAllWithdrawal from "./components/editalwithdrawal";
 import AllWithdrawalsReport from "./pages/allWithdrawalsReport";
 import AllDailyReport from "./pages/allDailyReport";
 import AllBranchSelectionPage from "./pages/allBranchSelect";
-import StaffTransactions from "./pages/stafftransactions";
-import StaffTransactionForm from "./pages/staffTransactionForm";
-import StaffTransactionEditForm from "./pages/editStaffTransactionForm";
+import EmployeeTransactions from "./pages/employeetransactions";
+import EmployeeTransactionForm from "./pages/employeeTransactionForm";
+import EmployeeTransactionEditForm from "./pages/editEmployeeTransactionForm";
 import AllDebtorsPage from "./pages/allDebtorsPage";
 import AllDebtorTransactions from "./pages/allDebtorTransactions";
 import DebtorTransactionForm from "./pages/allDebtorTransactionForm";
 import EditDebtorTransactionForm from "./pages/editAllDebtors";
 import AllVendorStatementPage from "./pages/allVendorStatementPage";
 import AllDebtorStatementPage from "./pages/allDebtorStatementPage";
-import StaffStatementPage from "./pages/staffStatementPage";
+import EmployeeStatementPage from "./pages/employeeStatementPage";
 // NCM related pages
 import AllNCMStatementPage from "./pages/allNCMStatementPage";
 import AllNCMTransactions from "./pages/allNCMTransactions";
@@ -67,6 +67,13 @@ import ProductIncentivesPage from "./pages/productIncentivesPage";
 import OrderOverviewPage from "./pages/allOrderOverview";
 import OrderReport from "./pages/orderReport";
 import SaleExchange from "./pages/saleExchange";
+import AttendancePage from "./pages/attendance";
+import AttendanceReportLayout from "./pages/attendance-report/Layout";
+import AttendanceTab from "./pages/attendance-report/attendance";
+import LateArrivalsReport from "./pages/attendance-report/late-arrivals";
+import EarlyDeparturesReport from "./pages/attendance-report/early-departure";
+import MonthlyReports from "./pages/attendance-report/monthly-reports";
+import DetailedMonthly from "./pages/attendance-report/detailed-monthly";
 
 function App() {
   const { isAuthenticated } = useSelector((state) => state.root);
@@ -126,9 +133,18 @@ function App() {
           <Route path="withdrawals-report/branch/:branchId" element={<AllWithdrawalsReport />} />
           <Route path="income-expense-report/branch/:branchId" element={<AllDailyReport />} />
 
-          <Route path="staff/branch/:branchId" element={<StaffPage/>}/>
+          <Route path="employee/branch/:branchId" element={<EmployeePage/>}/>
 
-          <Route path="staff/product-incentives/branch/:branchId" element={<ProductIncentivesPage />} />
+          <Route path="attendance/branch/:branchId" element={<AttendancePage />} />
+          <Route path="attendance-report/branch/:branchId" element={<AttendanceReportLayout />}>
+            <Route index element={<AttendanceTab />} />
+            <Route path="late-arrivals" element={<LateArrivalsReport />} />
+            <Route path="early-departure" element={<EarlyDeparturesReport />} />
+            <Route path="monthly-reports" element={<MonthlyReports />} />
+            <Route path="detailed-monthly" element={<DetailedMonthly />} />
+          </Route>
+
+          <Route path="employee/product-incentives/branch/:branchId" element={<ProductIncentivesPage />} />
 
           <Route path="vendors/branch/:branchId" element={<AllVendorPage />} />
           <Route path="vendors/statement/:vendorId" element={<AllVendorStatementPage />} />
@@ -136,15 +152,15 @@ function App() {
           <Route path="customers/branch/:branchId" element={<AllCustomersPage />} />
           <Route path="customer-lottery" element={<CustomerLotteryPage />} />
           <Route path="customer-lottery/branch/:branchId" element={<CustomerLotteryPage />} />
-          <Route path="staff/branch/:branchId/statement/:staffId" element={<StaffStatementPage />} />
+          <Route path="employee/branch/:branchId/statement/:employeeId" element={<EmployeeStatementPage />} />
 
           <Route path="vendor-transactions/branch/:branchId" element={<AllVendorTransactions />}/>
           <Route path="vendor-transactions/branch/:branchId/form" element={<AllVendorTransactionForm />} />
           <Route path="vendor-transactions/branch/:branchId/editform/:vendorTransactionId" element={<EditAllVendorTransactionForm />} />
 
-          <Route path="staff-transactions/branch/:branchId" element={<StaffTransactions />}/>
-          <Route path="staff-transactions/branch/:branchId/form" element={<StaffTransactionForm />}/>
-          <Route path="staff-transactions/branch/:branchId/editform/:id" element={<StaffTransactionEditForm />}/> 
+          <Route path="employee-transactions/branch/:branchId" element={<EmployeeTransactions />}/>
+          <Route path="employee-transactions/branch/:branchId/form" element={<EmployeeTransactionForm />}/>
+          <Route path="employee-transactions/branch/:branchId/editform/:id" element={<EmployeeTransactionEditForm />}/> 
 
           <Route path="debtors/branch/:branchId" element={<AllDebtorsPage />} />
           <Route path="debtor-transactions/branch/:branchId" element={<AllDebtorTransactions />} />

@@ -183,12 +183,12 @@ export default function ProductIncentivesPage() {
             </div>
             <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 w-full sm:w-auto">
               <Button
-                onClick={() => navigate(`/staff/branch/${branchId}`)}
+                onClick={() => navigate(`/employee/branch/${branchId}`)}
                 variant="outline"
                 className="w-full sm:w-auto px-5 text-black border-white hover:bg-gray-700 hover:text-white"
               >
                 <ArrowLeft className="mr-2 h-4 w-3" />
-                Back to Staff
+                Back to Employee
               </Button>
               <Button
                 onClick={() => setIsDeleteDialogOpen(true)}
