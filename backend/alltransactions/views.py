@@ -3,11 +3,11 @@ from datetime import timedelta
 from rest_framework.response import Response
 import random
 from decimal import Decimal
-from .serializers import PurchaseTransactionSerializer,PurchaseReturnSerializer,SalesTransactionSerializer,SalesReturnSerializer,VendorSerializer,VendorTransactionSerializer,StaffTransactionSerializer,StaffSerializer, ExpensesSerializer, WithdrawalSerializer, ClosingCashSerializer, CustomerSerializer
+from .serializers import PurchaseTransactionSerializer,PurchaseReturnSerializer,SalesTransactionSerializer,SalesReturnSerializer,VendorSerializer,VendorTransactionSerializer,EmployeeTransactionSerializer, ExpensesSerializer, WithdrawalSerializer, ClosingCashSerializer, CustomerSerializer
 from enterprise.models import Branch
 from rest_framework.views import APIView
 from rest_framework import status
-from .models import PurchaseTransaction,SalesTransaction,Vendor,VendorTransactions,SalesReturn,Purchase,Sales,PurchaseReturn,StaffTransactions,Staff, Expenses
+from .models import PurchaseTransaction,SalesTransaction,Vendor,VendorTransactions,SalesReturn,Purchase,Sales,PurchaseReturn,EmployeeTransactions, Expenses
 from rest_framework.permissions import IsAuthenticated
 from allinventory.models import Product,Brand
 from django.utils.dateparse import parse_date
@@ -22,10 +22,12 @@ from django.db import transaction
 from .models import Debtor, DebtorTransaction
 from .serializers import DebtorSerializer, DebtorTransactionSerializer
 import json
-from alltransactions.models import StaffTransactionDetail,Withdrawal, ClosingCash
+from alltransactions.models import EmployeeTransactionDetail,Withdrawal, ClosingCash
 from order.models import Order
 from .models import NCM, NCMTransaction
 from .serializers import NCMSerializer, NCMTransactionSerializer
+from enterprise.models import Employee
+from enterprise.serializers import EmployeeSerializer
 
 
 # Create your views here.
@@ -34,9 +36,9 @@ class PurchaseTransactionView(APIView):
     
     def post(self, request, format=None):
         user = request.user
-        enterprise = user.person.enterprise.id
+        enterprise = user.employee.enterprise.id
         request.data['enterprise'] = enterprise
-        request.data['person'] = user.person
+        request.data['employee'] = user.employee
         serializer = PurchaseTransactionSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -46,7 +48,7 @@ class PurchaseTransactionView(APIView):
     def get(self, request,pk=None,branch=None, format=None):
         print("HERE")
         user = request.user
-        enterprise = user.person.enterprise
+        enterprise = user.employee.enterprise
         search = request.GET.get('search')
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
@@ -87,8 +89,8 @@ class PurchaseTransactionView(APIView):
     
     def patch(self,request,pk,format=None):
         data = request.data
-        data['enterprise'] = request.user.person.enterprise.id
-        role = request.user.person.role
+        data['enterprise'] = request.user.employee.enterprise.id
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         try:
@@ -105,7 +107,7 @@ class PurchaseTransactionView(APIView):
     
     def delete(self, request, pk, format=None):
         with transaction.atomic():
-            role = request.user.person.role
+            role = request.user.employee.role
             if role != "Admin":
                 return Response("Unauthorized")
 
@@ -156,14 +158,14 @@ class SalesTransactionView(APIView):
         
     def post(self, request, format=None):
         user = request.user
-        enterprise = user.person.enterprise
+        enterprise = user.employee.enterprise
         data = request.data.copy()
 
         use_loyalty_points = str(data.pop('use_loyalty_points', 'false')).lower() in ['true', '1', 'yes', 'on']
         loyalty_points_used = float(data.pop('loyalty_points_used', 0) or 0)
 
         data['enterprise'] = enterprise.id
-        data['person'] = user.person
+        data['employee'] = user.employee
 
         customer_for_loyalty = None
         sale_customer = None
@@ -227,7 +229,7 @@ class SalesTransactionView(APIView):
         
     def get(self, request,pk=None,branch=None, format=None):
         user = request.user
-        enterprise = user.person.enterprise
+        enterprise = user.employee.enterprise
         search = request.GET.get('search')
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
@@ -284,8 +286,8 @@ class SalesTransactionView(APIView):
     
     def patch(self,request,pk,format=None):
         data = request.data
-        data['enterprise'] = request.user.person.enterprise.id
-        role = request.user.person.role
+        data['enterprise'] = request.user.employee.enterprise.id
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
 
@@ -305,7 +307,7 @@ class SalesTransactionView(APIView):
         loyalty_points_used = float(new_data.pop('loyalty_points_used', 0) or 0)
 
         phone_number = new_data.get('phone_number') or orig_phone
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         customer_for_loyalty = None
         if phone_number:
             customer_for_loyalty = Customer.objects.filter(
@@ -386,7 +388,7 @@ class SalesTransactionView(APIView):
     @transaction.atomic
     def delete(self, request, pk, format=None):
         sales_transaction = SalesTransaction.objects.get(id=pk)
-        role = request.user.person.role
+        role = request.user.employee.role
         modify_stock = request.GET.get('flag')
         amt_paid = sales_transaction.amount_paid if sales_transaction.amount_paid else 0
         customer = Customer.objects.filter(phone_number=sales_transaction.phone_number, enterprise=sales_transaction.enterprise).first()
@@ -469,8 +471,8 @@ class VendorView(APIView):
 
     def get(self, request, branch=None, pk=None, *args, **kwargs):
         id = request.GET.get("id")
-        role = request.user.person.role
-        enterprise = request.user.person.enterprise
+        role = request.user.employee.role
+        enterprise = request.user.employee.enterprise
         
         # If pk is provided in URL, get specific vendor
         if pk:
@@ -510,7 +512,7 @@ class VendorView(APIView):
     
     def post(self, request, *args, **kwargs):
         data = request.data
-        data["enterprise"] = request.user.person.enterprise.id
+        data["enterprise"] = request.user.employee.enterprise.id
         serializer = VendorSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
@@ -518,11 +520,11 @@ class VendorView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk=None, branch=None, *args, **kwargs):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
         
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         
         if not pk:
             return Response({"error": "Vendor ID is required"}, 
@@ -548,7 +550,7 @@ class VendorTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self,request,branch=None,pk=None):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         if pk:
@@ -558,12 +560,12 @@ class VendorTransactionView(APIView):
         query = request.GET.get('search')
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
-        vendor_transactions = VendorTransactions.objects.filter(enterprise = request.user.person.enterprise)
+        vendor_transactions = VendorTransactions.objects.filter(enterprise = request.user.employee.enterprise)
         if branch:
             vendor_transactions = vendor_transactions.filter(branch = branch)
         if query:
-            vendor_transactions_name = vendor_transactions.filter(vendor__name__icontains=query,enterprise = request.user.person.enterprise)
-            vendor_transactions_brand = vendor_transactions.filter(vendor__brand__name__icontains=query,enterprise = request.user.person.enterprise)
+            vendor_transactions_name = vendor_transactions.filter(vendor__name__icontains=query,enterprise = request.user.employee.enterprise)
+            vendor_transactions_brand = vendor_transactions.filter(vendor__brand__name__icontains=query,enterprise = request.user.employee.enterprise)
             vendor_transactions = vendor_transactions_name.union(vendor_transactions_brand)
 
         if start_date and end_date:
@@ -586,11 +588,11 @@ class VendorTransactionView(APIView):
         return paginator.get_paginated_response(serializer.data)
     
     def post(self,request,*args, **kwargs):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         data = request.data
-        data["enterprise"] = request.user.person.enterprise.id
+        data["enterprise"] = request.user.employee.enterprise.id
         serializer = VendorTransactionSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
@@ -598,12 +600,12 @@ class VendorTransactionView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def patch(self,request,pk):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         data = request.data
-        data["enterprise"] = request.user.person.enterprise.id
-        role = request.user.person.role
+        data["enterprise"] = request.user.employee.enterprise.id
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         vendor_transaction = VendorTransactions.objects.get(id=pk)
@@ -614,7 +616,7 @@ class VendorTransactionView(APIView):
         return Response(serializer.errors)
     
     def delete(self,request,pk):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         vendor_transaction = VendorTransactions.objects.get(id=pk)
@@ -640,7 +642,7 @@ class StatsView(APIView):
         end_date = parse_date(end_date) if isinstance(end_date, str) else end_date
 
 
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
     
         allstock = Product.objects.filter(enterprise = enterprise, branch=branch).count()
         allbrands = Brand.objects.filter(enterprise = enterprise, branch=branch).count()
@@ -706,7 +708,7 @@ class PurchaseReturnView(APIView):
 
 
     def get(self, request,branch=None):
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         search = request.GET.get('search')
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
@@ -760,7 +762,7 @@ class PurchaseReturnView(APIView):
     def post(self,request):
         data = request.data 
         user = request.user
-        enterprise = user.person.enterprise
+        enterprise = user.employee.enterprise
         data['enterprise'] = enterprise.id 
         if "date" in data:
             date_str = data["date"]
@@ -774,7 +776,7 @@ class PurchaseReturnView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self,request,pk):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         purchase_return = PurchaseReturn.objects.filter(id=pk).first()
@@ -795,7 +797,7 @@ class SalesReportView(APIView):
         end_date = request.GET.get('end_date')
         product = request.GET.get('product')
 
-        sales = Sales.objects.filter(sales_transaction__enterprise = request.user.person.enterprise, returned = False, sales_transaction__hidden = False)
+        sales = Sales.objects.filter(sales_transaction__enterprise = request.user.employee.enterprise, returned = False, sales_transaction__hidden = False)
         if branch:
             sales = sales.filter(sales_transaction__branch = branch)
         if search:
@@ -883,7 +885,7 @@ class PurchaseReportView(APIView):
         end_date = request.GET.get('end_date')
         product = request.GET.get('product')
 
-        purchases = Purchase.objects.filter(purchase_transaction__enterprise=request.user.person.enterprise)
+        purchases = Purchase.objects.filter(purchase_transaction__enterprise=request.user.employee.enterprise)
         if branch:
             purchases = purchases.filter(purchase_transaction__branch=branch)
         if search:
@@ -933,7 +935,7 @@ class PurchaseReportView(APIView):
 class NextBillNo(APIView):
     def get(self,request):
         max_bill_no = SalesTransaction.objects.filter(
-            enterprise=request.user.person.enterprise,
+            enterprise=request.user.employee.enterprise,
         ).aggregate(max_bill_no=Max('bill_no'))['max_bill_no']
         
         if max_bill_no is None:
@@ -943,28 +945,28 @@ class NextBillNo(APIView):
         
         return Response({'bill_no':next_bill_no})
     
-class StaffTransactionView(APIView):
+class EmployeeTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self,request,pk=None,branch=None, staff_pk = None):
+    def get(self,request,pk=None,branch=None, employee_pk = None):
         if pk:
-            staff_transactions = StaffTransactions.objects.get(id=pk)
-            serializer = StaffTransactionSerializer(staff_transactions)
+            employee_transactions = EmployeeTransactions.objects.get(id=pk)
+            serializer = EmployeeTransactionSerializer(employee_transactions)
             return Response(serializer.data)
 
         query = request.GET.get('search')
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
-        staff_transactions = StaffTransactions.objects.filter(enterprise = request.user.person.enterprise)
+        employee_transactions = EmployeeTransactions.objects.filter(enterprise = request.user.employee.enterprise)
         if branch:
-            staff_transactions = staff_transactions.filter(branch = branch)
+            employee_transactions = employee_transactions.filter(branch = branch)
 
-        if staff_pk:
-            staff_transactions = staff_transactions.filter(staff = staff_pk)
+        if employee_pk:
+            employee_transactions = employee_transactions.filter(employee = employee_pk)
         
         if query:
-            staff_transactions = staff_transactions.filter(
-                Q(staff__name__icontains=query) | Q(staff__branch__name__icontains=query)
+            employee_transactions = employee_transactions.filter(
+                Q(employee__name__icontains=query) | Q(employee__branch__name__icontains=query)
             )
 
         if start_date and end_date:
@@ -973,26 +975,26 @@ class StaffTransactionView(APIView):
 
         if start_date and end_date:
             
-            staff_transactions = staff_transactions.filter(
+            employee_transactions = employee_transactions.filter(
                 date__range=(start_date, end_date)
             )
 
-        staff_transactions = staff_transactions.order_by('-id')
+        employee_transactions = employee_transactions.order_by('-id')
 
         paginator = PageNumberPagination()
         paginator.page_size = 5  # Set the page size here
-        paginated_transactions = paginator.paginate_queryset(staff_transactions, request)
+        paginated_transactions = paginator.paginate_queryset(employee_transactions, request)
 
-        serializer = StaffTransactionSerializer(paginated_transactions, many=True)
+        serializer = EmployeeTransactionSerializer(paginated_transactions, many=True)
         return paginator.get_paginated_response(serializer.data)
     
     def post(self,request,*args, **kwargs):
         data = request.data
-        data["enterprise"] = request.user.person.enterprise.id
-        role = request.user.person.role
-        if role == "Staff":
+        data["enterprise"] = request.user.employee.enterprise.id
+        role = request.user.employee.role
+        if role == "Employee":
             return Response("Unauthorized")
-        serializer = StaffTransactionSerializer(data=data)
+        serializer = EmployeeTransactionSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1000,33 +1002,33 @@ class StaffTransactionView(APIView):
     
     def patch(self,request,pk):
         data = request.data
-        data["enterprise"] = request.user.person.enterprise.id
-        role = request.user.person.role
+        data["enterprise"] = request.user.employee.enterprise.id
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
-        staff_transaction = StaffTransactions.objects.get(id=pk)
-        serializer = StaffTransactionSerializer(staff_transaction,data=data,partial=True)
+        employee_transaction = EmployeeTransactions.objects.get(id=pk)
+        serializer = EmployeeTransactionSerializer(employee_transaction,data=data,partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors)
     
     def delete(self,request,pk):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
-        staff_transaction = StaffTransactions.objects.get(id=pk)
-        staff_transaction.delete()
+        employee_transaction = EmployeeTransactions.objects.get(id=pk)
+        employee_transaction.delete()
         return Response("Deleted")
     
-class StaffView(APIView):
+class EmployeeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self,request,branchId=None):
-        staffs = Staff.objects.filter(enterprise = request.user.person.enterprise)
+        employees = Employee.objects.filter(enterprise = request.user.employee.enterprise)
         if branchId:
-            staffs = staffs.filter(branch = branchId)
-        serializer = StaffSerializer(staffs,many=True)
+            employees = employees.filter(branch = branchId)
+        serializer = EmployeeSerializer(employees,many=True)
         return Response(serializer.data)
     
 class CustomerView(APIView):
@@ -1035,7 +1037,7 @@ class CustomerView(APIView):
     def get(self,request,pk):
         customer = Customer.objects.filter(phone_number=pk).first()
         if customer:
-            sales = SalesTransaction.objects.filter(phone_number=customer.phone_number,enterprise=request.user.person.enterprise)
+            sales = SalesTransaction.objects.filter(phone_number=customer.phone_number,enterprise=request.user.employee.enterprise)
             total_amount = 0
             for sale in sales:
                 total_amount += sale.total_amount
@@ -1045,7 +1047,7 @@ class CustomerView(APIView):
 
     def post(self,request):
         data = request.data
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         customer_name = data["customer_name"]
         phone_number = data["phone_number"]
         customer = Customer.objects.create(name=customer_name, phone_number=phone_number, enterprise=enterprise)
@@ -1062,7 +1064,7 @@ class ListCustomerView(APIView):
 
     def get(self, request):
         """List enterprise customers using backend pagination (100/page)."""
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         customers = Customer.objects.filter(enterprise=enterprise)
 
         search = (request.GET.get('search') or '').strip()
@@ -1109,7 +1111,7 @@ class CustomerLotteryView(APIView):
         from datetime import datetime
         from alltransactions.models import SalesTransaction
         
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         num_winners = int(request.data.get('num_winners', 1))
         use_loyalty_points = request.data.get('use_loyalty_points', True)
         start_date_str = request.data.get('start_date')
@@ -1205,7 +1207,7 @@ class SalesReturnView(APIView):
 
 
     def get(self, request,branch=None):
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         search = request.GET.get('search')
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
@@ -1259,7 +1261,7 @@ class SalesReturnView(APIView):
     def post(self,request):
         data = request.data 
         user = request.user
-        enterprise = user.person.enterprise
+        enterprise = user.employee.enterprise
         data['enterprise'] = enterprise.id 
         if "date" in data:
             date_str = data["date"]
@@ -1273,7 +1275,7 @@ class SalesReturnView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self,request,pk):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         purchase_return = SalesReturn.objects.filter(id=pk).first()
@@ -1286,7 +1288,7 @@ class DebtorsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, branchId=None):
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         debtors = Debtor.objects.filter(enterprise=enterprise)
         
         if branchId:
@@ -1297,7 +1299,7 @@ class DebtorsView(APIView):
     
     def post(self, request):
         data = request.data
-        data['enterprise'] = request.user.person.enterprise.id
+        data['enterprise'] = request.user.employee.enterprise.id
         serializer = DebtorSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
@@ -1305,7 +1307,7 @@ class DebtorsView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         debtor = Debtor.objects.filter(id=pk).first()
@@ -1318,7 +1320,7 @@ class DebtorTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, debtor_pk=None, pk=None, branch=None):
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         debtor_transactions = DebtorTransaction.objects.filter(enterprise=enterprise)
         
         query = request.GET.get('search')
@@ -1362,7 +1364,7 @@ class DebtorTransactionView(APIView):
     
     def post(self, request):
         data = request.data
-        data['enterprise'] = request.user.person.enterprise.id
+        data['enterprise'] = request.user.employee.enterprise.id
         serializer = DebtorTransactionSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
@@ -1371,8 +1373,8 @@ class DebtorTransactionView(APIView):
     
     def patch(self, request, pk):
         data = request.data
-        data['enterprise'] = request.user.person.enterprise.id
-        role = request.user.person.role
+        data['enterprise'] = request.user.employee.enterprise.id
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         debtor_transaction = DebtorTransaction.objects.get(id=pk)
@@ -1383,7 +1385,7 @@ class DebtorTransactionView(APIView):
         return Response(serializer.errors)
     
     def delete(self, request, pk):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         debtor_transaction = DebtorTransaction.objects.filter(id=pk).first()
@@ -1405,7 +1407,7 @@ class NCMTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, ncm_pk=None, pk=None, branch=None):
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         ncm_transactions = NCMTransaction.objects.filter(enterprise=enterprise, branch=branch)
 
         query = request.GET.get('search')
@@ -1447,9 +1449,9 @@ class NCMTransactionView(APIView):
 
     def post(self, request):
         data = request.data
-        data['enterprise'] = request.user.person.enterprise.id
+        data['enterprise'] = request.user.employee.enterprise.id
         serializer = NCMTransactionSerializer(data=data)
-        data['ncm'] = NCM.objects.filter(enterprise=request.user.person.enterprise).first().id
+        data['ncm'] = NCM.objects.filter(enterprise=request.user.employee.enterprise).first().id
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1457,11 +1459,11 @@ class NCMTransactionView(APIView):
 
     def patch(self, request, pk):
         data = request.data
-        data['enterprise'] = request.user.person.enterprise.id
-        role = request.user.person.role
+        data['enterprise'] = request.user.employee.enterprise.id
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
-        ncm_transaction = NCMTransaction.objects.filter(id=pk, enterprise=request.user.person.enterprise).first()
+        ncm_transaction = NCMTransaction.objects.filter(id=pk, enterprise=request.user.employee.enterprise).first()
         if not ncm_transaction:
             return Response("NCM Transaction not found", status=status.HTTP_404_NOT_FOUND)
         if ncm_transaction.all_sales_transaction_id:
@@ -1476,7 +1478,7 @@ class NCMTransactionView(APIView):
         return Response(serializer.errors)
 
     def delete(self, request, pk):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         ncm_transaction = NCMTransaction.objects.filter(id=pk).first()
@@ -1495,7 +1497,7 @@ class VendorStatementView(APIView):
 
     def get(self, request, vendorId=None, branch=None):
         print("HERE START")
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         vendor = Vendor.objects.filter(id=vendorId, enterprise=enterprise).first()
         vendor_transactions = VendorTransactions.objects.filter(enterprise=enterprise,vendor=vendor)
 
@@ -1548,7 +1550,7 @@ class DebtorStatementView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, debtorId=None, branch=None):
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         debtor = Debtor.objects.filter(id=debtorId, enterprise=enterprise).first()
         debtor_transactions = DebtorTransaction.objects.filter(enterprise=enterprise, debtor=debtor)
 
@@ -1593,16 +1595,16 @@ class DebtorStatementView(APIView):
         return Response({'debtor_data': debtor, 'debtor_transactions': dts})
     
 
-class StaffStatementView(APIView):
+class EmployeeStatementView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, staffId=None, branch=None):
-        enterprise = request.user.person.enterprise
-        staff = Staff.objects.filter(id=staffId, enterprise=enterprise).first()
-        staff_transactions = StaffTransactions.objects.filter(enterprise=enterprise, staff=staff)
+    def get(self, request, employeeId=None, branch=None):
+        enterprise = request.user.employee.enterprise
+        employee = Employee.objects.filter(id=employeeId, enterprise=enterprise).first()
+        employee_transactions = EmployeeTransactions.objects.filter(enterprise=enterprise, employee=employee)
         due = 0
-        if not staff:
-            return Response("Staff not found", status=status.HTTP_404_NOT_FOUND)
+        if not employee:
+            return Response("Employee not found", status=status.HTTP_404_NOT_FOUND)
 
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
@@ -1613,37 +1615,37 @@ class StaffStatementView(APIView):
 
         if start_date and end_date:
             due = 0
-            staff_transactions = staff_transactions.filter(
+            employee_transactions = employee_transactions.filter(
                 date__range=(start_date, end_date)
             )
-            for st in StaffTransactions.objects.filter(staff=staff, enterprise=enterprise, date__lt=start_date).order_by('date','id'):
+            for st in EmployeeTransactions.objects.filter(employee=employee, enterprise=enterprise, date__lt=start_date).order_by('date','id'):
                 due += st.amount
         elif start_date and not end_date:
-            staff_transactions = staff_transactions.filter(
+            employee_transactions = employee_transactions.filter(
                 date__gte=start_date
             )
             due = 0
-            for st in StaffTransactions.objects.filter(staff=staff, enterprise=enterprise, date__lt=start_date).order_by('date','id'):
+            for st in EmployeeTransactions.objects.filter(employee=employee, enterprise=enterprise, date__lt=start_date).order_by('date','id'):
                 due += st.amount
         elif not start_date and end_date:
-            staff_transactions = staff_transactions.filter(
+            employee_transactions = employee_transactions.filter(
                 date__lte=end_date
             )
 
-        staff_transactions = staff_transactions.order_by('date','id')
-        staff_data = StaffSerializer(staff).data
-        # previous_due for staff when start_date provided
+        employee_transactions = employee_transactions.order_by('date','id')
+        employee_data = EmployeeSerializer(employee).data
+        # previous_due for employee when start_date provided
         previous_due = 0
         if start_date:
-            prev_sum = StaffTransactions.objects.filter(
+            prev_sum = EmployeeTransactions.objects.filter(
                 enterprise=enterprise,
-                staff_id=staffId,
+                employee_id=employeeId,
                 date__lt=start_date
             ).aggregate(total=Sum('amount'))['total'] or 0
             previous_due = float(prev_sum)
-            staff_data['previous_due'] = previous_due
-        sts = StaffTransactionSerializer(staff_transactions, many=True).data
-        return Response({'staff_data': staff_data, 'staff_transactions': sts})
+            employee_data['previous_due'] = previous_due
+        sts = EmployeeTransactionSerializer(employee_transactions, many=True).data
+        return Response({'employee_data': employee_data, 'employee_transactions': sts})
 
 
 class ProductTransferView(APIView):
@@ -1660,10 +1662,10 @@ class ProductTransferView(APIView):
         products = request.data.get('products')
         print("This is products: ", products)
 
-        # branch = request.user.person.branch
+        # branch = request.user.employee.branch
         # if branch != from_branch:
             # return Response("Unauthorized branch for transfer", status=status.HTTP_403_FORBIDDEN)
-        enterprise = request.user.person.enterprise.id
+        enterprise = request.user.employee.enterprise.id
 
         sales = []
         purchase = []
@@ -1694,7 +1696,7 @@ class ProductTransferView(APIView):
             'sales': sales,
             'bill_no': '000',
             'method': 'transfer',
-            'person': request.user.person
+            'employee': request.user.employee
         }
 
         purchase_data = {
@@ -1704,7 +1706,7 @@ class ProductTransferView(APIView):
             'purchase': purchase,
             'bill_no': '000',
             'method': 'transfer',
-            'person': request.user.person
+            'employee': request.user.employee
         }
         # sale_transaction = SalesTransactionSerializer().create({
         #     'enterprise': enterprise,
@@ -1738,7 +1740,7 @@ class ExpensesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, branch=None, pk=None):
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         # Single expense fetch
         if pk is not None:
             expense = Expenses.objects.filter(id=pk, enterprise=enterprise).first()
@@ -1791,7 +1793,7 @@ class ExpensesView(APIView):
                 'amount': exp.amount,
                 'method': exp.method,
                 'desc': exp.desc,
-                'person_name': exp.person.user.name if exp.person else None,
+                'employee_name': exp.employee.user.name if exp.employee else None,
                 'type': 'Expense'
             })
         
@@ -1802,7 +1804,7 @@ class ExpensesView(APIView):
                 'amount': wit.amount,
                 'method': 'N/A',  # Withdrawals don't have method
                 'desc': 'Withdrawal',
-                'person_name': wit.person.user.name if wit.person else None,
+                'employee_name': wit.employee.user.name if wit.employee else None,
                 'type': 'Withdrawal'
             })
         
@@ -1840,10 +1842,10 @@ class ExpensesView(APIView):
 
         data = request.data 
         user = request.user
-        enterprise = user.person.enterprise
+        enterprise = user.employee.enterprise
         data['enterprise'] = enterprise.id 
         # Record who created the expense for consistency with other flows
-        data['person'] = getattr(user, 'person', None)
+        data['employee'] = getattr(user, 'employee', None)
         serializer = ExpensesSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
@@ -1853,8 +1855,8 @@ class ExpensesView(APIView):
     def patch(self,request,pk):
         data = request.data 
         user = request.user
-        enterprise = user.person.enterprise
-        role = request.user.person.role
+        enterprise = user.employee.enterprise
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
         expense = Expenses.objects.get(id=pk, enterprise=enterprise)
@@ -1866,8 +1868,8 @@ class ExpensesView(APIView):
 
     
     def delete(self,request,pk):
-        role = request.user.person.role
-        enterprise = request.user.person.enterprise
+        role = request.user.employee.role
+        enterprise = request.user.employee.enterprise
         if role != "Admin":
             return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
         expense = Expenses.objects.get(id=pk, enterprise=enterprise)
@@ -1880,7 +1882,7 @@ class ExpensesReportView(APIView):
 
     def get(self, request, branch=None):
         """Return expense rows plus a summary object (last element)."""
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
         search = request.GET.get('search')
@@ -1937,7 +1939,7 @@ class ExpensesReportView(APIView):
                 'method': exp.method,
                 'amount': amt,
                 'desc': exp.desc,
-                'person_name': exp.person.user.name if exp.person else None,
+                'employee_name': exp.employee.user.name if exp.employee else None,
             })
 
         rows.append({
@@ -1955,7 +1957,7 @@ class WithdrawalView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, branch=None, pk=None):
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         if pk is not None:
             withdrawal = Withdrawal.objects.filter(id=pk, enterprise=enterprise).first()
             if not withdrawal:
@@ -2000,9 +2002,9 @@ class WithdrawalView(APIView):
     def post(self, request):
         data = request.data.copy()
         user = request.user
-        enterprise = user.person.enterprise
+        enterprise = user.employee.enterprise
         data['enterprise'] = enterprise.id
-        data['person'] = getattr(user, 'person', None)
+        data['employee'] = getattr(user, 'employee', None)
         serializer = WithdrawalSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
@@ -2010,8 +2012,8 @@ class WithdrawalView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request, pk):
-        enterprise = request.user.person.enterprise
-        role = request.user.person.role
+        enterprise = request.user.employee.enterprise
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
         withdrawal = Withdrawal.objects.filter(id=pk, enterprise=enterprise).first()
@@ -2024,8 +2026,8 @@ class WithdrawalView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        enterprise = request.user.person.enterprise
-        role = request.user.person.role
+        enterprise = request.user.employee.enterprise
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
         withdrawal = Withdrawal.objects.filter(id=pk, enterprise=enterprise).first()
@@ -2038,7 +2040,7 @@ class WithdrawalReportView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, branch=None):
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
         search = request.GET.get('search')
@@ -2074,7 +2076,7 @@ class WithdrawalReportView(APIView):
                 'id': w.id,
                 'date': w.date,
                 'amount': amt,
-                'person_name': w.person.user.name if w.person else None,
+                'employee_name': w.employee.user.name if w.employee else None,
             })
         rows.append({
             'count': count,
@@ -2087,7 +2089,7 @@ class IncomeExpenseReportView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, branch=None):
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
         total_cash_income = 0
@@ -2275,7 +2277,7 @@ class IncomeExpenseReportView(APIView):
                 'id': wd.id,
                 'bill_no': 'Withdrawal',
                 'net_amount': -wd.amount,
-                'description': f"Withdrawal by {wd.person.user.name if wd.person else 'Unknown'}",
+                'description': f"Withdrawal by {wd.employee.user.name if wd.employee else 'Unknown'}",
                 'method': 'N/A',
                 'type': 'Withdrawal',
                 'date': wd.date
@@ -2395,7 +2397,7 @@ class ClosingCashView(APIView):
         If a ClosingCash already exists for today for the branch+enterprise it will be updated.
         Returns the serialized ClosingCash object.
         """
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         branch_id = request.data.get('branch')
         amount = request.data.get('amount')
         if branch_id is None or amount is None:
@@ -2426,7 +2428,7 @@ class ClosingCashView(APIView):
 
     def get(self, request):
         """Optional helper: fetch today's closing cash for a branch (branch query param)."""
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         branch_id = request.GET.get('branch')
         today = timezone.now().date()
         qs = ClosingCash.objects.filter(enterprise=enterprise, date=today)
@@ -2448,7 +2450,7 @@ class NCMReport(APIView):
         branch‑wise (the user asked for a branch column on the page).
         """
 
-        enterprise = request.user.person.enterprise
+        enterprise = request.user.employee.enterprise
         ncm = NCM.objects.filter(enterprise=enterprise, branch=branch).first()
         # if there is no NCM record for the enterprise we cannot proceed
         if not ncm:

@@ -31,22 +31,22 @@ class ProductView(APIView):
         search = request.GET.get('search')
 
         if branch:
-            products = Product.objects.filter(enterprise=request.user.person.enterprise,branch=branch)
+            products = Product.objects.filter(enterprise=request.user.employee.enterprise,branch=branch)
             serializer = ProductSerializer(products, many=True, context={'request': request})
             return Response(serializer.data)
         if search:
-            products = Product.objects.filter(enterprise=request.user.person.enterprise,name__icontains=search)
+            products = Product.objects.filter(enterprise=request.user.employee.enterprise,name__icontains=search)
             serializer = ProductSerializer(products, many=True, context={'request': request})
             return Response(serializer.data)
         
-        products = Product.objects.filter(enterprise=request.user.person.enterprise)
+        products = Product.objects.filter(enterprise=request.user.employee.enterprise)
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
     
 
     def post(self, request, format=None):
         data = request.data
-        data['enterprise'] = request.user.person.enterprise.id
+        data['enterprise'] = request.user.employee.enterprise.id
         serializer = ProductSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -55,10 +55,10 @@ class ProductView(APIView):
     
     def patch(self,request,pk,format=None):
         data = request.data
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
-        data['enterprise'] = request.user.person.enterprise.id
+        data['enterprise'] = request.user.employee.enterprise.id
         
         try:
             product = Product.objects.get(id=pk)
@@ -100,16 +100,16 @@ class BrandView(APIView):
         
         # search = request.GET.get('search')
         # if search:
-        #     brands = Brand.objects.filter(enterprise=request.user.person.enterprise,branch=request.user.person.branch,name__icontains=search)
+        #     brands = Brand.objects.filter(enterprise=request.user.employee.enterprise,branch=request.user.employee.branch,name__icontains=search)
         #     serializer = BrandSerializer(brands, many=True)
         #     return Response(serializer.data)
-        brands = Brand.objects.filter(enterprise=request.user.person.enterprise)
+        brands = Brand.objects.filter(enterprise=request.user.employee.enterprise)
         serializer = BrandSerializer(brands, many=True, context={'request': request})
         return Response(serializer.data)
     
     def post(self, request, format=None):
         data = request.data
-        data['enterprise'] = request.user.person.enterprise.id  
+        data['enterprise'] = request.user.employee.enterprise.id  
         serializer = BrandSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -118,10 +118,10 @@ class BrandView(APIView):
     
     def patch(self,request,pk,format=None):
         data = request.data
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
-        data['enterprise'] = request.user.person.enterprise.id
+        data['enterprise'] = request.user.employee.enterprise.id
         
         try:
             brand = Brand.objects.get(id=pk)
@@ -135,7 +135,7 @@ class BrandView(APIView):
         return Response(serializer.errors)
     
     def delete(self,request,pk,format=None):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized")
         try:
@@ -198,7 +198,7 @@ class ManufactureView(APIView):
 
         product = request.GET.get('search')
 
-        manufactures = Manufacture.objects.filter(branch=branch, enterprise=request.user.person.enterprise)
+        manufactures = Manufacture.objects.filter(branch=branch, enterprise=request.user.employee.enterprise)
         manufactures = manufactures.order_by('-id')
         if pk:
             try:
@@ -208,9 +208,9 @@ class ManufactureView(APIView):
             except Manufacture.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
-        # manufactures = Manufacture.objects.filter(enterprise=request.user.person.enterprise, branch=branch)
+        # manufactures = Manufacture.objects.filter(enterprise=request.user.employee.enterprise, branch=branch)
         if product:
-            manufactures = Manufacture.objects.filter(manufacture_items__product__name__icontains=product,branch = branch, enterprise=request.user.person.enterprise)
+            manufactures = Manufacture.objects.filter(manufacture_items__product__name__icontains=product,branch = branch, enterprise=request.user.employee.enterprise)
 
         paginator = PageNumberPagination()
         paginator.page_size = 10  # Set the page size here
@@ -222,10 +222,10 @@ class ManufactureView(APIView):
 
 
     def post(self, request, format=None):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
-        request.data['enterprise'] = request.user.person.enterprise.id
+        request.data['enterprise'] = request.user.employee.enterprise.id
         serializer = ManufactureSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -233,7 +233,7 @@ class ManufactureView(APIView):
         return Response(serializer.errors)
 
     def patch(self, request, pk, format=None):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
         try:
@@ -248,7 +248,7 @@ class ManufactureView(APIView):
         return Response(serializer.errors)
 
     def delete(self, request, pk, format=None):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
         try:
@@ -267,7 +267,7 @@ class IncentiveProductView(APIView):
         if pk:
             try:
                 incentive_product = IncentiveProduct.objects.get(
-                    id=pk, enterprise=request.user.person.enterprise
+                    id=pk, enterprise=request.user.employee.enterprise
                 )
             except IncentiveProduct.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
@@ -275,9 +275,9 @@ class IncentiveProductView(APIView):
             return Response(serializer.data)
 
         incentive_products = IncentiveProduct.objects.filter(
-            enterprise=request.user.person.enterprise, branch=branch
+            enterprise=request.user.employee.enterprise, branch=branch
         )
-        user_branch = request.user.person.branch
+        user_branch = request.user.employee.branch
         if user_branch:
             incentive_products = incentive_products.filter(branch=user_branch)
 
@@ -290,7 +290,7 @@ class IncentiveProductView(APIView):
 
     def post(self, request, *args, **kwargs):
         data = request.data.copy()
-        data['enterprise'] = request.user.person.enterprise.id
+        data['enterprise'] = request.user.employee.enterprise.id
         serializer = IncentiveProductSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -298,12 +298,12 @@ class IncentiveProductView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request, pk, *args, **kwargs):
-        role = request.user.person.role
+        role = request.user.employee.role
         if role != "Admin":
             return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
         try:
             incentive_product = IncentiveProduct.objects.get(
-                pk=pk, enterprise=request.user.person.enterprise
+                pk=pk, enterprise=request.user.employee.enterprise
             )
         except IncentiveProduct.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -316,7 +316,7 @@ class IncentiveProductView(APIView):
     def delete(self, request, pk, *args, **kwargs):
         try:
             incentive_product = IncentiveProduct.objects.get(
-                pk=pk, enterprise=request.user.person.enterprise
+                pk=pk, enterprise=request.user.employee.enterprise
             )
         except IncentiveProduct.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)

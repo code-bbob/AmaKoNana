@@ -6,8 +6,8 @@ from django.utils.dateparse import parse_date
 from datetime import datetime, date
 from .serializers import BranchSerializer
 from .models import Branch
-from alltransactions.models import Staff
-from alltransactions.serializers import StaffSerializer
+from .models import Employee
+from .serializers import EmployeeSerializer
 
 class BranchView(APIView):
     permission_classes = [IsAuthenticated]
@@ -15,48 +15,52 @@ class BranchView(APIView):
     def get(self, request,id=None):
         user = request.user
         print("HERE")
-        enterprise = user.person.enterprise
+        enterprise = user.employee.enterprise
         print("NOT HERE")
         if id:
-            branch = enterprise.branch.get(id=id)
+            branch = enterprise.branches.get(id=id)
             serializer = BranchSerializer(branch)
             return Response(serializer.data)
-        if user.person.role == 'Admin':
-            if user.person.branch:
-                branch = user.person.branch
+        print(user.employee.role)
+        if user.employee.role == 'Admin':
+            print("YES HEREEE")
+            if user.employee.branch:
+                branch = user.employee.branch
                 serializer = BranchSerializer(branch)
                 return Response([serializer.data])
-            branches = enterprise.branch.all()
+            branches = enterprise.branches.all()
+            print("branches",branches)
             serializer = BranchSerializer(branches, many=True)
             return Response(serializer.data)
         else:
-            branch = user.person.branch
+            print("NO HEREEE")
+            branch = user.employee.branch
             print(branch)
             serializer = BranchSerializer(branch)
             print(serializer.data)
             return Response([serializer.data])
 
-class BranchStaffView(APIView):
+class BranchEmployeeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request,id):
         user = request.user
-        enterprise = user.person.enterprise
-        if user.person.role != "Staff":
-            staff = Staff.objects.filter(branch=id)
-            serializer = StaffSerializer(staff, many=True)
+        enterprise = user.employee.enterprise
+        if user.employee.role != "Employee":
+            employee = Employee.objects.filter(branch=id)
+            serializer = EmployeeSerializer(employee, many=True)
             return Response(serializer.data)
         else:
             return Response("You are not authorized to view this page")
         
     def post(self, request,id):
         user = request.user
-        enterprise = user.person.enterprise
-        if user.person.role == 'Admin':
+        enterprise = user.employee.enterprise
+        if user.employee.role == 'Admin':
             data = request.data
             data['branch'] = id
-            data['enterprise'] = request.user.person.enterprise.id
-            serializer = StaffSerializer(data=data)
+            data['enterprise'] = request.user.employee.enterprise.id
+            serializer = EmployeeSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -66,10 +70,10 @@ class BranchStaffView(APIView):
     
     def patch(self, request,id):
         user = request.user
-        enterprise = user.person.enterprise
-        if user.person.role == 'Admin':
-            staff = Staff.objects.get(id=id)
-            serializer = StaffSerializer(staff, data=request.data, partial=True)
+        enterprise = user.employee.enterprise
+        if user.employee.role == 'Admin':
+            employee = Employee.objects.get(id=id)
+            serializer = EmployeeSerializer(employee, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -79,10 +83,10 @@ class BranchStaffView(APIView):
     
     def delete(self, request,id):
         user = request.user
-        enterprise = user.person.enterprise
-        if user.person.role == 'Admin':
-            staff = Staff.objects.get(id=id)
-            staff.delete()
+        enterprise = user.employee.enterprise
+        if user.employee.role == 'Admin':
+            employee = Employee.objects.get(id=id)
+            employee.delete()
             return Response(status=204)
         else:
             return Response("You are not authorized to view this page")
@@ -91,8 +95,8 @@ class BranchStaffView(APIView):
 class UserBranchView(APIView):
 
     def get(self,request):
-        role = request.user.person.role
-        branch = request.user.person.branch
+        role = request.user.employee.role
+        branch = request.user.employee.branch
         if branch:
             branch_serializer = BranchSerializer(branch)
             return Response(branch_serializer.data)
@@ -104,5 +108,5 @@ class RoleView(APIView):
 
     def get(self, request):
         user = request.user
-        role = user.person.role
+        role = user.employee.role
         return Response(role)

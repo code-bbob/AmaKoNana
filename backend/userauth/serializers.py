@@ -4,7 +4,7 @@ from django.utils.encoding import smart_str, force_bytes, DjangoUnicodeDecodeErr
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from .utils import Util
-from enterprise.serializers import EnterpriseSerializer
+from enterprise.serializers import EnterpriseSerializer, BranchSummarySerializer, DepartmentSummarySerializer, EnterpriseSummarySerializer
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
   # We are writing this becoz we need confirm password field in our Registratin Request
@@ -113,9 +113,41 @@ class UserInfoSerializer(serializers.ModelSerializer):
     fields = ['id','name','email','enterprise','role']
 
   def get_enterprise(self,obj):
-    if obj.person.enterprise:
-      return obj.person.enterprise.name
+    if obj.employee.enterprise:
+      return obj.employee.enterprise.name
     return None
   
   def get_role(self,obj):
-    return obj.person.role
+    return obj.employee.role
+
+class UserSerializer(serializers.ModelSerializer):
+  employee_profile = serializers.SerializerMethodField()
+
+  class Meta:
+    model = User
+    fields=['id', 'username', 'email', 'name', 'is_staff', 'is_admin', 'employee_profile']
+    read_only_fields = ['id']
+
+  def get_employee_profile(self, user):
+    employee = getattr(user, 'employee', None)
+    if not employee:
+      return None
+
+    request = self.context.get('request')
+    avatar_url = None
+    if employee.avatar:
+      avatar_url = employee.avatar.url
+      if request is not None:
+        avatar_url = request.build_absolute_uri(avatar_url)
+
+    return {
+      'id': employee.id,
+      'employee_code': employee.employee_code,
+      'name': employee.name,
+      'enterprise': EnterpriseSummarySerializer(employee.enterprise).data if employee.enterprise else None,
+      'branch': BranchSummarySerializer(employee.branch).data if employee.branch else None,
+      'department': DepartmentSummarySerializer(employee.department).data if employee.department else None,
+      'avatar': avatar_url,
+    }
+
+

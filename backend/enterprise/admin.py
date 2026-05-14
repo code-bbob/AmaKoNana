@@ -1,13 +1,13 @@
 from django.contrib import admin
-from .models import Enterprise,Person, Branch
+from .models import Enterprise,Employee, Branch
 # Register your models here.
 
-# class PersonInline(admin.TabularInline):
-#     model = Person
+# class EmployeeInline(admin.TabularInline):
+#     model = Employee
 #     extra = 0
 
 # class EnterpriseAdmin(admin.ModelAdmin):
-#     inlines = [PersonInline]
+#     inlines = [EmployeeInline]
 
 #     def delete_model(self, request, obj):
 #         # Custom delete logic if needed
@@ -15,8 +15,8 @@ from .models import Enterprise,Person, Branch
 
 
 # admin.site.register(Enterprise,EnterpriseAdmin)
-# admin.site.register(Person)
+# admin.site.register(Employee)
 
 admin.site.register(Enterprise)
-admin.site.register(Person)
+admin.site.register(Employee)
 admin.site.register(Branch)

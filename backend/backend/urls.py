@@ -27,6 +27,11 @@ urlpatterns = [
     path('alltransaction/',include('alltransactions.urls')),
     # Orders app (customer orders / production orders)
     path('order/', include('order.urls')),
+    path('attendance/', include('attendance.urls')),
+
+    path('', include('device.iclock_urls')),
+
+
 ]
 
 # Serve media files during development

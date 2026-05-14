@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'allinventory',
     'alltransactions',
     'order',
+    'device',
+    'attendance'
 ]
 
 MIDDLEWARE = [

@@ -2,7 +2,8 @@ from rest_framework import serializers
 from .models import ClosingCash, Vendor, Purchase, PurchaseTransaction,PurchaseReturn, Sales, SalesTransaction, VendorTransactions, SalesReturn, Expenses, Customer
 from django.db import transaction
 from allinventory.models import Product,Brand
-from alltransactions.models import Staff,StaffTransactions, Debtor, DebtorTransaction, StaffTransactionDetail, Withdrawal, ClosingCash, NCM, NCMTransaction
+from alltransactions.models import EmployeeTransactions, Debtor, DebtorTransaction, EmployeeTransactionDetail, Withdrawal, ClosingCash, NCM, NCMTransaction
+from enterprise.models import Employee
 
 
 
@@ -36,7 +37,7 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
     purchase = PurchaseSerializer(many=True)
     vendor_name = serializers.SerializerMethodField(read_only=True)
     date = serializers.DateField()
-    person_name = serializers.SerializerMethodField(read_only=True)
+    employee_name = serializers.SerializerMethodField(read_only=True)
 
 
     class Meta:
@@ -331,8 +332,8 @@ class PurchaseTransactionSerializer(serializers.ModelSerializer):
     def get_vendor_name(self, obj):
         return obj.vendor.name if obj.vendor else None
 
-    def get_person_name(self, obj):
-        return obj.person.user.name if obj.person else None
+    def get_employee_name(self, obj):
+        return obj.employee.user.name if obj.employee else None
 
 
 class SalesSerializer(serializers.ModelSerializer):
@@ -349,7 +350,7 @@ class SalesSerializer(serializers.ModelSerializer):
 class SalesTransactionSerializer(serializers.ModelSerializer):  
     sales = SalesSerializer(many=True)
     date = serializers.DateField()
-    person_name = serializers.SerializerMethodField()
+    employee_name = serializers.SerializerMethodField()
     is_sale_exchange = serializers.BooleanField(write_only=True, required=False, default=False)
     exchange_previous_balance = serializers.FloatField(write_only=True, required=False, default=0)
     exchange_exceeded_amount = serializers.FloatField(write_only=True, required=False, default=0)
@@ -647,8 +648,8 @@ class SalesTransactionSerializer(serializers.ModelSerializer):
         rep['date'] = instance.date.strftime('%Y-%m-%d')
         return rep
 
-    def get_person_name(self, obj):
-        return obj.person.user.name if obj.person else None
+    def get_employee_name(self, obj):
+        return obj.employee.user.name if obj.employee else None
 
 
 class VendorTransactionSerializer(serializers.ModelSerializer):
@@ -1050,32 +1051,28 @@ class SalesReturnSerializer(serializers.ModelSerializer):
             })
         return result
 
-class StaffSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Staff
-        fields = '__all__'
 
-class StaffTransactionDetailsSerializer(serializers.ModelSerializer):
+class EmployeeTransactionDetailsSerializer(serializers.ModelSerializer):
     product_name = serializers.SerializerMethodField(read_only=True)
     class Meta:
-        model = StaffTransactionDetail
+        model = EmployeeTransactionDetail
         fields = ['id', 'bill_no', 'product','product_name','quantity','rate','total']
         read_only_fields = ['total_price']
 
     def get_product_name(self, obj):
         return obj.product.name if obj.product else None
 
-class StaffTransactionSerializer(serializers.ModelSerializer):
-    staff_name = serializers.SerializerMethodField(read_only=True)
-    staff_transaction_details = StaffTransactionDetailsSerializer(many=True, required = False)
+class EmployeeTransactionSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField(read_only=True)
+    employee_transaction_details = EmployeeTransactionDetailsSerializer(many=True, required = False)
     date = serializers.DateField()
     class Meta:
-        model = StaffTransactions
+        model = EmployeeTransactions
         fields = '__all__'
 
     def create(self, validated_data):
         
-        transaction_details = validated_data.pop('staff_transaction_details', None)
+        transaction_details = validated_data.pop('employee_transaction_details', None)
         transaction_type = validated_data.get('transaction_type', 'Payment')
         amount = validated_data.get('amount', 0)
         
@@ -1083,19 +1080,19 @@ class StaffTransactionSerializer(serializers.ModelSerializer):
         if transaction_type == 'Payment':
             validated_data['amount'] = -abs(amount)
         
-        transaction = StaffTransactions.objects.create(**validated_data)
-        staff = transaction.staff
-        staff.due = (staff.due + transaction.amount) if staff.due is not None else +transaction.amount
-        staff.save()
+        transaction = EmployeeTransactions.objects.create(**validated_data)
+        employee = transaction.employee
+        employee.due = (employee.due + transaction.amount) if employee.due is not None else +transaction.amount
+        employee.save()
 
         if transaction_details:
             for detail in transaction_details:
-                StaffTransactionDetail.objects.create(staff_transaction=transaction, **detail)
+                EmployeeTransactionDetail.objects.create(employee_transaction=transaction, **detail)
 
         return transaction
     
     def update(self, instance, validated_data):
-        old_staff = instance.staff
+        old_employee = instance.employee
         old_amount = instance.amount or 0
         transaction_type = validated_data.get('transaction_type', instance.transaction_type)
         new_amount = validated_data.get('amount', instance.amount or 0)
@@ -1107,7 +1104,7 @@ class StaffTransactionSerializer(serializers.ModelSerializer):
             validated_data['amount'] = abs(new_amount)
 
         # Pull out nested details if provided
-        details_data = validated_data.pop('staff_transaction_details', None)
+        details_data = validated_data.pop('employee_transaction_details', None)
 
         # Update simple fields
         for attr, value in validated_data.items():
@@ -1118,28 +1115,28 @@ class StaffTransactionSerializer(serializers.ModelSerializer):
         # Replace details if provided
         if details_data is not None:
             # Delete existing and recreate
-            instance.staff_transaction_details.all().delete()
+            instance.employee_transaction_details.all().delete()
             for detail in details_data:
-                StaffTransactionDetail.objects.create(staff_transaction=instance, **detail)
+                EmployeeTransactionDetail.objects.create(employee_transaction=instance, **detail)
 
-        # Adjust staff due based on any amount and/or staff change
-        new_staff = instance.staff
+        # Adjust employee due based on any amount and/or employee change
+        new_employee = instance.employee
         final_amount = instance.amount or 0
-        if old_staff == new_staff:
+        if old_employee == new_employee:
             # Reverse old, apply new
-            new_staff.due = (new_staff.due or 0) + final_amount - old_amount
-            new_staff.save()
+            new_employee.due = (new_employee.due or 0) + final_amount - old_amount
+            new_employee.save()
         else:
             # Give back to old, charge new
-            old_staff.due = (old_staff.due or 0) - old_amount
-            new_staff.due = (new_staff.due or 0) + final_amount
-            old_staff.save()
-            new_staff.save()
+            old_employee.due = (old_employee.due or 0) - old_amount
+            new_employee.due = (new_employee.due or 0) + final_amount
+            old_employee.save()
+            new_employee.save()
 
         return instance
     
-    def get_staff_name(self,obj):
-        return obj.staff.name
+    def get_employee_name(self,obj):
+        return obj.employee.name
 
 
 class DebtorTransactionSerializer(serializers.ModelSerializer):
@@ -1195,25 +1192,25 @@ class DebtorSerializer(serializers.ModelSerializer):
 
 class ExpensesSerializer(serializers.ModelSerializer):
     date = serializers.DateField()
-    person_name = serializers.SerializerMethodField()
+    employee_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Expenses
         fields = '__all__'
 
-    def get_person_name(self, obj):
-        return obj.person.user.name if obj.person else None
+    def get_employee_name(self, obj):
+        return obj.employee.user.name if obj.employee else None
 
 class WithdrawalSerializer(serializers.ModelSerializer):
     date = serializers.DateField()
-    person_name = serializers.SerializerMethodField()
+    employee_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Withdrawal
         fields = '__all__'
 
-    def get_person_name(self, obj):
-        return obj.person.user.name if obj.person else None
+    def get_employee_name(self, obj):
+        return obj.employee.user.name if obj.employee else None
 
 class ClosingCashSerializer(serializers.ModelSerializer):
     date = serializers.DateField()

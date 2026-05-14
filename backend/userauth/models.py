@@ -34,6 +34,9 @@ class UserManager(BaseUserManager):
         return user
     
 class User(AbstractBaseUser,PermissionsMixin):
+ 
+    username = models.CharField(max_length=150,null=True, blank=True)
+
     email = models.EmailField(
         verbose_name="email address",
         max_length=255,
@@ -44,6 +47,7 @@ class User(AbstractBaseUser,PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_superuser = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+    is_admin = models.BooleanField(default=False)
 
       # Include groups if needed
     groups = models.ManyToManyField(

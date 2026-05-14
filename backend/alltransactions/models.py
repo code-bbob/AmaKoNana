@@ -24,7 +24,7 @@ class PurchaseTransaction(models.Model):
     method = models.CharField(max_length=20,choices=(('cash','Cash'),('credit','Credit'),('cheque','Cheque'),('transfer','transfer')),default='credit')
     cheque_number = models.CharField(max_length=10,null=True,blank=True)
     cashout_date = models.DateField(null=True)
-    person = models.ForeignKey('enterprise.Person', on_delete=models.SET_NULL, null=True, blank=True)
+    employee = models.ForeignKey('enterprise.Employee', on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self):
         return self.vendor.name if self.vendor else f"Purchase Transaction {self.pk}"
     
@@ -99,7 +99,7 @@ class SalesTransaction(models.Model):
     debtor = models.ForeignKey('Debtor', on_delete=models.CASCADE, null=True, blank=True, related_name='all_sales_transaction')
     credited_amount = models.FloatField(null=True,blank=True,default=0)
     amount_paid = models.FloatField(null=True,blank=True,default=0)
-    person = models.ForeignKey('enterprise.Person', on_delete=models.SET_NULL, null=True, blank=True)
+    employee = models.ForeignKey('enterprise.Employee', on_delete=models.SET_NULL, null=True, blank=True)
     cod_amount = models.FloatField(null=True,blank=True,default=0)
     delivery_charge = models.FloatField(null=True,blank=True,default=0)
     is_ncm = models.BooleanField(default=False)
@@ -187,48 +187,48 @@ class VendorTransactions(models.Model):
         super().delete(*args, **kwargs)
 
 
-
-class Staff(models.Model):
-    name = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=10,null=True,blank=True)
-    due = models.FloatField(null=True,blank=True,default=0)
-    enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE,related_name='staff')
-    branch = models.ForeignKey('enterprise.Branch', on_delete=models.CASCADE, null=True, blank=True)
-
-    def __str__(self):
-        return self.name
+#
+# class Employee(models.Model):
+#     name = models.CharField(max_length=255)
+#     phone_number = models.CharField(max_length=10,null=True,blank=True)
+#     due = models.FloatField(null=True,blank=True,default=0)
+#     enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE,related_name='employee')
+#     branch = models.ForeignKey('enterprise.Branch', on_delete=models.CASCADE, null=True, blank=True)
+#
+#     def __str__(self):
+#         return self.name
     
 
-
-class StaffTransactions(models.Model):
+#
+class EmployeeTransactions(models.Model):
 
     date = models.DateField()
-    staff = models.ForeignKey(Staff, on_delete=models.CASCADE,related_name='staff_transaction')
+    employee = models.ForeignKey('enterprise.Employee', on_delete=models.CASCADE,related_name='employee_transaction')
     amount = models.FloatField(null=True,blank=True)
-    enterprise = models.ForeignKey('enterprise.Enterprise', on_delete=models.CASCADE,related_name='all_staff_transactions')
+    enterprise = models.ForeignKey('enterprise.Enterprise', on_delete=models.CASCADE,related_name='all_employee_transactions')
     branch = models.ForeignKey('enterprise.Branch', on_delete=models.CASCADE, null=True, blank=True)
     desc = models.CharField(max_length=255, null=True, blank=True)
-    staff_type = models.CharField(max_length=20,choices=(('incentive','Incentive'),('salary','Salary')),default='payment')
+    employee_type = models.CharField(max_length=20,choices=(('incentive','Incentive'),('salary','Salary')),default='payment')
     transaction_type = models.CharField(max_length=20,choices=(('Salary Credited','Salary Credited'),('Payment','Payment')),default='Payment')
     
     def __str__(self):
-        return f"Staff Transaction {self.pk} of {self.staff.name}"
+        return f"Employee Transaction {self.pk} of {self.employee.name}"
     
     @transaction.atomic
     def delete(self, *args, **kwargs):
-        self.staff.due = self.staff.due - self.amount
-        self.staff.save() 
+        self.employee.due = self.employee.due - self.amount
+        self.employee.save() 
         super().delete(*args, **kwargs)
 
-class StaffTransactionDetail(models.Model):
-    staff_transaction = models.ForeignKey(StaffTransactions, on_delete=models.CASCADE,related_name='staff_transaction_details')
+class EmployeeTransactionDetail(models.Model):
+    employee_transaction = models.ForeignKey(EmployeeTransactions, on_delete=models.CASCADE,related_name='employee_transaction_details')
     bill_no = models.CharField(max_length=20, null=True, blank=True)
     quantity = models.IntegerField()
     rate = models.FloatField()
     total = models.FloatField(null=True,blank=True)
     product = models.ForeignKey('allinventory.IncentiveProduct', on_delete=models.CASCADE, null=True, blank=True) 
     def __str__(self):
-        return f"Staff Transaction Detail {self.pk} of {self.staff_transaction.staff.name}"
+        return f"Employee Transaction Detail {self.pk} of {self.employee_transaction.employee.name}"
 
 class Customer(models.Model):
     name = models.CharField(max_length=255)
@@ -286,7 +286,7 @@ class Expenses(models.Model):
     cheque_number = models.CharField(max_length=255,null=True,blank=True)
     cashout_date = models.DateField(null=True)
     desc = models.CharField(max_length=1000,null=True,blank=True)
-    person = models.ForeignKey('enterprise.Person', on_delete=models.SET_NULL, null=True, blank=True)
+    employee = models.ForeignKey('enterprise.Employee', on_delete=models.SET_NULL, null=True, blank=True)
     type = models.CharField(max_length=50, null=True, blank=True)
     sales_return = models.ForeignKey('SalesReturn', on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -303,7 +303,7 @@ class Withdrawal(models.Model):
     # cheque_number = models.CharField(max_length=255,null=True,blank=True)
     # cashout_date = models.DateField(null=True)
     # desc = models.CharField(max_length=1000,null=True,blank=True)
-    person = models.ForeignKey('enterprise.Person', on_delete=models.SET_NULL, null=True, blank=True)
+    employee = models.ForeignKey('enterprise.Employee', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"Withdrawal of amount {self.amount} at branch {self.branch.name} of {self.enterprise.name}"

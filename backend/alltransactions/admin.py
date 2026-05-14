@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import PurchaseTransaction, Purchase, Vendor, SalesTransaction, Sales,VendorTransactions,Staff, Debtor,DebtorTransaction, PurchaseReturn, SalesReturn, NCM, NCMTransaction
+from .models import PurchaseTransaction, Purchase, Vendor, SalesTransaction, Sales,VendorTransactions, Debtor,DebtorTransaction, PurchaseReturn, SalesReturn, NCM, NCMTransaction
 # Register your models here.
 
 admin.site.register(PurchaseTransaction)
@@ -8,7 +8,6 @@ admin.site.register(Vendor)
 admin.site.register(SalesTransaction)
 admin.site.register(Sales)
 admin.site.register(VendorTransactions)
-admin.site.register(Staff)
 admin.site.register(NCM)
 admin.site.register(NCMTransaction)
 admin.site.register(Debtor)

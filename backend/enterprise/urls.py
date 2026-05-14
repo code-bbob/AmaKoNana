@@ -2,11 +2,11 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # path('persons/',views.PersonView.as_view(),name='persons')
+    # path('employees/',views.EmployeeView.as_view(),name='employees')
     path('branch/',views.BranchView.as_view(),name='branch'),
     path('branch/<int:id>/',views.BranchView.as_view(),name='branch'),
     path('getbranch/',views.UserBranchView.as_view(),name='branch'),
-    path('staffbranch/<int:id>/',views.BranchStaffView.as_view(),name='branch_staff'),
+    path('employeebranch/<int:id>/',views.BranchEmployeeView.as_view(),name='branch_employee'),
     path('role/',views.RoleView.as_view(),name='user_role'),
    
 ]

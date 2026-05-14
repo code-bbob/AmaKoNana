@@ -33,13 +33,13 @@ urlpatterns = [
     path('expenses-report/',views.ExpensesReportView.as_view(), name='expensesreport'),
     path('expenses-report/branch/<int:branch>/',views.ExpensesReportView.as_view(), name='expensesreport'),
     path('next-bill-no/',views.NextBillNo.as_view(), name='nextbillno'),
-    path('stafftransaction/',views.StaffTransactionView.as_view(), name='stafftransaction'),
-    path('stafftransaction/branch/<int:branch>/',views.StaffTransactionView.as_view(), name='stafftransaction'),
-    path('stafftransaction/staff/<int:staff_pk>/',views.StaffTransactionView.as_view(), name='stafftransaction'),
-    path('stafftransaction/<int:pk>/',views.StaffTransactionView.as_view(), name='stafftransaction'),
+    path('employeetransaction/',views.EmployeeTransactionView.as_view(), name='employeetransaction'),
+    path('employeetransaction/branch/<int:branch>/',views.EmployeeTransactionView.as_view(), name='employeetransaction'),
+    path('employeetransaction/employee/<int:employee_pk>/',views.EmployeeTransactionView.as_view(), name='employeetransaction'),
+    path('employeetransaction/<int:pk>/',views.EmployeeTransactionView.as_view(), name='employeetransaction'),
 
-    path('staff/',views.StaffView.as_view(), name='staff'),
-    path('staff/branch/<int:branchId>/',views.StaffView.as_view(), name='staff'),
+    path('employee/',views.EmployeeView.as_view(), name='employee'),
+    path('employee/branch/<int:branchId>/',views.EmployeeView.as_view(), name='employee'),
     path('customer/<int:pk>/',views.CustomerView.as_view(), name='customertotal'),
     path('customer/',views.CustomerView.as_view(), name='customertotal'),
     path('customers/', views.ListCustomerView.as_view(), name='list_customers'),
@@ -53,8 +53,8 @@ urlpatterns = [
 
     path('debtor/statement/<int:debtorId>/',views.DebtorStatementView.as_view(), name = 'debtorstatement'),
 
-    # Staff Statement
-    path('staff/statement/<int:staffId>/', views.StaffStatementView.as_view(), name='staffstatement'),
+    # Employee Statement
+    path('employee/statement/<int:employeeId>/', views.EmployeeStatementView.as_view(), name='employeestatement'),
 
     path('product-transfer/', views.ProductTransferView.as_view(), name='product_transfer'),
 
