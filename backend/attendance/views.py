@@ -833,6 +833,7 @@ class LateArrivalsAPIView(APIView):
         # `dateFormat=bs` when providing Nepali (Bikram Sambat) dates so
         # the backend can convert them to AD for querying.
         date_format = request.query_params.get('dateFormat') or request.query_params.get('date_format')
+        print("Yaha samma", request.query_params.get('attendance_date'), date_format)
         attendance_date = _parse_date_param(request.query_params.get('attendance_date'), date_format=date_format)
 
         branch_id = _parse_optional_int(request.query_params.get('branch_id'))
@@ -846,6 +847,8 @@ class LateArrivalsAPIView(APIView):
             return Response({'error': 'Branch not found for your enterprise'}, status=404)
         if department_id and not Department.objects.filter(id=department_id, enterprise=enterprise).exists():
             return Response({'error': 'Department not found for your enterprise'}, status=404)
+        
+        print("date hai ta", attendance_date, "branch", branch_id, "dept", department_id)
         
         late_arrivals = get_late_arrivals(
             attendance_date=attendance_date,

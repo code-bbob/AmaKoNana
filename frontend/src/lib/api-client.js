@@ -12,7 +12,35 @@ const createClient = () => {
 
 export const apiClient = {
   request: (url, opts) => createClient().request({ url, ...opts }).then(r => r.data),
+  auth: {
+    getCurrentUser: async () => {
+      const res = await createClient().get('/userauth/user-info/');
+      return res.data;
+    },
+  },
+  enterprise: {
+    hierarchy: async () => {
+      const res = await createClient().get('/enterprise/api/hierarchy/');
+      return res.data;
+    },
+    updatePreference: async (enterpriseId, data) => {
+      const res = await createClient().post(
+        `/enterprise/api/enterprise/${enterpriseId}/update-preference/`,
+        data
+      );
+      return res.data;
+    },
+  },
   dashboard: {
+    getAttendance: async (branchId, departmentId, dateFormat) => {
+      const params = new URLSearchParams();
+      if (branchId) params.append('branch_id', String(branchId));
+      if (departmentId) params.append('department_id', String(departmentId));
+      if (dateFormat) params.append('date_format', String(dateFormat));
+      const url = `/attendance/api/daily/?${params.toString()}`;
+      const res = await createClient().get(url);
+      return res.data;
+    },
     getLateArrivals: async (branchId, departmentId, attendance_date, date_format) => {
       const params = new URLSearchParams();
       if (branchId) params.append('branch_id', String(branchId));
@@ -39,7 +67,7 @@ export const apiClient = {
       if (departmentId) params.append('department_id', String(departmentId));
       if (startDate) params.append('start_date', String(startDate));
       if (endDate) params.append('end_date', String(endDate));
-      if (dateFormat) params.append('dateFormat', String(dateFormat));
+      if (dateFormat) params.append('date_format', String(dateFormat));
       const url = `/attendance/api/reports/monthly-summary/?${params.toString()}`;
       const res = await createClient().get(url);
       return res.data;
@@ -50,7 +78,7 @@ export const apiClient = {
       if (departmentId) params.append('department_id', String(departmentId));
       if (startDate) params.append('start_date', String(startDate));
       if (endDate) params.append('end_date', String(endDate));
-      if (dateFormat) params.append('dateFormat', String(dateFormat));
+      if (dateFormat) params.append('date_format', String(dateFormat));
       const url = `/attendance/api/reports/monthly-summary-detailed/?${params.toString()}`;
       const res = await createClient().get(url);
       return res.data;

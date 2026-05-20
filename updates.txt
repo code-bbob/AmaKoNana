@@ -1,0 +1,1648 @@
+diff --git a/backend/attendance/date_utils.py b/backend/attendance/date_utils.py
+index 3f976a3..03f66a4 100644
+--- a/backend/attendance/date_utils.py
++++ b/backend/attendance/date_utils.py
+@@ -43,6 +43,65 @@ NEPALI_MONTH_DAYS = {
+     2031: [31, 32, 32, 31, 31, 30, 30, 29, 30, 29, 30, 31],
+     2032: [31, 32, 32, 31, 31, 31, 29, 30, 29, 30, 30, 31],
+     2033: [31, 32, 32, 31, 31, 31, 29, 30, 29, 30, 30, 31],
++    2034: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
++    2035: [30, 32, 31, 32, 31, 31, 29, 30, 30, 29, 29, 31],
++    2036: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
++    2037: [31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
++    2038: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
++    2039: [31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
++    2040: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
++    2041: [31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
++    2042: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
++    2043: [31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
++    2044: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
++    2045: [31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
++    2046: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
++    2047: [31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
++    2048: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
++    2049: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
++    2050: [31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
++    2051: [31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
++    2052: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
++    2053: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
++    2054: [31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
++    2055: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
++    2056: [31, 31, 32, 31, 32, 30, 30, 29, 30, 29, 30, 30],
++    2057: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
++    2058: [30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
++    2059: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
++    2060: [31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
++    2061: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
++    2062: [30, 32, 31, 32, 31, 31, 29, 30, 29, 30, 29, 31],
++    2063: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
++    2064: [31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
++    2065: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
++    2066: [31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 29, 31],
++    2067: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
++    2068: [31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
++    2069: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
++    2070: [31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
++    2071: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
++    2072: [31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
++    2073: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
++    2074: [31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
++    2075: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
++    2076: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
++    2077: [31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
++    2078: [31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
++    2079: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
++    2080: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
++    2081: [31, 31, 32, 32, 31, 30, 30, 30, 29, 30, 30, 30],
++    2082: [30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
++    2083: [31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 30, 30],
++    2084: [31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 30, 30],
++    2085: [31, 32, 31, 32, 30, 31, 30, 30, 29, 30, 30, 30],
++    2086: [30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
++    2087: [31, 31, 32, 31, 31, 31, 30, 30, 29, 30, 30, 30],
++    2088: [30, 31, 32, 32, 30, 31, 30, 30, 29, 30, 30, 30],
++    2089: [30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
++    2090: [30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
++    2091: [31, 31, 32, 31, 31, 31, 30, 30, 29, 30, 30, 30],
++    2092: [31, 31, 32, 32, 31, 30, 30, 30, 29, 30, 30, 30],
+ }
+ 
+ # Reference point: Nepali 2000-01-01 is Gregorian 1943-04-14
+@@ -63,13 +122,21 @@ except Exception:
+     _ndu_converter = None
+     _HAS_NEPALI_CONVERTER = False
+ 
++# Use the package's own month table as the fallback source for years that are
++# not explicitly listed below. The installed package currently covers BS 1978
++# through 2092.
++try:
++    from nepali_date_utils.data import calendar_data as _PACKAGE_CALENDAR_DATA
++except Exception:
++    _PACKAGE_CALENDAR_DATA = {}
++
+ 
+ def get_nepali_month_days(nepali_year: int, nepali_month: int) -> int:
+     """Get number of days in a Nepali month."""
+     if nepali_year not in NEPALI_MONTH_DAYS:
+-        # Extrapolate for years beyond our data range
+-        # This is a fallback and may not be accurate for all future years
+-        return 30
++        if nepali_year in _PACKAGE_CALENDAR_DATA:
++            return _PACKAGE_CALENDAR_DATA[nepali_year][nepali_month - 1]
++        raise ValueError(f"Nepali year out of supported range: {nepali_year}")
+     return NEPALI_MONTH_DAYS[nepali_year][nepali_month - 1]
+ 
+ 
+diff --git a/backend/enterprise/models.py b/backend/enterprise/models.py
+index e72d6a0..50baa0d 100644
+--- a/backend/enterprise/models.py
++++ b/backend/enterprise/models.py
+@@ -6,6 +6,11 @@ from datetime import time as _time
+ # Create your models here.
+ 
+ class Enterprise(models.Model):
++    DATE_FORMAT_CHOICES = [
++        ('ad', 'Gregorian (AD)'),
++        ('bs', 'Nepali (BS)'),
++    ]
++    
+     name = models.CharField(max_length=255)
+     address = models.TextField(blank=True, null=True)
+     contact_email = models.EmailField(blank=True, null=True)
+@@ -14,6 +19,12 @@ class Enterprise(models.Model):
+     licensed = models.BooleanField(default=False)
+     licensed_until = models.DateField(blank=True, null=True)
+     max_alowed_employees = models.PositiveIntegerField(default=0)
++    date_format_preference = models.CharField(
++        max_length=2,
++        choices=DATE_FORMAT_CHOICES,
++        default='ad',
++        help_text='Preferred date format for attendance and reports'
++    )
+ 
+     class Meta:
+         ordering = ['name']
+diff --git a/backend/enterprise/serializers.py b/backend/enterprise/serializers.py
+index 1872527..8c2cef9 100644
+--- a/backend/enterprise/serializers.py
++++ b/backend/enterprise/serializers.py
+@@ -28,13 +28,21 @@ class EnterpriseHierarchySerializer(serializers.ModelSerializer):
+ 
+     class Meta:
+         model = Enterprise
+-        fields = ['id', 'name', 'address', 'contact_email', 'contact_phone', 'licensed', 'licensed_until', 'max_alowed_employees', 'branches', 'departments']
++        fields = ['id', 'name', 'address', 'contact_email', 'contact_phone', 'licensed', 'licensed_until', 'max_alowed_employees', 'date_format_preference', 'branches', 'departments']
+ 
+ 
+ class EnterpriseSummarySerializer(serializers.ModelSerializer):
+     class Meta:
+         model = Enterprise
+-        fields = ['id', 'name']
++        fields = ['id', 'name', 'date_format_preference']
++
++
++class EnterpriseDetailSerializer(serializers.ModelSerializer):
++    """Full enterprise details with editable fields"""
++    class Meta:
++        model = Enterprise
++        fields = ['id', 'name', 'address', 'contact_email', 'contact_phone', 'licensed', 'licensed_until', 'max_alowed_employees', 'date_format_preference', 'created_at']
++        read_only_fields = ['id', 'created_at']
+ 
+ 
+ class BranchSummarySerializer(serializers.ModelSerializer):
+diff --git a/backend/enterprise/urls.py b/backend/enterprise/urls.py
+index 476c48b..ff5bef2 100644
+--- a/backend/enterprise/urls.py
++++ b/backend/enterprise/urls.py
+@@ -4,6 +4,7 @@ from .views import (
+     DepartmentCreateAPIView,
+     DepartmentDetailAPIView,
+     EnterpriseHierarchyAPIView,
++    EnterpriseUpdatePreferenceAPIView,
+     CreateEmployeeAPIView,
+     ListEmployeesAPIView,
+     EmployeeDetailAPIView,
+@@ -15,6 +16,7 @@ app_name = 'enterprise'
+ 
+ urlpatterns = [
+     path('api/hierarchy/', EnterpriseHierarchyAPIView.as_view(), name='hierarchy'),
++    path('api/enterprise/<int:enterprise_id>/update-preference/', EnterpriseUpdatePreferenceAPIView.as_view(), name='update_preference'),
+     path('api/departments/', DepartmentCreateAPIView.as_view(), name='create_department'),
+     path('api/departments/<int:department_id>/', DepartmentDetailAPIView.as_view(), name='department_detail'),
+ 
+diff --git a/backend/enterprise/views.py b/backend/enterprise/views.py
+index 162fa66..b55169c 100644
+--- a/backend/enterprise/views.py
++++ b/backend/enterprise/views.py
+@@ -57,6 +57,30 @@ class EnterpriseHierarchyAPIView(APIView):
+         return Response({'enterprises': serializer.data})
+ 
+ 
++class EnterpriseUpdatePreferenceAPIView(APIView):
++    """Update enterprise date format preference"""
++    permission_classes = [IsAuthenticated, IsAdminRole]
++
++    def post(self, request, enterprise_id):
++        enterprise = _resolve_user_enterprise(request.user)
++        if enterprise is None or enterprise.id != enterprise_id:
++            return Response({'error': 'Not authorized to update this enterprise'}, status=HTTP_403_FORBIDDEN)
++
++        date_format_preference = request.data.get('date_format_preference')
++        if date_format_preference not in ('ad', 'bs'):
++            return Response({'error': 'Invalid date_format_preference. Must be "ad" or "bs"'}, status=HTTP_400_BAD_REQUEST)
++
++        enterprise.date_format_preference = date_format_preference
++        enterprise.save(update_fields=['date_format_preference'])
++
++        from .serializers import EnterpriseDetailSerializer
++        serializer = EnterpriseDetailSerializer(enterprise)
++        return Response({
++            'message': 'Enterprise date format preference updated successfully',
++            'enterprise': serializer.data
++        })
++
++
+ class DepartmentCreateAPIView(APIView):
+     permission_classes = [IsAuthenticated, IsAdminRole]
+ 
+diff --git a/frontend/app/attendance/page.tsx b/frontend/app/attendance/page.tsx
+index 2d970fa..cabe5fd 100644
+--- a/frontend/app/attendance/page.tsx
++++ b/frontend/app/attendance/page.tsx
+@@ -6,7 +6,8 @@ import { useApi } from '@/lib/hooks/useApi';
+ import { apiClient, type DashboardData } from '@/lib/api-client';
+ import { useAuth } from '@/lib/hooks/useAuth';
+ import { useFilters } from '@/hooks/useFilters';
+-import { getDateFormatPreference } from '@/hooks/use-date-format';
++import { useDateFormatPreference } from '@/hooks/use-date-format';
++import { adToBS } from '@/lib/date-utils';
+ 
+ // shadcn UI Components
+ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+@@ -43,6 +44,26 @@ const formatTime = (value?: string | null) =>
+       })
+     : '-';
+ 
++/**
++ * Get today's date formatted as YYYY-MM-DD in the specified format
++ * If dateFormat is 'bs', converts today's AD date to Nepali calendar
++ */
++const getTodayInFormat = (dateFormat: 'ad' | 'bs'): string => {
++  const today = new Date();
++  
++  if (dateFormat === 'bs') {
++    // Convert AD date to BS
++    const { year, month, day } = adToBS(today);
++    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
++  }
++  
++  // AD format
++  const year = today.getFullYear();
++  const month = String(today.getMonth() + 1).padStart(2, '0');
++  const day = String(today.getDate()).padStart(2, '0');
++  return `${year}-${month}-${day}`;
++};
++
+ const getBreakSessions = (row: AttendanceRow): BreakSession[] => {
+   if (Array.isArray(row.break_sessions) && row.break_sessions.length > 0) {
+     return row.break_sessions;
+@@ -91,7 +112,7 @@ const applyBreakEventToSessions = (
+ function AttendanceContent() {
+   const { loading: authLoading, isAuthenticated } = useAuth();
+   const router = useRouter();
+-  const [dateFormat] = useState(() => getDateFormatPreference());
++  const { dateFormat, loading: prefLoading } = useDateFormatPreference();
+ 
+   const { 
+     selectedBranchId, 
+@@ -221,6 +242,8 @@ function AttendanceContent() {
+         if (selectedBranchId) params.append('branch_id', String(selectedBranchId));
+         if (selectedDepartmentId) params.append('department_id', String(selectedDepartmentId));
+         params.append('date_format', dateFormat);
++        // Get today's date in the appropriate format (AD or BS)
++        params.append('attendance_date', getTodayInFormat(dateFormat));
+         params.append('page', String(currentPage));
+ 
+         const queryString = params.toString();
+@@ -304,6 +327,8 @@ function AttendanceContent() {
+       if (selectedBranchId) params.append('branch_id', String(selectedBranchId));
+       if (selectedDepartmentId) params.append('department_id', String(selectedDepartmentId));
+       params.append('date_format', dateFormat);
++      // Get today's date in the appropriate format (AD or BS)
++      params.append('attendance_date', getTodayInFormat(dateFormat));
+ 
+       const baseQuery = params.toString();
+       let page = 1;
+@@ -426,7 +451,7 @@ function AttendanceContent() {
+                       <TableRow>
+                         <TableHead>S.N.</TableHead>
+                         <TableHead>Employee Name</TableHead>
+-                        <TableHead>Department</TableHead>
++                        {/* <TableHead>Department</TableHead> */}
+                         <TableHead>Status</TableHead>
+                         <TableHead>Check In</TableHead>
+                         <TableHead>Check Out</TableHead>
+@@ -459,7 +484,7 @@ function AttendanceContent() {
+                               {row.employee?.name || 'Unknown'}
+                             </Button>
+                           </TableCell>
+-                          <TableCell>-</TableCell>
++                          {/* <TableCell>-</TableCell> */}
+                           <TableCell>
+                             <span
+                               className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+diff --git a/frontend/app/attendance/reports/early-departures/page.tsx b/frontend/app/attendance/reports/early-departures/page.tsx
+index b67b83e..5776d6c 100644
+--- a/frontend/app/attendance/reports/early-departures/page.tsx
++++ b/frontend/app/attendance/reports/early-departures/page.tsx
+@@ -3,6 +3,7 @@
+ import { useCallback, useEffect, useMemo, useState } from 'react';
+ import { apiClient } from '@/lib/api-client';
+ import { useFilters } from '@/hooks/useFilters';
++import { useDateFormatPreference } from '@/hooks/use-date-format';
+ import { Button } from '@/components/ui/button';
+ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+@@ -21,15 +22,16 @@ function getToday() {
+ 
+ export default function EarlyDeparturesReport() {
+   const { selectedBranchId, selectedDepartmentId } = useFilters();
++  const { dateFormat } = useDateFormatPreference();
+   const [data, setData] = useState<any | null>(null);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
+   const [attendanceDate, setAttendanceDate] = useState(getToday());
+-  const [dateFormat, setDateFormat] = useState<'ad' | 'bs'>('ad');
++  const [currentDateFormat, setCurrentDateFormat] = useState<'ad' | 'bs'>(dateFormat);
+ 
+   const reportLabel = useMemo(() => attendanceDate, [attendanceDate]);
+ 
+-  const loadReport = useCallback(async (nextDate = attendanceDate, nextFormat = dateFormat) => {
++  const loadReport = useCallback(async (nextDate = attendanceDate, nextFormat = currentDateFormat) => {
+     setLoading(true);
+     setError(null);
+ 
+@@ -43,12 +45,17 @@ export default function EarlyDeparturesReport() {
+     } finally {
+       setLoading(false);
+     }
+-  }, [attendanceDate, dateFormat, selectedBranchId, selectedDepartmentId]);
++  }, [attendanceDate, currentDateFormat, selectedBranchId, selectedDepartmentId]);
+ 
+   useEffect(() => {
+     loadReport();
+   }, [loadReport]);
+ 
++  // Update currentDateFormat when enterprise preference changes
++  useEffect(() => {
++    setCurrentDateFormat(dateFormat);
++  }, [dateFormat]);
++
+   return (
+     <div className="w-full flex-1 min-w-0 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+       <header className="mb-6 flex flex-col gap-4">
+@@ -61,12 +68,12 @@ export default function EarlyDeparturesReport() {
+ 
+         <AttendanceDateFilter
+           mode="single"
+-          initialDateFormat={dateFormat}
++          initialDateFormat={currentDateFormat}
+           initialDate={attendanceDate}
+           applyLabel="Apply Date"
+           onApply={({ startDate: nextDate, dateFormat: nextFormat }) => {
+             setAttendanceDate(nextDate);
+-            setDateFormat(nextFormat);
++            setCurrentDateFormat(nextFormat);
+             void loadReport(nextDate, nextFormat);
+           }}
+         />
+diff --git a/frontend/app/attendance/reports/late-arrivals/page.tsx b/frontend/app/attendance/reports/late-arrivals/page.tsx
+index 51503b4..776fec6 100644
+--- a/frontend/app/attendance/reports/late-arrivals/page.tsx
++++ b/frontend/app/attendance/reports/late-arrivals/page.tsx
+@@ -3,6 +3,7 @@
+ import { useCallback, useEffect, useMemo, useState } from 'react';
+ import { apiClient } from '@/lib/api-client';
+ import { useFilters } from '@/hooks/useFilters';
++import { useDateFormatPreference } from '@/hooks/use-date-format';
+ import { Button } from '@/components/ui/button';
+ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+@@ -21,15 +22,16 @@ function getToday() {
+ 
+ export default function LateArrivalsReport() {
+   const { selectedBranchId, selectedDepartmentId } = useFilters();
++  const { dateFormat, loading: datePrefLoading } = useDateFormatPreference();
+   const [data, setData] = useState<any | null>(null);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
+   const [attendanceDate, setAttendanceDate] = useState(getToday());
+-  const [dateFormat, setDateFormat] = useState<'ad' | 'bs'>('ad');
++  const [currentDateFormat, setCurrentDateFormat] = useState<'ad' | 'bs'>(dateFormat);
+ 
+   const reportLabel = useMemo(() => attendanceDate, [attendanceDate]);
+ 
+-  const loadReport = useCallback(async (nextDate = attendanceDate, nextFormat = dateFormat) => {
++  const loadReport = useCallback(async (nextDate = attendanceDate, nextFormat = currentDateFormat) => {
+     setLoading(true);
+     setError(null);
+ 
+@@ -43,11 +45,17 @@ export default function LateArrivalsReport() {
+     } finally {
+       setLoading(false);
+     }
+-  }, [attendanceDate, dateFormat, selectedBranchId, selectedDepartmentId]);
++  }, [attendanceDate, currentDateFormat, selectedBranchId, selectedDepartmentId]);
+ 
+   useEffect(() => {
++    if (datePrefLoading) return;
+     loadReport();
+-  }, [loadReport]);
++  }, [loadReport, datePrefLoading]);
++
++  // Update currentDateFormat when enterprise preference changes
++  useEffect(() => {
++    setCurrentDateFormat(dateFormat);
++  }, [dateFormat]);
+ 
+   return (
+     <div className="w-full flex-1 min-w-0 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+@@ -60,12 +68,12 @@ export default function LateArrivalsReport() {
+ 
+         <AttendanceDateFilter
+           mode="single"
+-          initialDateFormat={dateFormat}
++          initialDateFormat={currentDateFormat}
+           initialDate={attendanceDate}
+           applyLabel="Apply Date"
+           onApply={({ startDate: nextDate, dateFormat: nextFormat }) => {
+             setAttendanceDate(nextDate);
+-            setDateFormat(nextFormat);
++            setCurrentDateFormat(nextFormat);
+             void loadReport(nextDate, nextFormat);
+           }}
+         />
+diff --git a/frontend/app/attendance/reports/monthly-summary-detailed/page.tsx b/frontend/app/attendance/reports/monthly-summary-detailed/page.tsx
+index f6375af..8d617d2 100644
+--- a/frontend/app/attendance/reports/monthly-summary-detailed/page.tsx
++++ b/frontend/app/attendance/reports/monthly-summary-detailed/page.tsx
+@@ -3,6 +3,7 @@
+ import { useEffect, useMemo, useState } from 'react';
+ import { apiClient } from '@/lib/api-client';
+ import { useFilters } from '@/hooks/useFilters';
++import { useDateFormatPreference } from '@/hooks/use-date-format';
+ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+ import { Button } from '@/components/ui/button';
+ import { Skeleton } from '@/components/ui/skeleton';
+@@ -11,6 +12,7 @@ import { buildCsv, downloadCsv, getRangeDates, triggerPrint } from '@/lib/report
+ import { AttendanceReportTabs } from '@/components/attendance-report-tabs';
+ import { Input } from '@/components/ui/input';
+ import { AttendanceDateFilter } from '@/components/AttendanceDateFilter';
++import { getDaysInMonth, getTodayDate } from 'bs-ad-calendar-react';
+ 
+ function padDate(d: Date) {
+   const y = d.getFullYear();
+@@ -29,11 +31,56 @@ function getMonthBounds() {
+   };
+ }
+ 
++function getMonthBoundsForFormat(format: 'ad' | 'bs') {
++  if (format === 'bs') {
++    const todayBs = getTodayDate('BS');
++    const today = `${todayBs.year}-${String(todayBs.month + 1).padStart(2, '0')}-${String(todayBs.day).padStart(2, '0')}`;
++    const monthStart = `${todayBs.year}-${String(todayBs.month + 1).padStart(2, '0')}-01`;
++    return {
++      startDate: monthStart,
++      endDate: today,
++    };
++  }
++
++  const now = new Date();
++  const start = new Date(now.getFullYear(), now.getMonth(), 1);
++  const today = padDate(now);
++
++  return {
++    startDate: padDate(start),
++    endDate: today,
++  };
++}
++
+ function formatDayLabel(dateValue: string, dateFormat: 'ad' | 'bs') {
++  // Nepali month names (transliterated)
++  const nepaliMonths = [
++    'Baishakh',
++    'Jestha',
++    'Ashadh',
++    'Shrawan',
++    'Bhadra',
++    'Ashwin',
++    'Kartik',
++    'Mangsir',
++    'Poush',
++    'Magh',
++    'Falgun',
++    'Chaitra',
++  ];
++
+   if (dateFormat === 'bs') {
++    // Expecting dateValue in YYYY-MM-DD (BS) format
++    const parts = dateValue.split('-').map((p) => Number(p));
++    const [y, m, d] = parts;
++    if (![y, m, d].every((v) => Number.isFinite(v))) {
++      return { firstLine: dateValue, secondLine: '' };
++    }
++
++    const monthName = nepaliMonths[(m || 1) - 1] || nepaliMonths[0];
+     return {
+-      firstLine: dateValue,
+-      secondLine: '',
++      firstLine: `${monthName} ${d}`,
++      secondLine: `(${y})`,
+     };
+   }
+ 
+@@ -57,22 +104,52 @@ function formatDayLabel(dateValue: string, dateFormat: 'ad' | 'bs') {
+ 
+ export default function MonthlySummaryDetailedPage() {
+   const { selectedBranchId, selectedDepartmentId } = useFilters();
+-  const initialBounds = getMonthBounds();
++  const { dateFormat, loading: datePrefLoading } = useDateFormatPreference();
++  const [initializedRange, setInitializedRange] = useState(false);
+ 
+-  const [startDate, setStartDate] = useState(initialBounds.startDate);
+-  const [endDate, setEndDate] = useState(initialBounds.endDate);
+-  const [dateFormat, setDateFormat] = useState<'ad' | 'bs'>('ad');
++  const [startDate, setStartDate] = useState('');
++  const [endDate, setEndDate] = useState('');
++  const [currentDateFormat, setCurrentDateFormat] = useState<'ad' | 'bs'>(dateFormat);
+   const [data, setData] = useState<any | null>(null);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
++  const [currentPage, setCurrentPage] = useState(1);
++  const [showAll, setShowAll] = useState(false);
++  const [allRows, setAllRows] = useState<any[]>([]);
++  const [totalCount, setTotalCount] = useState(0);
++  const [pageSize, setPageSize] = useState(30);
+ 
+-  const reportDates = useMemo(() => getRangeDates(startDate, endDate, dateFormat), [startDate, endDate, dateFormat]);
++  const reportDates = useMemo(() => getRangeDates(startDate, endDate, currentDateFormat), [startDate, endDate, currentDateFormat]);
+ 
+   const reportLabel = useMemo(() => {
+-    return `${startDate} — ${endDate}`;
++    return startDate && endDate ? `${startDate} — ${endDate}` : 'Selected dates';
+   }, [startDate, endDate]);
+ 
+-  async function loadReport(nextStart = startDate, nextEnd = endDate, nextFormat = dateFormat) {
++  const rows = data?.rows || [];
++  const itemsPerPage = pageSize || 30;
++  const effectiveRows = showAll ? allRows : rows;
++  const totalPages = Math.max(1, Math.ceil((totalCount || effectiveRows.length) / itemsPerPage));
++  const displayStart = showAll ? (effectiveRows.length ? 1 : 0) : ((currentPage - 1) * itemsPerPage + 1);
++  const displayEnd = showAll ? Math.min(effectiveRows.length, effectiveRows.length) : (displayStart + (rows.length ? rows.length - 1 : 0));
++  const paginatedRows = effectiveRows;
++
++  useEffect(() => {
++    if (datePrefLoading) return;
++    if (initializedRange && currentDateFormat === dateFormat) return;
++
++    const initialBounds = getMonthBoundsForFormat(dateFormat);
++    console.debug('[monthly-summary-detailed] init-range', {
++      dateFormat,
++      initialBounds,
++    });
++    setStartDate(initialBounds.startDate);
++    setEndDate(initialBounds.endDate);
++    setCurrentDateFormat(dateFormat);
++    setInitializedRange(true);
++  }, [dateFormat, datePrefLoading, initializedRange, currentDateFormat]);
++
++  async function loadReport(nextStart = startDate, nextEnd = endDate, nextFormat = currentDateFormat) {
++    if (!nextStart || !nextEnd) return;
+     setLoading(true);
+     setError(null);
+ 
+@@ -85,6 +162,10 @@ export default function MonthlySummaryDetailedPage() {
+         dateFormat: nextFormat,
+       });
+       setData(res);
++      const pagination = res?.pagination || {};
++      setTotalCount(typeof res?.count === 'number' ? res.count : (pagination.count || (Array.isArray(res?.rows) ? res.rows.length : 0)));
++      setPageSize(pagination.page_size || 30);
++      setCurrentPage(pagination.page || 1);
+     } catch (err) {
+       console.error(err);
+       setError(err instanceof Error ? err.message : 'Failed to load report');
+@@ -94,10 +175,43 @@ export default function MonthlySummaryDetailedPage() {
+     }
+   }
+ 
++  async function loadPage(page: number) {
++    const params = new URLSearchParams();
++    if (selectedBranchId) params.append('branch_id', String(selectedBranchId));
++    if (selectedDepartmentId) params.append('department_id', String(selectedDepartmentId));
++    params.append('date_format', currentDateFormat);
++    params.append('start_date', startDate);
++    params.append('end_date', endDate);
++    params.append('page', String(page));
++
++    const queryString = params.toString();
++    setLoading(true);
++    setError(null);
++    try {
++      const res = await apiClient.request<any>(`/attendance/api/reports/monthly-summary-detailed/${queryString ? `?${queryString}` : ''}`);
++      setData(res);
++      const pagination = res?.pagination || {};
++      setTotalCount(typeof res?.count === 'number' ? res.count : (pagination.count || (Array.isArray(res?.rows) ? res.rows.length : 0)));
++      setPageSize(pagination.page_size || 30);
++      setCurrentPage(pagination.page || page);
++    } catch (err) {
++      console.error(err);
++      setError(err instanceof Error ? err.message : 'Failed to load report');
++    } finally {
++      setLoading(false);
++    }
++  }
++
+   useEffect(() => {
++    if (datePrefLoading || !initializedRange) return;
+     loadReport();
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+-  }, [selectedBranchId, selectedDepartmentId]);
++  }, [selectedBranchId, selectedDepartmentId, currentDateFormat, datePrefLoading, initializedRange, startDate, endDate]);
++
++  // Update currentDateFormat when enterprise preference changes
++  useEffect(() => {
++    setCurrentDateFormat(dateFormat);
++  }, [dateFormat]);
+ 
+   const handleExportCsv = () => {
+     const csv = buildCsv([
+@@ -140,19 +254,21 @@ export default function MonthlySummaryDetailedPage() {
+         <p className="text-sm text-muted-foreground">Filter any date range and export the report as CSV or PDF.</p>
+         <AttendanceReportTabs />
+ 
+-        <AttendanceDateFilter
+-          mode="range"
+-          initialDateFormat={dateFormat}
+-          initialStartDate={startDate}
+-          initialEndDate={endDate}
+-          applyLabel="Apply Range"
+-          onApply={({ startDate: nextStart, endDate: nextEnd, dateFormat: nextFormat }) => {
+-            setStartDate(nextStart);
+-            setEndDate(nextEnd);
+-            setDateFormat(nextFormat);
+-            void loadReport(nextStart, nextEnd, nextFormat);
+-          }}
+-        />
++        {initializedRange && (
++          <AttendanceDateFilter
++            mode="range"
++            initialDateFormat={currentDateFormat}
++            initialStartDate={startDate}
++            initialEndDate={endDate}
++            applyLabel="Apply Range"
++            onApply={({ startDate: nextStart, endDate: nextEnd, dateFormat: nextFormat }) => {
++              setStartDate(nextStart);
++              setEndDate(nextEnd);
++              setCurrentDateFormat(nextFormat);
++              void loadReport(nextStart, nextEnd, nextFormat);
++            }}
++          />
++        )}
+ 
+         <div className="flex flex-wrap items-center gap-4 mt-2 print:hidden">
+           <div className="ml-auto flex gap-2">
+@@ -162,6 +278,48 @@ export default function MonthlySummaryDetailedPage() {
+             <Button variant="outline" className="rounded-full px-6" onClick={triggerPrint} disabled={!data?.rows?.length}>
+               Export PDF
+             </Button>
++            <Button
++              variant={showAll ? 'secondary' : 'outline'}
++              className="rounded-full px-6"
++              onClick={async () => {
++                if (showAll) {
++                  setShowAll(false);
++                  setAllRows([]);
++                  setCurrentPage(1);
++                  return;
++                }
++
++                const params = new URLSearchParams();
++                if (selectedBranchId) params.append('branch_id', String(selectedBranchId));
++                if (selectedDepartmentId) params.append('department_id', String(selectedDepartmentId));
++                params.append('date_format', currentDateFormat);
++                params.append('start_date', startDate);
++                params.append('end_date', endDate);
++
++                const baseQuery = params.toString();
++                let page = 1;
++                const results: any[] = [];
++
++                try {
++                  while (true) {
++                    const pageParams = new URLSearchParams(baseQuery);
++                    pageParams.append('page', String(page));
++                    const queryString = pageParams.toString();
++                    const response = await apiClient.request<any>(`/attendance/api/reports/monthly-summary-detailed/${queryString ? `?${queryString}` : ''}`);
++                    const pageRows = Array.isArray(response?.rows) ? response.rows : [];
++                    results.push(...pageRows);
++                    if (pageRows.length === 0 || !response?.pagination?.next) break;
++                    page += 1;
++                  }
++                  setAllRows(results);
++                  setShowAll(true);
++                } catch (err) {
++                  console.error('Failed to load all monthly detailed pages', err);
++                }
++              }}
++            >
++              {showAll ? 'Showing all' : 'Show all'}
++            </Button>
+           </div>
+         </div>
+       </div>
+@@ -194,7 +352,7 @@ export default function MonthlySummaryDetailedPage() {
+                     <TableHead>Employee</TableHead>
+ 
+                     {reportDates.map((d) => {
+-                      const { firstLine, secondLine } = formatDayLabel(d, dateFormat);
++                      const { firstLine, secondLine } = formatDayLabel(d, currentDateFormat);
+ 
+                       return (
+                         <TableHead key={d}>
+@@ -214,7 +372,7 @@ export default function MonthlySummaryDetailedPage() {
+                 </TableHeader>
+ 
+                 <TableBody>
+-                  {data.rows.map((item: any, i: number) => {
++                  {paginatedRows.map((item: any, i: number) => {
+                     console.log(item);
+                     const dayValues = (item.days || []).map((day: any) => {
+                       if (!day?.present) return 'A';
+@@ -225,7 +383,7 @@ export default function MonthlySummaryDetailedPage() {
+ 
+                     return (
+                       <TableRow key={i}>
+-                        <TableCell>{i + 1}</TableCell>
++                        <TableCell>{displayStart + i}</TableCell>
+                         <TableCell>{item.employee?.name}</TableCell>
+                         {dayValues.map((v: string, j: number) => {
+                           let colorClass = '';
+@@ -256,6 +414,28 @@ export default function MonthlySummaryDetailedPage() {
+           )}
+         </CardContent>
+       </Card>
++      {/* Pagination Controls */}
++      {(showAll ? allRows.length : rows.length) > 0 && (
++        <div className="mt-4 px-2">
++          <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
++            <div>
++              {showAll ? (
++                <>Showing all {allRows.length} records</>
++              ) : (
++                <>Showing {displayStart}–{displayEnd} of {totalCount} records</>
++              )}
++            </div>
++
++            {!showAll && (
++              <div className="flex items-center gap-2">
++                <Button variant="outline" size="sm" onClick={() => loadPage(Math.max(currentPage - 1, 1))} disabled={currentPage === 1} className="rounded-full">Previous</Button>
++                <div className="text-sm font-medium">Page {currentPage} of {totalPages}</div>
++                <Button variant="outline" size="sm" onClick={() => loadPage(Math.min(currentPage + 1, totalPages))} disabled={currentPage === totalPages} className="rounded-full">Next</Button>
++              </div>
++            )}
++          </div>
++        </div>
++      )}
+     </div>
+   );
+ }
+\ No newline at end of file
+diff --git a/frontend/app/attendance/reports/monthly-summary/page.tsx b/frontend/app/attendance/reports/monthly-summary/page.tsx
+index 3a870bb..8ffb127 100644
+--- a/frontend/app/attendance/reports/monthly-summary/page.tsx
++++ b/frontend/app/attendance/reports/monthly-summary/page.tsx
+@@ -3,6 +3,7 @@
+ import { useEffect, useMemo, useState } from 'react';
+ import { apiClient } from '@/lib/api-client';
+ import { useFilters } from '@/hooks/useFilters';
++import { useDateFormatPreference } from '@/hooks/use-date-format';
+ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+ import { Button } from '@/components/ui/button';
+ import { Skeleton } from '@/components/ui/skeleton';
+@@ -10,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
+ import { buildCsv, downloadCsv, triggerPrint } from '@/lib/report-export';
+ import { AttendanceReportTabs } from '@/components/attendance-report-tabs';
+ import { AttendanceDateFilter } from '@/components/AttendanceDateFilter';
+-import { DateFormatBadge } from '@/components/DateDisplay';
++import { getDaysInMonth, getTodayDate } from 'bs-ad-calendar-react';
+ 
+ function padDate(d: Date) {
+   const y = d.getFullYear();
+@@ -19,43 +20,80 @@ function padDate(d: Date) {
+   return `${y}-${m}-${day}`;
+ }
+ 
+-function getMonthBounds() {
++function getMonthBoundsForFormat(format: 'ad' | 'bs') {
++  if (format === 'bs') {
++    const todayBs = getTodayDate('BS');
++    const today = `${todayBs.year}-${String(todayBs.month + 1).padStart(2, '0')}-${String(todayBs.day).padStart(2, '0')}`;
++    const monthStart = `${todayBs.year}-${String(todayBs.month + 1).padStart(2, '0')}-01`;
++    return {
++      startDate: monthStart,
++      endDate: today,
++    };
++  }
++
+   const now = new Date();
+   const start = new Date(now.getFullYear(), now.getMonth(), 1);
+-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
++  const today = padDate(now);
++
+   return {
+     startDate: padDate(start),
+-    endDate: padDate(end),
++    endDate: today,
+   };
+ }
+ 
+ export default function MonthlySummaryPage() {
+   const { selectedBranchId, selectedDepartmentId } = useFilters();
+-  const initialBounds = getMonthBounds();
+-  const [startDate, setStartDate] = useState(initialBounds.startDate);
+-  const [endDate, setEndDate] = useState(initialBounds.endDate);
+-  const [dateFormat, setDateFormat] = useState<'ad' | 'bs'>('ad');
++  const { dateFormat, loading: datePrefLoading } = useDateFormatPreference();
++  const [initializedRange, setInitializedRange] = useState(false);
++  const [startDate, setStartDate] = useState('');
++  const [endDate, setEndDate] = useState('');
++  const [currentDateFormat, setCurrentDateFormat] = useState<'ad' | 'bs'>(dateFormat);
+   const [data, setData] = useState<any | null>(null);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
++  const [currentPage, setCurrentPage] = useState(1);
++  const [showAll, setShowAll] = useState(false);
++  const [allRows, setAllRows] = useState<any[]>([]);
++  const [totalCount, setTotalCount] = useState(0);
++  const [pageSize, setPageSize] = useState(30);
+ 
+   const reportLabel = useMemo(() => {
+     if (!startDate || !endDate) return 'Selected dates';
+     return `${startDate} — ${endDate}`;
+   }, [startDate, endDate]);
+ 
+-  async function loadReport(nextStart = startDate, nextEnd = endDate, nextFormat = dateFormat) {
++  useEffect(() => {
++    if (datePrefLoading) return;
++    if (initializedRange && currentDateFormat === dateFormat) return;
++
++    const initialBounds = getMonthBoundsForFormat(dateFormat);
++    setStartDate(initialBounds.startDate);
++    setEndDate(initialBounds.endDate);
++    setCurrentDateFormat(dateFormat);
++    setInitializedRange(true);
++  }, [dateFormat, datePrefLoading, initializedRange, currentDateFormat]);
++
++  async function loadReport(page = 1, nextStart = startDate, nextEnd = endDate, nextFormat = currentDateFormat) {
++    if (!nextStart || !nextEnd) return;
+     setLoading(true);
+     setError(null);
+     try {
+-      const res = await apiClient.dashboard.getMonthlySummary({
+-        startDate: nextStart,
+-        endDate: nextEnd,
+-        branchId: selectedBranchId,
+-        departmentId: selectedDepartmentId,
+-        dateFormat: nextFormat,
+-      });
++      const params = new URLSearchParams();
++      if (selectedBranchId) params.append('branch_id', String(selectedBranchId));
++      if (selectedDepartmentId) params.append('department_id', String(selectedDepartmentId));
++      params.append('date_format', nextFormat);
++      params.append('start_date', nextStart);
++      params.append('end_date', nextEnd);
++      params.append('page', String(page));
++
++      const queryString = params.toString();
++      const res = await apiClient.request<any>(`/attendance/api/reports/monthly-summary/${queryString ? `?${queryString}` : ''}`);
++
+       setData(res);
++      const pagination = res?.pagination || {};
++      setTotalCount(typeof res?.count === 'number' ? res.count : (pagination.count || (Array.isArray(res?.summary) ? res.summary.length : 0)));
++      setPageSize(pagination.page_size || 30);
++      setCurrentPage(pagination.page || page);
+     } catch (err) {
+       console.error(err);
+       setError(err instanceof Error ? err.message : 'Failed to load report');
+@@ -65,13 +103,52 @@ export default function MonthlySummaryPage() {
+     }
+   }
+ 
++  async function loadPage(page: number) {
++    const params = new URLSearchParams();
++    if (selectedBranchId) params.append('branch_id', String(selectedBranchId));
++    if (selectedDepartmentId) params.append('department_id', String(selectedDepartmentId));
++    params.append('date_format', currentDateFormat);
++    params.append('start_date', startDate);
++    params.append('end_date', endDate);
++    params.append('page', String(page));
++
++    const queryString = params.toString();
++    setLoading(true);
++    setError(null);
++    try {
++      const res = await apiClient.request<any>(`/attendance/api/reports/monthly-summary/${queryString ? `?${queryString}` : ''}`);
++      setData(res);
++      const pagination = res?.pagination || {};
++      setTotalCount(typeof res?.count === 'number' ? res.count : (pagination.count || (Array.isArray(res?.summary) ? res.summary.length : 0)));
++      setPageSize(pagination.page_size || 30);
++      setCurrentPage(pagination.page || page);
++    } catch (err) {
++      console.error(err);
++      setError(err instanceof Error ? err.message : 'Failed to load report');
++    } finally {
++      setLoading(false);
++    }
++  }
++
+   useEffect(() => {
+-    loadReport();
++    if (datePrefLoading || !initializedRange) return;
++    loadReport(1);
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+-  }, [selectedBranchId, selectedDepartmentId]);
++  }, [selectedBranchId, selectedDepartmentId, currentDateFormat, datePrefLoading, initializedRange, startDate, endDate]);
++
++  useEffect(() => {
++    setCurrentDateFormat(dateFormat);
++  }, [dateFormat]);
+ 
+   const rows = data?.summary || [];
+-  const totals = rows.reduce(
++  const itemsPerPage = pageSize || 30;
++  const effectiveRows = showAll ? allRows : rows;
++  const totalPages = Math.max(1, Math.ceil((totalCount || effectiveRows.length) / itemsPerPage));
++  const displayStart = showAll ? (effectiveRows.length ? 1 : 0) : ((currentPage - 1) * itemsPerPage + 1);
++  const displayEnd = showAll ? effectiveRows.length : (displayStart + (rows.length ? rows.length - 1 : 0));
++  const paginatedRows = effectiveRows;
++
++  const totals = (showAll ? allRows : rows).reduce(
+     (acc: any, item: any) => {
+       acc.totalDays += Number(item.total_days || 0);
+       acc.presentDays += Number(item.present_days || 0);
+@@ -86,7 +163,7 @@ export default function MonthlySummaryPage() {
+   const handleExportCsv = () => {
+     const csv = buildCsv([
+       ['S.N.', 'Employee', 'Code', 'Total Days', 'Present Days', 'Absent Days', 'Late Days', 'Worked Hours'],
+-      ...rows.map((item: any, index: number) => [
++      ...(showAll ? allRows : rows).map((item: any, index: number) => [
+         index + 1,
+         item.employee?.name || 'Unknown',
+         item.employee?.employee_code || '-',
+@@ -100,6 +177,43 @@ export default function MonthlySummaryPage() {
+     downloadCsv(`monthly-summary-${startDate}-to-${endDate}.csv`, csv);
+   };
+ 
++  const handleShowAll = async () => {
++    if (showAll) {
++      setShowAll(false);
++      setAllRows([]);
++      setCurrentPage(1);
++      return;
++    }
++
++    const params = new URLSearchParams();
++    if (selectedBranchId) params.append('branch_id', String(selectedBranchId));
++    if (selectedDepartmentId) params.append('department_id', String(selectedDepartmentId));
++    params.append('date_format', currentDateFormat);
++    params.append('start_date', startDate);
++    params.append('end_date', endDate);
++
++    const baseQuery = params.toString();
++    let page = 1;
++    const results: any[] = [];
++
++    try {
++      while (true) {
++        const pageParams = new URLSearchParams(baseQuery);
++        pageParams.append('page', String(page));
++        const queryString = pageParams.toString();
++        const response = await apiClient.request<any>(`/attendance/api/reports/monthly-summary/${queryString ? `?${queryString}` : ''}`);
++        const pageRows = Array.isArray(response?.summary) ? response.summary : [];
++        results.push(...pageRows);
++        if (pageRows.length === 0 || !response?.pagination?.next) break;
++        page += 1;
++      }
++      setAllRows(results);
++      setShowAll(true);
++    } catch (err) {
++      console.error('Failed to load all monthly summary pages', err);
++    }
++  };
++
+   return (
+     <div className="w-full min-w-0 flex-1 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+       <div className="mb-6 flex flex-col gap-3 print:hidden">
+@@ -107,21 +221,22 @@ export default function MonthlySummaryPage() {
+         <p className="text-sm text-muted-foreground">Filter any date range and export the report as CSV or PDF.</p>
+         <AttendanceReportTabs />
+ 
+-        <AttendanceDateFilter
+-          mode="range"
+-          initialDateFormat={dateFormat}
+-          initialStartDate={startDate}
+-          initialEndDate={endDate}
+-          applyLabel="Apply Range"
+-          onApply={({ startDate: nextStart, endDate: nextEnd, dateFormat: nextFormat }) => {
+-            setStartDate(nextStart);
+-            setEndDate(nextEnd);
+-            setDateFormat(nextFormat);
+-            void loadReport(nextStart, nextEnd, nextFormat);
+-          }}
+-        />
+-
+-        {/* exports moved into table header - compact layout, remove duplicate info bar */}
++        {initializedRange && (
++          <AttendanceDateFilter
++            mode="range"
++            initialDateFormat={currentDateFormat}
++            initialStartDate={startDate}
++            initialEndDate={endDate}
++            applyLabel="Apply Range"
++            onApply={({ startDate: nextStart, endDate: nextEnd, dateFormat: nextFormat }) => {
++              setStartDate(nextStart);
++              setEndDate(nextEnd);
++              setCurrentDateFormat(nextFormat);
++              void loadReport(1, nextStart, nextEnd, nextFormat);
++            }}
++          />
++        )}
++
+       </div>
+ 
+       <Card className="w-full min-w-0 border-border/60 shadow-sm">
+@@ -131,8 +246,11 @@ export default function MonthlySummaryPage() {
+             <div className="flex items-center gap-3">
+               <span className="text-sm font-normal text-muted-foreground">{reportLabel}</span>
+               <div className="flex gap-2">
+-                <Button variant="outline" onClick={handleExportCsv} disabled={!rows.length}>Export CSV</Button>
+-                <Button variant="outline" onClick={triggerPrint} disabled={!rows.length}>Export PDF</Button>
++                <Button variant="outline" onClick={handleExportCsv} disabled={!(showAll ? allRows.length : rows.length)}>Export CSV</Button>
++                <Button variant="outline" onClick={triggerPrint} disabled={!(showAll ? allRows.length : rows.length)}>Export PDF</Button>
++                <Button variant={showAll ? 'secondary' : 'outline'} onClick={handleShowAll} className="rounded-2xl">
++                  {showAll ? 'Showing all' : 'Show all'}
++                </Button>
+               </div>
+             </div>
+           </CardTitle>
+@@ -146,55 +264,78 @@ export default function MonthlySummaryPage() {
+             </div>
+           ) : error ? (
+             <div className="p-6 text-rose-600">Error: {error}</div>
+-          ) : !rows.length ? (
++          ) : !(showAll ? allRows.length : rows.length) ? (
+             <div className="p-6 text-sm text-muted-foreground">No data for the selected dates.</div>
+           ) : (
+             <div className="w-full overflow-x-auto">
+               <div className="min-w-max px-2">
+                 <Table className="w-max min-w-full">
+-                <TableHeader className="bg-background">
+-                  <TableRow>
+-                    <TableHead className="w-20">S.N.</TableHead>
+-                    <TableHead>Employee</TableHead>
+-                    <TableHead className="w-24 text-right">Total Days</TableHead>
+-                    <TableHead className="w-24 text-right">Present</TableHead>
+-                    <TableHead className="w-24 text-right">Absent</TableHead>
+-                    <TableHead className="w-24 text-right">Late</TableHead>
+-                    <TableHead className="w-32 text-right">Worked Hours</TableHead>
+-                  </TableRow>
+-                </TableHeader>
+-                <TableBody>
+-                  {rows.map((item: any, index: number) => (
+-                    <TableRow key={item.employee?.id ?? index}>
+-                      <TableCell className="font-medium">{index + 1}</TableCell>
+-                      <TableCell>
+-                        <div className="flex flex-col">
+-                          <span className="font-medium">{item.employee?.name || 'Unknown'}</span>
+-                          <span className="text-xs text-muted-foreground">{item.employee?.employee_code || '-'}</span>
+-                        </div>
+-                      </TableCell>
+-                      <TableCell className="text-right">{item.total_days ?? '-'}</TableCell>
+-                      <TableCell className="text-right font-medium text-emerald-600">{item.present_days ?? '-'}</TableCell>
+-                      <TableCell className="text-right font-medium text-rose-600">{item.absent_days ?? '-'}</TableCell>
+-                      <TableCell className="text-right font-medium text-amber-600">{item.late_days ?? '-'}</TableCell>
+-                      <TableCell className="text-right font-medium">{typeof item.worked_hours === 'number' ? item.worked_hours.toFixed(2) : '-'}</TableCell>
++                  <TableHeader className="bg-background">
++                    <TableRow>
++                      <TableHead className="w-20">S.N.</TableHead>
++                      <TableHead>Employee</TableHead>
++                      <TableHead className="w-24 text-right">Total Days</TableHead>
++                      <TableHead className="w-24 text-right">Present</TableHead>
++                      <TableHead className="w-24 text-right">Absent</TableHead>
++                      <TableHead className="w-24 text-right">Late</TableHead>
++                      <TableHead className="w-32 text-right">Worked Hours</TableHead>
++                    </TableRow>
++                  </TableHeader>
++                  <TableBody>
++                    {paginatedRows.map((item: any, index: number) => (
++                      <TableRow key={item.employee?.id ?? index}>
++                        <TableCell className="font-medium">{displayStart + index}</TableCell>
++                        <TableCell>
++                          <div className="flex flex-col">
++                            <span className="font-medium">{item.employee?.name || 'Unknown'}</span>
++                            <span className="text-xs text-muted-foreground">{item.employee?.employee_code || '-'}</span>
++                          </div>
++                        </TableCell>
++                        <TableCell className="text-right">{item.total_days ?? '-'}</TableCell>
++                        <TableCell className="text-right font-medium text-emerald-600">{item.present_days ?? '-'}</TableCell>
++                        <TableCell className="text-right font-medium text-rose-600">{item.absent_days ?? '-'}</TableCell>
++                        <TableCell className="text-right font-medium text-amber-600">{item.late_days ?? '-'}</TableCell>
++                        <TableCell className="text-right font-medium">{typeof item.worked_hours === 'number' ? item.worked_hours.toFixed(2) : '-'}</TableCell>
++                      </TableRow>
++                    ))}
++                    <TableRow className="bg-muted/30 font-medium">
++                      <TableCell colSpan={2} className="text-right">Totals</TableCell>
++                      <TableCell className="text-right">{totals.totalDays}</TableCell>
++                      <TableCell className="text-right text-emerald-600">{totals.presentDays}</TableCell>
++                      <TableCell className="text-right text-rose-600">{totals.absentDays}</TableCell>
++                      <TableCell className="text-right text-amber-600">{totals.lateDays}</TableCell>
++                      <TableCell className="text-right">{totals.workedHours.toFixed(2)}</TableCell>
+                     </TableRow>
+-                  ))}
+-                  <TableRow className="bg-muted/30 font-medium">
+-                    <TableCell colSpan={2} className="text-right">Totals</TableCell>
+-                    <TableCell className="text-right">{totals.totalDays}</TableCell>
+-                    <TableCell className="text-right text-emerald-600">{totals.presentDays}</TableCell>
+-                    <TableCell className="text-right text-rose-600">{totals.absentDays}</TableCell>
+-                    <TableCell className="text-right text-amber-600">{totals.lateDays}</TableCell>
+-                    <TableCell className="text-right">{totals.workedHours.toFixed(2)}</TableCell>
+-                  </TableRow>
+-                </TableBody>
++                  </TableBody>
+                 </Table>
+               </div>
+             </div>
+           )}
+         </CardContent>
+       </Card>
++
++      {/* Pagination Controls */}
++      {(showAll ? allRows.length : rows.length) > 0 && (
++        <div className="mt-4 px-2">
++          <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
++            <div>
++              {showAll ? (
++                <>Showing all {allRows.length} records</>
++              ) : (
++                <>Showing {displayStart}–{displayEnd} of {totalCount} records</>
++              )}
++            </div>
++
++            {!showAll && (
++              <div className="flex items-center gap-2">
++                <Button variant="outline" size="sm" onClick={() => loadPage(Math.max(currentPage - 1, 1))} disabled={currentPage === 1} className="rounded-full">Previous</Button>
++                <div className="text-sm font-medium">Page {currentPage} of {totalPages}</div>
++                <Button variant="outline" size="sm" onClick={() => loadPage(Math.min(currentPage + 1, totalPages))} disabled={currentPage === totalPages} className="rounded-full">Next</Button>
++              </div>
++            )}
++          </div>
++        </div>
++      )}
+     </div>
+   );
+ }
+diff --git a/frontend/app/page.tsx b/frontend/app/page.tsx
+index c3d94d5..2235a8d 100644
+--- a/frontend/app/page.tsx
++++ b/frontend/app/page.tsx
+@@ -9,7 +9,7 @@ import { AddEmployeeModal } from '@/components/AddEmployeeModal';
+ import { AddDepartmentModal } from '@/components/AddDepartmentModal';
+ import { useFilters } from '@/hooks/useFilters';
+ import { useRightSidebar } from '@/hooks/useRightSidebar';
+-import { getDateFormatPreference } from '@/hooks/use-date-format';
++import { useDateFormatPreference } from '@/hooks/use-date-format';
+ 
+ // shadcn UI Components
+ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+@@ -30,7 +30,7 @@ type HierarchicalViewData = HierarchicalDashboardData | BranchDashboardData | De
+ export default function HomePage() {
+   const { user, loading: authLoading, isAuthenticated } = useAuth();
+   const router = useRouter();
+-  const [dateFormat] = useState(() => getDateFormatPreference());
++  const { dateFormat } = useDateFormatPreference();
+   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+   const [showAddDepartmentModal, setShowAddDepartmentModal] = useState(false);
+   const { isOpen: isRightSidebarOpen, toggle: toggleRightSidebar } = useRightSidebar();
+diff --git a/frontend/app/staff/page.tsx b/frontend/app/staff/page.tsx
+index 053b8f8..03f8fe5 100644
+--- a/frontend/app/staff/page.tsx
++++ b/frontend/app/staff/page.tsx
+@@ -222,15 +222,15 @@ export default function StaffPage() {
+   }
+ 
+   return (
+-    <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
++    <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px- lg:px-8 py-6 space-y-6">
+       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+         <div className="space-y-3">
+-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
++          {/* <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+             <Users className="h-3.5 w-3.5" />
+             Staff Directory
+-          </div>
++          </div> */}
+           <div>
+-            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
++            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-3xl">
+               Manage staff with precision.
+             </h1>
+             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+diff --git a/frontend/components/AppShell.tsx b/frontend/components/AppShell.tsx
+index 44918e1..ca1640b 100644
+--- a/frontend/components/AppShell.tsx
++++ b/frontend/components/AppShell.tsx
+@@ -10,6 +10,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+ import { apiClient, type DashboardData, type HierarchicalDashboardData } from '@/lib/api-client'
+ import { useAuth } from '@/lib/hooks/useAuth'
+ import { useFilters } from '@/hooks/useFilters'
++import { useDateFormatPreference } from '@/hooks/use-date-format'
+ 
+ export function AppShell({ children }: { children: React.ReactNode }) {
+ 	const router = useRouter()
+@@ -24,6 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
+ 		clearFilters,
+ 		clearDepartment,
+ 	} = useFilters()
++	const { dateFormat, loading: datePrefLoading } = useDateFormatPreference()
+ 
+ 	const syncSelectionToUrl = useCallback(
+ 		(branchId: number | null, departmentId: number | null) => {
+@@ -55,14 +57,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
+ 
+ 	useEffect(() => {
+ 		if (!isAuthenticated) return
++		if (datePrefLoading) return
+ 
+ 		let cancelled = false
+ 
+ 		const load = async () => {
+ 			try {
++				console.debug('[app-shell] load-dashboard', {
++					selectedBranchId,
++					selectedDepartmentId,
++					dateFormat,
++				})
+ 				const [hier, attendance, employeesResp] = await Promise.all([
+ 					apiClient.dashboard.getHierarchical(),
+-					apiClient.dashboard.getAttendance(selectedBranchId, selectedDepartmentId),
++					apiClient.dashboard.getAttendance(selectedBranchId, selectedDepartmentId, dateFormat),
+ 					apiClient.employees.listWithFilters?.(selectedBranchId, selectedDepartmentId) ?? apiClient.employees.list(),
+ 				])
+ 
+@@ -87,7 +95,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
+ 		return () => {
+ 			cancelled = true
+ 		}
+-	}, [isAuthenticated, selectedBranchId, selectedDepartmentId])
++	}, [isAuthenticated, selectedBranchId, selectedDepartmentId, dateFormat, datePrefLoading])
+ 
+ 	const totalEmployees = attendanceData?.stats?.total_employees ?? 0
+ 	const presentCount = attendanceData?.stats?.present_today ?? 0
+diff --git a/frontend/components/AttendanceDateFilter.tsx b/frontend/components/AttendanceDateFilter.tsx
+index 16f7397..1b3f8c2 100644
+--- a/frontend/components/AttendanceDateFilter.tsx
++++ b/frontend/components/AttendanceDateFilter.tsx
+@@ -10,6 +10,7 @@ import { NepaliBSCalendar } from '@/components/nepali-bs-calendar';
+ import { getDateFormatPreference, setDateFormatPreference, type DateFormat } from '@/hooks/use-date-format';
+ import { createAdSelection, createBsSelection, getInitialCalendarSelection, parseDateString, type CalendarSelection } from '@/lib/calendar-sync';
+ import { cn } from '@/lib/utils';
++import { dateMatchModifiers } from 'react-day-picker';
+ 
+ type FilterMode = 'single' | 'range';
+ 
+@@ -32,10 +33,11 @@ interface AttendanceDateFilterProps {
+ }
+ 
+ function selectionFromDate(dateValue: string | undefined, format: 'ad' | 'bs'): CalendarSelection {
++  console.log("ekxoti",dateValue, format);
+   if (!dateValue) {
++    console.log("Idhar?")
+     return getInitialCalendarSelection();
+   }
+-
+   const parsed = parseDateString(dateValue);
+   if (!parsed || !Number.isFinite(parsed.year) || !Number.isFinite(parsed.month) || !Number.isFinite(parsed.day)) {
+     return getInitialCalendarSelection();
+@@ -67,7 +69,6 @@ function DateField({
+ }: DateFieldProps) {
+   const [open, setOpen] = useState(false);
+   const value = selection[dateFormat];
+-
+   return (
+     <Popover open={open} onOpenChange={setOpen}>
+       <PopoverTrigger
+@@ -117,12 +118,27 @@ export function AttendanceDateFilter({
+ }: AttendanceDateFilterProps) {
+   const defaultFormat = initialDateFormat ?? getDateFormatPreference();
+   const [dateFormat, setDateFormat] = useState<DateFormat>(defaultFormat);
+-  const [singleSelection, setSingleSelection] = useState<CalendarSelection>(() => selectionFromDate(initialDate, 'ad'));
+-  const [startSelection, setStartSelection] = useState<CalendarSelection>(() => selectionFromDate(initialStartDate, 'ad'));
+-  const [endSelection, setEndSelection] = useState<CalendarSelection>(() => selectionFromDate(initialEndDate, 'ad'));
++  const [singleSelection, setSingleSelection] = useState<CalendarSelection>(() => selectionFromDate(initialDate, defaultFormat));
++  const [startSelection, setStartSelection] = useState<CalendarSelection>(() => selectionFromDate(initialStartDate, defaultFormat));
++  const [endSelection, setEndSelection] = useState<CalendarSelection>(() => selectionFromDate(initialEndDate, defaultFormat));
++
++  useEffect(() => {
++    console.debug('[attendance-date-filter] init', {
++      mode,
++      defaultFormat,
++      initialDateFormat,
++      initialDate,
++      initialStartDate,
++      initialEndDate,
++    });
++  }, [defaultFormat, initialDate, initialDateFormat, initialEndDate, initialStartDate, mode]);
++
++console.log("Yaha bata hok", initialStartDate, initialEndDate);
++console.log("Yaha bata hokiii",  startSelection, endSelection);
+ 
+   useEffect(() => {
+     if (initialDateFormat) {
++      console.debug('[attendance-date-filter] sync-format-from-props', { initialDateFormat });
+       setDateFormat(initialDateFormat);
+     }
+   }, [initialDateFormat]);
+@@ -130,6 +146,7 @@ export function AttendanceDateFilter({
+   const isSingle = mode === 'single';
+ 
+   const handleFormatChange = (nextFormat: DateFormat) => {
++    console.debug('[attendance-date-filter] format-change', { from: dateFormat, to: nextFormat });
+     setDateFormat(nextFormat);
+     setDateFormatPreference(nextFormat);
+   };
+@@ -145,6 +162,7 @@ export function AttendanceDateFilter({
+   const handleApply = () => {
+     if (isSingle) {
+       const value = currentValue(singleSelection, dateFormat);
++      console.debug('[attendance-date-filter] apply-single', { dateFormat, value });
+       onApply({
+         dateFormat,
+         startDate: value,
+@@ -153,12 +171,18 @@ export function AttendanceDateFilter({
+       return;
+     }
+ 
++    console.debug('[attendance-date-filter] apply-range', {
++      dateFormat,
++      startDate: currentValue(startSelection, dateFormat),
++      endDate: currentValue(endSelection, dateFormat),
++    });
+     onApply({
+       dateFormat,
+       startDate: currentValue(startSelection, dateFormat),
+       endDate: currentValue(endSelection, dateFormat),
+     });
+   };
++  console.log("ARKO HAIIII", startSelection, endSelection);
+ 
+   return (
+     <Card className="w-full rounded-2xl border-border/60 shadow-sm">
+@@ -168,7 +192,7 @@ export function AttendanceDateFilter({
+             {!isSingle && (
+               <>
+                 <div className="flex flex-col gap-2">
+-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">Start Date</span>
++                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">Start Datess</span>
+                   <DateField
+                     label="Start Date"
+                     placeholder="Select start"
+diff --git a/frontend/components/Navbar.tsx b/frontend/components/Navbar.tsx
+index d8a5387..c0db996 100644
+--- a/frontend/components/Navbar.tsx
++++ b/frontend/components/Navbar.tsx
+@@ -61,7 +61,7 @@ export function Navbar({ title = 'EziHR', subtitle, infoItems = [] }: NavbarProp
+ 
+   return (
+     <nav className="sticky top-0 py-2.5 z-50 w-full border-b border-border/90 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-3 px-3 sm:px-4">
++      <div className=" flex h-16 w-full items-center gap-3 px-3 sm:px-4">
+         <div className="flex items-center gap-2 min-w-0">
+           <div className="md:hidden">
+             <SidebarTrigger aria-label="Toggle navigation" />
+diff --git a/frontend/hooks/use-date-format.ts b/frontend/hooks/use-date-format.ts
+index f525c74..3b39da1 100644
+--- a/frontend/hooks/use-date-format.ts
++++ b/frontend/hooks/use-date-format.ts
+@@ -1,39 +1,97 @@
+ /**
+- * Hook for managing user's date format preference (AD or BS)
+- * Fetches preference from current user's employee profile
++ * Hook for managing date format preference from enterprise
++ * Fetches preference from enterprise configuration
+  */
+ 
+ 'use client';
+ 
+ import { useEffect, useState } from 'react';
+-import { apiClient } from '@/lib/api-client';
++import { apiClient, type EnterpriseHierarchyItem } from '@/lib/api-client';
+ 
+ export type DateFormat = 'ad' | 'bs';
+ 
++/**
++ * Hook to get and manage enterprise's date format preference
++ * Automatically fetches from the user's enterprise
++ */
+ export function useDateFormatPreference() {
+   const [dateFormat, setDateFormat] = useState<DateFormat>('ad');
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
++  const [enterpriseId, setEnterpriseId] = useState<number | null>(null);
++
++  const resolveEnterpriseId = (userInfo: any): number | null => {
++    const rawEnterprise = userInfo?.enterprise;
++
++    if (typeof rawEnterprise === 'number') {
++      return rawEnterprise;
++    }
++
++    if (rawEnterprise && typeof rawEnterprise === 'object' && typeof rawEnterprise.id === 'number') {
++      return rawEnterprise.id;
++    }
++
++    const nestedEnterprise = userInfo?.employee?.enterprise?.id;
++    if (typeof nestedEnterprise === 'number') {
++      return nestedEnterprise;
++    }
++
++    return null;
++  };
+ 
+   useEffect(() => {
+     const loadPreference = async () => {
+       try {
+         setLoading(true);
+-        // Get current user info
++        console.debug('[date-format] loadPreference:start');
++        // Get current user info to find their enterprise
+         const userInfo = await apiClient.auth.getCurrentUser();
++        console.debug('[date-format] loadPreference:user-info', userInfo);
++        const resolvedEnterpriseId = resolveEnterpriseId(userInfo);
++
++        if (!resolvedEnterpriseId) {
++          console.warn('No enterprise found for user');
++          console.debug('[date-format] loadPreference:no-enterprise');
++          setDateFormat('ad');
++          setLoading(false);
++          return;
++        }
++
++        setEnterpriseId(resolvedEnterpriseId);
++        const cachedFormat = localStorage.getItem(`enterpriseDateFormat_${resolvedEnterpriseId}`);
++        if (cachedFormat === 'ad' || cachedFormat === 'bs') {
++          console.debug('[date-format] loadPreference:cached', {
++            enterpriseId: resolvedEnterpriseId,
++            cachedFormat,
++          });
++          setDateFormat(cachedFormat);
++        }
++        
++        // Fetch enterprise hierarchy which includes date_format_preference
++        const response = await apiClient.enterprise.hierarchy();
++        const enterprises = response.enterprises || [];
++        const enterprise = enterprises.find((e: EnterpriseHierarchyItem) => e.id === resolvedEnterpriseId);
+         
+-        // If user has employee profile with date_format_preference, use it
+-        if (userInfo?.employee?.date_format_preference) {
+-          setDateFormat(userInfo.employee.date_format_preference);
++        if (enterprise?.date_format_preference) {
++          console.debug('[date-format] loadPreference:fetched', {
++            enterpriseId: enterprise.id,
++            dateFormat: enterprise.date_format_preference,
++          });
++          setDateFormat(enterprise.date_format_preference);
++          // Cache in localStorage
++          localStorage.setItem(`enterpriseDateFormat_${enterprise.id}`, enterprise.date_format_preference);
++          localStorage.setItem('dateFormatPreference', enterprise.date_format_preference);
+         } else {
+-          // Default to 'ad'
++          console.debug('[date-format] loadPreference:missing-preference-falling-back-to-ad');
+           setDateFormat('ad');
+         }
+       } catch (err) {
+-        console.warn('Failed to load date format preference, using default:', err);
++        console.warn('Failed to load enterprise date format preference, using default:', err);
++        console.debug('[date-format] loadPreference:error-fallback-ad', err);
+         setDateFormat('ad');
+       } finally {
+         setLoading(false);
++        console.debug('[date-format] loadPreference:done');
+       }
+     };
+ 
+@@ -41,24 +99,29 @@ export function useDateFormatPreference() {
+   }, []);
+ 
+   const updatePreference = async (newFormat: DateFormat): Promise<boolean> => {
+-    try {
+-      const userInfo = await apiClient.auth.getCurrentUser();
+-      if (!userInfo?.employee?.id) {
+-        throw new Error('No employee profile found');
+-      }
++    if (!enterpriseId) {
++      setError('No enterprise found');
++      console.debug('[date-format] updatePreference:no-enterprise-id', { newFormat });
++      return false;
++    }
+ 
+-      // Update employee's date format preference
+-      await apiClient.employees.update(userInfo.employee.id, {
++    try {
++      console.debug('[date-format] updatePreference:start', { enterpriseId, newFormat });
++      // Update enterprise date format preference
++      await apiClient.enterprise.updatePreference(enterpriseId, {
+         date_format_preference: newFormat,
+       });
+ 
+       setDateFormat(newFormat);
+-      // Store in localStorage as backup
++      // Update localStorage cache
++      localStorage.setItem(`enterpriseDateFormat_${enterpriseId}`, newFormat);
+       localStorage.setItem('dateFormatPreference', newFormat);
++      console.debug('[date-format] updatePreference:success', { enterpriseId, newFormat });
+       return true;
+     } catch (err) {
+       const errorMsg = err instanceof Error ? err.message : String(err);
+       setError(errorMsg);
++      console.debug('[date-format] updatePreference:error', { enterpriseId, newFormat, errorMsg });
+       return false;
+     }
+   };
+@@ -67,13 +130,14 @@ export function useDateFormatPreference() {
+     dateFormat,
+     loading,
+     error,
++    enterpriseId,
+     updatePreference,
+   };
+ }
+ 
+ /**
+  * Hook to get user's current date format without side effects
+- * Uses localStorage as fallback
++ * Uses localStorage as fallback, defaults to 'ad'
+  */
+ export function getDateFormatPreference(): DateFormat {
+   if (typeof window === 'undefined') return 'ad';
+@@ -90,3 +154,4 @@ export function setDateFormatPreference(format: DateFormat) {
+     localStorage.setItem('dateFormatPreference', format);
+   }
+ }
++
+diff --git a/frontend/lib/api-client.ts b/frontend/lib/api-client.ts
+index 67405dc..81e53c2 100644
+--- a/frontend/lib/api-client.ts
++++ b/frontend/lib/api-client.ts
+@@ -299,6 +299,7 @@ export interface EnterpriseHierarchyItem {
+   licensed?: boolean;
+   licensed_until?: string | null;
+   max_alowed_employees?: number;
++  date_format_preference?: 'ad' | 'bs';
+   branches: EnterpriseBranchDepartment[];
+   departments: Array<{
+     id: number;
+@@ -399,6 +400,7 @@ class ApiClient {
+       if (departmentId) params.append('department_id', departmentId.toString());
+       if (dateFormat) params.append('date_format', dateFormat);
+       const queryString = params.toString();
++      console.debug('[api-client] getAttendance', { branchId, departmentId, dateFormat, queryString });
+       return this.request<DashboardData>(`/attendance/api/daily/${queryString ? `?${queryString}` : ''}`);
+     },
+     getLateArrivals: (branchId?: number | null, departmentId?: number | null, attendanceDate?: string | null, dateFormat?: 'ad' | 'bs') => {
+@@ -408,6 +410,7 @@ class ApiClient {
+       if (attendanceDate) params.append('attendance_date', attendanceDate);
+       if (dateFormat) params.append('date_format', dateFormat);
+       const queryString = params.toString();
++      console.debug('[api-client] getLateArrivals', { branchId, departmentId, attendanceDate, dateFormat, queryString });
+       return this.request<LateArrivalsData>(`/attendance/api/dashboard/late-arrivals/${queryString ? `?${queryString}` : ''}`);
+     },
+     getEarlyDepartures: (branchId?: number | null, departmentId?: number | null, attendanceDate?: string | null, dateFormat?: 'ad' | 'bs') => {
+@@ -417,6 +420,7 @@ class ApiClient {
+       if (attendanceDate) params.append('attendance_date', attendanceDate);
+       if (dateFormat) params.append('date_format', dateFormat);
+       const queryString = params.toString();
++      console.debug('[api-client] getEarlyDepartures', { branchId, departmentId, attendanceDate, dateFormat, queryString });
+       return this.request<EarlyDeparturesData>(`/attendance/api/dashboard/early-departures/${queryString ? `?${queryString}` : ''}`);
+     },
+     // Monthly attendance summary endpoints (server supports month or arbitrary date ranges)
+@@ -440,6 +444,7 @@ class ApiClient {
+       if (options.employeeId) params.append('employee_id', options.employeeId.toString());
+       if (options.dateFormat) params.append('date_format', options.dateFormat);
+       const queryString = params.toString();
++      console.debug('[api-client] getMonthlySummary', { ...options, queryString });
+       return this.request<any>(`/attendance/api/reports/monthly-summary/${queryString ? `?${queryString}` : ''}`);
+     },
+     getMonthlySummaryDetailed: (options: {
+@@ -462,6 +467,7 @@ class ApiClient {
+       if (options.employeeId) params.append('employee_id', options.employeeId.toString());
+       if (options.dateFormat) params.append('date_format', options.dateFormat);
+       const queryString = params.toString();
++      console.debug('[api-client] getMonthlySummaryDetailed', { ...options, queryString });
+       return this.request<any>(`/attendance/api/reports/monthly-summary-detailed/${queryString ? `?${queryString}` : ''}`);
+     },
+     getEmployeeDashboard: () =>
+@@ -516,6 +522,12 @@ class ApiClient {
+     hierarchy: () =>
+       this.request<{ enterprises: EnterpriseHierarchyItem[] }>('/enterprise/api/hierarchy/'),
+ 
++    updatePreference: (enterpriseId: number, data: { date_format_preference: 'ad' | 'bs' }) =>
++      this.request<any>(`/enterprise/api/enterprise/${enterpriseId}/update-preference/`, {
++        method: 'POST',
++        body: JSON.stringify(data),
++      }),
++
+     createDepartment: (data: { name: string; branch_id?: number | null; enterprise_id?: number; arrival_time?: string | null; departure_time?: string | null }) =>
+       this.request<any>('/enterprise/api/departments/', {
+         method: 'POST',
+diff --git a/frontend/lib/report-export.ts b/frontend/lib/report-export.ts
+index a8752f5..b19eead 100644
+--- a/frontend/lib/report-export.ts
++++ b/frontend/lib/report-export.ts
+@@ -71,12 +71,35 @@ export function getRangeDates(startDate: string, endDate: string, dateFormat: 'a
+   while (current <= end) {
+     if (dateFormat === 'bs') {
+       const bsDate = adToBS(current);
+-      dates.push(formatBSDate(bsDate.year, bsDate.month, bsDate.day));
++      const formattedBS = formatBSDate(bsDate.year, bsDate.month, bsDate.day);
++      // Ensure we don't exceed the end date in BS format
++      if (formattedBS <= endDate) {
++        dates.push(formattedBS);
++      }
+     } else {
+       dates.push(formatLocalDate(current));
+     }
+     current.setDate(current.getDate() + 1);
+   }
+ 
++  // If conversion missed the exact requested endDate (possible when BS conversion
++  // rounds to next month for certain years), ensure the requested endDate is
++  // included for BS ranges.
++  if (dateFormat === 'bs' && dates.length > 0) {
++    const last = dates[dates.length - 1];
++    if (last !== endDate) {
++      // Only append if endDate is after the last generated (to avoid duplicates)
++      const lastParts = parseDateParts(last);
++      const endParts = parseDateParts(endDate);
++      if (lastParts && endParts) {
++        const lastNum = lastParts.year * 10000 + lastParts.month * 100 + lastParts.day;
++        const endNum = endParts.year * 10000 + endParts.month * 100 + endParts.day;
++        if (endNum > lastNum) {
++          dates.push(endDate);
++        }
++      }
++    }
++  }
++
+   return dates;
+ }

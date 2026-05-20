@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import useAxios from '@/utils/useAxios';
+import { useDateFormatPreference } from '@/hooks/useDateFormatPreference';
 
 // shadcn UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +34,7 @@ export default function AttendanceTab() {
   const api = useAxios();
   const { branchId } = useParams();
   const navigate = useNavigate();
+  const { dateFormat } = useDateFormatPreference();
 
   const [loading, setLoading] = useState(true);
   const [attendanceRows, setAttendanceRows] = useState([]);
@@ -42,8 +44,13 @@ export default function AttendanceTab() {
   const [rowsLoading, setRowsLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [showAllLoading, setShowAllLoading] = useState(false);
-  const [attendanceDate, setAttendanceDate] = useState(null);
+  const [attendanceDateAd, setAttendanceDateAd] = useState(null);
+  const [attendanceDateBs, setAttendanceDateBs] = useState(null);
   const [departments, setDepartments] = useState([]);
+
+  const attendanceDate = dateFormat === 'bs'
+    ? (attendanceDateBs || attendanceDateAd)
+    : (attendanceDateAd || attendanceDateBs);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +59,8 @@ export default function AttendanceTab() {
       try {
         const res = await api.get(`attendance/api/dashboard/branch/${branchId}/`);
         if (cancelled) return;
-        setAttendanceDate(res.data?.attendance_date);
+        setAttendanceDateAd(res.data?.attendance_date_ad || res.data?.attendance_date || null);
+        setAttendanceDateBs(res.data?.attendance_date_bs || null);
         setDepartments(res.data?.departments || []);
       } catch (err) {
         // ignore

@@ -1,13 +1,13 @@
-'use client';
-
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { apiClient } from '@/lib/api-client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { DateFormatBadge } from '@/components/DateDisplay';
+import { apiClient } from '../../lib/api-client';
+import { useDateFormatPreference } from '../../hooks/useDateFormatPreference';
+import { Button } from '../../components/ui/button';
+import { AttendanceDateFilter } from '../../components/AttendanceDateFilter';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Skeleton } from '../../components/ui/skeleton';
+import { createDateSelection } from '../../lib/calendar-sync';
 
 function getToday() {
   const now = new Date();
@@ -21,15 +21,18 @@ export default function LateArrivalsReport() {
   const { branchId } = useParams();
   const selectedBranchId = branchId || null;
   const selectedDepartmentId = null;
+  const { dateFormat, loading: datePrefLoading } = useDateFormatPreference();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [attendanceDate, setAttendanceDate] = useState(getToday());
-  const [dateFormat, setDateFormat] = useState('ad');
+  const [attendanceDate, setAttendanceDate] = useState('');
+  const [attendanceDateSourceFormat, setAttendanceDateSourceFormat] = useState('ad');
+  const [currentDateFormat, setCurrentDateFormat] = useState(dateFormat);
+  const hasInitializedDateRef = useRef(false);
 
-  const reportLabel = useMemo(() => attendanceDate, [attendanceDate]);
+  const reportLabel = useMemo(() => attendanceDate || getToday(), [attendanceDate]);
 
-  const loadReport = useCallback(async (nextDate = attendanceDate, nextFormat = dateFormat) => {
+  const loadReport = useCallback(async (nextDate = attendanceDate, nextFormat = currentDateFormat) => {
     setLoading(true);
     setError(null);
 
@@ -43,22 +46,53 @@ export default function LateArrivalsReport() {
     } finally {
       setLoading(false);
     }
-  }, [attendanceDate, dateFormat, selectedBranchId, selectedDepartmentId]);
+  }, [attendanceDate, currentDateFormat, selectedBranchId, selectedDepartmentId]);
 
   useEffect(() => {
-    void loadReport();
-  }, [loadReport]);
+    if (datePrefLoading || hasInitializedDateRef.current) return;
+
+    const nextFormat = dateFormat === 'bs' ? 'bs' : 'ad';
+    const todaySelection = createDateSelection(getToday(), 'ad');
+    const nextDate = todaySelection[nextFormat] || getToday();
+
+    setAttendanceDate(nextDate);
+    setAttendanceDateSourceFormat(nextFormat);
+    setCurrentDateFormat(nextFormat);
+    hasInitializedDateRef.current = true;
+    void loadReport(nextDate, nextFormat);
+  }, [dateFormat, datePrefLoading, loadReport]);
 
   return (
-    <div className="w-full min-w-0 py-2">
-      <Card className="overflow-hidden border-slate-800 bg-slate-900/80 text-slate-100 shadow-xl">
-        <CardHeader className="border-b border-slate-800 bg-slate-900/70">
+    <div className="mx-auto w-full min-w-0 max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+      <div className="mb-6 rounded-3xl border border-slate-800/80 bg-slate-950/60 p-4 shadow-lg shadow-slate-950/20 sm:p-6">
+        <div className="mb-4 flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-50">Late Arrivals Report</h1>
+          <p className="text-sm text-slate-400">Generated for: {reportLabel}</p>
+        </div>
+
+        <AttendanceDateFilter
+          mode="single"
+          initialDateFormat={currentDateFormat}
+          initialDateSourceFormat={attendanceDateSourceFormat}
+          initialDate={attendanceDate}
+          applyLabel="Apply Date"
+          onApply={({ startDate: nextDate, dateFormat: nextFormat }) => {
+            setAttendanceDate(nextDate);
+            setAttendanceDateSourceFormat(nextFormat);
+            setCurrentDateFormat(nextFormat);
+            void loadReport(nextDate, nextFormat);
+          }}
+        />
+      </div>
+
+      <Card className="overflow-hidden rounded-3xl border-slate-800 bg-slate-900/80 text-slate-100 shadow-xl shadow-slate-950/30">
+        <CardHeader className="border-b border-slate-800 bg-slate-900/70 px-4 py-4 sm:px-6">
           <CardTitle className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-base font-semibold sm:text-lg">Late Arrivals</span>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <span className="text-xs font-normal text-slate-400 sm:text-sm">{reportLabel}</span>
-              <DateFormatBadge date={reportLabel} format={dateFormat} />
-              <Button onClick={() => void loadReport()} className="sm:shrink-0">Refresh</Button>
+              <span className="text-xs font-normal text-slate-500 sm:text-sm">({currentDateFormat.toUpperCase()})</span>
+              <Button onClick={() => void loadReport(attendanceDate, currentDateFormat)} className="sm:shrink-0">Refresh</Button>
             </div>
           </CardTitle>
         </CardHeader>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiClient } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DateFormatBadge } from '@/components/DateDisplay';
+import { useDateFormatPreference } from '@/hooks/useDateFormatPreference';
+import { AttendanceDateFilter } from '@/components/AttendanceDateFilter';
+import { createDateSelection } from '@/lib/calendar-sync';
 
 function padDate(date) {
   const year = date.getFullYear();
@@ -26,9 +29,24 @@ function getMonthBounds() {
   };
 }
 
+function expandDateRange(startDate, endDate) {
+  const dates = [];
+  if (!startDate || !endDate) return dates;
+
+  const current = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  while (!Number.isNaN(current.getTime()) && !Number.isNaN(end.getTime()) && current <= end) {
+    dates.push(padDate(current));
+    current.setDate(current.getDate() + 1);
+  }
+
+  return dates;
+}
+
 function formatDayLabel(dateValue, dateFormat) {
   if (dateFormat === 'bs') {
-    return { firstLine: dateValue, secondLine: '' };
+    const converted = createDateSelection(dateValue, 'ad');
+    return { firstLine: converted.bs || dateValue, secondLine: '' };
   }
 
   const date = new Date(`${dateValue}T00:00:00`);
@@ -63,33 +81,36 @@ function getDayColorClass(marker) {
 
 export default function DetailedMonthly() {
   const { branchId } = useParams();
+  const { dateFormat: preferredDateFormat, loading: prefLoading } = useDateFormatPreference();
   const initialBounds = useMemo(() => getMonthBounds(), []);
-  const [startDate, setStartDate] = useState(initialBounds.startDate);
-  const [endDate, setEndDate] = useState(initialBounds.endDate);
-  const [dateFormat, setDateFormat] = useState('ad');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [sourceStartDate, setSourceStartDate] = useState(initialBounds.startDate);
+  const [sourceEndDate, setSourceEndDate] = useState(initialBounds.endDate);
+  const [dateFormat, setDateFormat] = useState(preferredDateFormat);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const hasInitializedRangeRef = useRef(false);
 
   const reportDates = useMemo(() => {
-    const dates = [];
-    if (!startDate || !endDate) return dates;
+    return expandDateRange(sourceStartDate, sourceEndDate);
+  }, [sourceEndDate, sourceStartDate]);
 
-    const current = new Date(`${startDate}T00:00:00`);
-    const end = new Date(`${endDate}T00:00:00`);
-    while (!Number.isNaN(current.getTime()) && !Number.isNaN(end.getTime()) && current <= end) {
-      dates.push(padDate(current));
-      current.setDate(current.getDate() + 1);
-    }
-    return dates;
-  }, [startDate, endDate]);
+  const visibleStartDate = useMemo(() => {
+    return createDateSelection(sourceStartDate, 'ad')[dateFormat] || sourceStartDate;
+  }, [dateFormat, sourceStartDate]);
+
+  const visibleEndDate = useMemo(() => {
+    return createDateSelection(sourceEndDate, 'ad')[dateFormat] || sourceEndDate;
+  }, [dateFormat, sourceEndDate]);
 
   const reportLabel = useMemo(() => {
-    if (!startDate || !endDate) return 'Selected dates';
-    return `${startDate} — ${endDate}`;
-  }, [startDate, endDate]);
+    if (!visibleStartDate || !visibleEndDate) return 'Selected dates';
+    return `${visibleStartDate} — ${visibleEndDate}`;
+  }, [visibleEndDate, visibleStartDate]);
 
   const loadReport = useCallback(async (nextStart = startDate, nextEnd = endDate, nextFormat = dateFormat) => {
     setLoading(true);
@@ -113,8 +134,30 @@ export default function DetailedMonthly() {
   }, [branchId, dateFormat, endDate, startDate]);
 
   useEffect(() => {
-    void loadReport();
-  }, [loadReport]);
+    setDateFormat(preferredDateFormat);
+  }, [preferredDateFormat]);
+
+  useEffect(() => {
+    if (prefLoading || hasInitializedRangeRef.current) return;
+
+    const nextFormat = preferredDateFormat === 'bs' ? 'bs' : 'ad';
+    const nextStart = initialBounds.startDate;
+    const nextEnd = initialBounds.endDate;
+    const nextRequestStart = createDateSelection(nextStart, 'ad')[nextFormat] || nextStart;
+    const nextRequestEnd = createDateSelection(nextEnd, 'ad')[nextFormat] || nextEnd;
+    hasInitializedRangeRef.current = true;
+    setDateFormat(nextFormat);
+    setStartDate(nextRequestStart);
+    setEndDate(nextRequestEnd);
+    setSourceStartDate(nextStart);
+    setSourceEndDate(nextEnd);
+    void loadReport(nextRequestStart, nextRequestEnd, nextFormat);
+  }, [initialBounds.endDate, initialBounds.startDate, loadReport, prefLoading, preferredDateFormat]);
+
+  useEffect(() => {
+    setStartDate(createDateSelection(sourceStartDate, 'ad')[dateFormat] || sourceStartDate);
+    setEndDate(createDateSelection(sourceEndDate, 'ad')[dateFormat] || sourceEndDate);
+  }, [dateFormat, sourceEndDate, sourceStartDate]);
 
   const rows = data?.rows || [];
   const itemsPerPage = 30;
@@ -129,7 +172,16 @@ export default function DetailedMonthly() {
   }, [totalPages]);
 
   const handleExportCsv = () => {
-    const header = ['S.N.', 'Employee', 'Code', ...reportDates, 'Present Days', 'Absent Days', 'Late Days', 'Worked Hours'];
+    const header = [
+      'S.N.',
+      'Employee',
+      'Code',
+      ...reportDates.map((dateValue) => formatDayLabel(dateValue, dateFormat).firstLine),
+      'Present Days',
+      'Absent Days',
+      'Late Days',
+      'Worked Hours',
+    ];
     const csvRows = [header];
 
     rows.forEach((item, index) => {
@@ -177,38 +229,24 @@ export default function DetailedMonthly() {
           <p className="text-sm text-slate-400">Filter any date range and export the report as CSV or PDF.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 shadow-lg">
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="text-xs uppercase tracking-wide text-slate-500">Start</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-emerald-500"
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="text-xs uppercase tracking-wide text-slate-500">End</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-emerald-500"
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="text-xs uppercase tracking-wide text-slate-500">Format</label>
-            <select
-              value={dateFormat}
-              onChange={(e) => setDateFormat(e.target.value)}
-              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-emerald-500"
-            >
-              <option value="ad">AD</option>
-              <option value="bs">BS</option>
-            </select>
-          </div>
-          <Button onClick={() => void loadReport(startDate, endDate, dateFormat)} className="bg-emerald-600 text-white hover:bg-emerald-700">Apply Range</Button>
-        </div>
+        <AttendanceDateFilter
+          mode="range"
+          initialDateFormat={dateFormat}
+          initialDateSourceFormat="ad"
+          initialStartDate={initialBounds.startDate}
+          initialEndDate={initialBounds.endDate}
+          applyLabel="Apply Range"
+          onApply={({ startDate: nextStart, endDate: nextEnd, dateFormat: nextFormat }) => {
+            const nextSourceStart = createDateSelection(nextStart, nextFormat).ad || initialBounds.startDate;
+            const nextSourceEnd = createDateSelection(nextEnd, nextFormat).ad || initialBounds.endDate;
+            setStartDate(nextStart);
+            setEndDate(nextEnd);
+            setSourceStartDate(nextSourceStart);
+            setSourceEndDate(nextSourceEnd);
+            setDateFormat(nextFormat);
+            void loadReport(nextStart, nextEnd, nextFormat);
+          }}
+        />
       </div>
 
       <Card className="overflow-hidden border-slate-800 bg-slate-900/80 text-slate-100 shadow-xl">
@@ -217,17 +255,8 @@ export default function DetailedMonthly() {
             <span className="text-base font-semibold sm:text-lg">Detailed Monthly Summary</span>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <span className="text-xs font-normal text-slate-400 sm:text-sm">{reportLabel}</span>
-              <DateFormatBadge date={reportLabel} format={dateFormat} />
-              <Button variant="outline" className="bg-slate-800 text-white hover:bg-slate-700" onClick={handleToggleShowAll} disabled={!rows.length}>{showAll ? 'Show 30/page' : 'Show All'}</Button>
-              <Button variant="outline" className="bg-slate-800 text-white hover:bg-slate-700" onClick={handleExportCsv} disabled={!rows.length}>Export CSV</Button>
-              <Button variant="outline" className="bg-slate-800 text-white hover:bg-slate-700" onClick={handlePrint} disabled={!rows.length}>Export PDF</Button>
-              {!showAll && rows.length > 0 ? (
-                <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300">
-                  <Button variant="outline" size="sm" onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))} disabled={currentPage === 1}>Previous</Button>
-                  <span>Page {currentPage} of {totalPages}</span>
-                  <Button variant="outline" size="sm" onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))} disabled={currentPage === totalPages}>Next</Button>
-                </div>
-              ) : null}
+              <Button variant="outline" className="bg-slate-800 text-white hover:bg-slate-700" onClick={handleExportCsv} disabled={!rows.length}>Export CSV</Button> <Button variant="outline" className="bg-slate-800 text-white hover:bg-slate-700" onClick={handlePrint} disabled={!rows.length}>Export PDF</Button> <Button variant="outline" className="bg-slate-800 text-white hover:bg-slate-700" onClick={handleToggleShowAll} disabled={!rows.length}>{showAll ? 'Show 30/page' : 'Show All'}</Button>
+              
             </div>
           </CardTitle>
         </CardHeader>

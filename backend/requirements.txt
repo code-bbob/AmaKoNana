@@ -15,4 +15,4 @@ tzdata==2024.1
 whitenoise
 gunicorn
 gevent
-
+nepali-date-utils

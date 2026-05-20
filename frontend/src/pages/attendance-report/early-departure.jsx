@@ -1,13 +1,13 @@
-'use client';
-
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { apiClient } from '@/lib/api-client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { DateFormatBadge } from '@/components/DateDisplay';
+import { apiClient } from '../../lib/api-client';
+import { useDateFormatPreference } from '../../hooks/useDateFormatPreference';
+import { Button } from '../../components/ui/button';
+import { AttendanceDateFilter } from '../../components/AttendanceDateFilter';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Skeleton } from '../../components/ui/skeleton';
+import { createDateSelection } from '../../lib/calendar-sync';
 
 function getToday() {
   const now = new Date();
@@ -21,15 +21,17 @@ export default function EarlyDeparturesReport() {
   const { branchId } = useParams();
   const selectedBranchId = branchId || null;
   const selectedDepartmentId = null;
+  const { dateFormat, loading: datePrefLoading } = useDateFormatPreference();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [attendanceDate, setAttendanceDate] = useState(getToday());
-  const [dateFormat, setDateFormat] = useState('ad');
+  const [attendanceDate, setAttendanceDate] = useState('');
+  const [currentDateFormat, setCurrentDateFormat] = useState(dateFormat);
+  const hasInitializedDateRef = useRef(false);
 
   const reportLabel = useMemo(() => attendanceDate, [attendanceDate]);
 
-  const loadReport = useCallback(async (nextDate = attendanceDate, nextFormat = dateFormat) => {
+  const loadReport = useCallback(async (nextDate = attendanceDate, nextFormat = currentDateFormat) => {
     setLoading(true);
     setError(null);
 
@@ -43,22 +45,49 @@ export default function EarlyDeparturesReport() {
     } finally {
       setLoading(false);
     }
-  }, [attendanceDate, dateFormat, selectedBranchId, selectedDepartmentId]);
+  }, [attendanceDate, currentDateFormat, selectedBranchId, selectedDepartmentId]);
 
   useEffect(() => {
-    void loadReport();
-  }, [loadReport]);
+    setCurrentDateFormat(dateFormat);
+  }, [dateFormat]);
+
+  useEffect(() => {
+    if (datePrefLoading || hasInitializedDateRef.current) return;
+
+    const nextFormat = dateFormat === 'bs' ? 'bs' : 'ad';
+    const todaySelection = createDateSelection(getToday(), 'ad');
+    const nextDate = todaySelection[nextFormat] || getToday();
+
+    hasInitializedDateRef.current = true;
+    setAttendanceDate(nextDate);
+    setCurrentDateFormat(nextFormat);
+    void loadReport(nextDate, nextFormat);
+  }, [dateFormat, datePrefLoading, loadReport]);
 
   return (
     <div className="w-full min-w-0 py-2">
+      <div className="mb-6">
+        <AttendanceDateFilter
+          mode="single"
+          initialDateFormat={currentDateFormat}
+          initialDateSourceFormat="ad"
+          initialDate={attendanceDate || getToday()}
+          applyLabel="Apply Date"
+          onApply={({ startDate: nextDate, dateFormat: nextFormat }) => {
+            setAttendanceDate(nextDate);
+            setCurrentDateFormat(nextFormat);
+            void loadReport(nextDate, nextFormat);
+          }}
+        />
+      </div>
       <Card className="overflow-hidden border-slate-800 bg-slate-900/80 text-slate-100 shadow-xl">
         <CardHeader className="border-b border-slate-800 bg-slate-900/70">
           <CardTitle className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-base font-semibold sm:text-lg">Early Departures</span>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <span className="text-xs font-normal text-slate-400 sm:text-sm">{reportLabel}</span>
-              <DateFormatBadge date={reportLabel} format={dateFormat} />
-              <Button onClick={() => void loadReport()} className="sm:shrink-0">Refresh</Button>
+              <span className="text-xs font-normal text-slate-500 sm:text-sm">({currentDateFormat.toUpperCase()})</span>
+              <Button onClick={() => void loadReport(attendanceDate, currentDateFormat)} className="sm:shrink-0">Refresh</Button>
             </div>
           </CardTitle>
         </CardHeader>

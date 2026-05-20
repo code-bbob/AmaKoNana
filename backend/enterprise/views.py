@@ -2,12 +2,14 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_400_BAD_REQUEST
 from django.utils.dateparse import parse_date
 from datetime import datetime, date
-from .serializers import BranchSerializer
-from .models import Branch
+from .serializers import BranchSerializer, EnterpriseHierarchySerializer
+from .models import Branch, Enterprise
 from .models import Employee
 from .serializers import EmployeeSerializer
+from enterprise.permissions import IsAdminRole
 
 class BranchView(APIView):
     permission_classes = [IsAuthenticated]
@@ -110,3 +112,48 @@ class RoleView(APIView):
         user = request.user
         role = user.employee.role
         return Response(role)
+
+
+def _resolve_user_enterprise(user):
+    if hasattr(user, 'employee') and user.employee and user.employee.enterprise:
+        return user.employee.enterprise
+    if hasattr(user, 'profile') and user.profile and user.profile.enterprise:
+        return user.profile.enterprise
+    return None
+
+
+class EnterpriseHierarchyAPIView(APIView):
+    """Get hierarchical structure of enterprises, branches, and departments"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        enterprise = _resolve_user_enterprise(request.user)
+        if enterprise is None:
+            return Response({'error': 'No enterprise found for user'}, status=HTTP_403_FORBIDDEN)
+        
+        serializer = EnterpriseHierarchySerializer(enterprise)
+        return Response({'enterprises': [serializer.data]})
+
+
+class EnterpriseUpdatePreferenceAPIView(APIView):
+    """Update enterprise date format preference"""
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def post(self, request, enterprise_id):
+        enterprise = _resolve_user_enterprise(request.user)
+        if enterprise is None or enterprise.id != enterprise_id:
+            return Response({'error': 'Not authorized to update this enterprise'}, status=HTTP_403_FORBIDDEN)
+
+        date_format_preference = request.data.get('date_format_preference')
+        if date_format_preference not in ('ad', 'bs'):
+            return Response({'error': 'Invalid date_format_preference. Must be "ad" or "bs"'}, status=HTTP_400_BAD_REQUEST)
+
+        enterprise.date_format_preference = date_format_preference
+        enterprise.save(update_fields=['date_format_preference'])
+
+        from .serializers import EnterpriseDetailSerializer
+        serializer = EnterpriseDetailSerializer(enterprise)
+        return Response({
+            'message': 'Enterprise date format preference updated successfully',
+            'enterprise': serializer.data
+        })
