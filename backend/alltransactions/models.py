@@ -209,7 +209,7 @@ class EmployeeTransactions(models.Model):
     branch = models.ForeignKey('enterprise.Branch', on_delete=models.CASCADE, null=True, blank=True)
     desc = models.CharField(max_length=255, null=True, blank=True)
     employee_type = models.CharField(max_length=20,choices=(('incentive','Incentive'),('salary','Salary')),default='payment')
-    transaction_type = models.CharField(max_length=20,choices=(('Salary Credited','Salary Credited'),('Payment','Payment')),default='Payment')
+    transaction_type = models.CharField(max_length=20,choices=(('Salary Credited','Salary Credited'),('Payment','Payment'), ('Daily Wage','Daily Wage')),default='Payment')
     
     def __str__(self):
         return f"Employee Transaction {self.pk} of {self.employee.name}"

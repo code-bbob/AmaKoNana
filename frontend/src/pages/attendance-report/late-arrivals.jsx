@@ -85,7 +85,7 @@ export default function LateArrivalsReport() {
         />
       </div>
 
-      <Card className="overflow-hidden rounded-3xl border-slate-800 bg-slate-900/80 text-slate-100 shadow-xl shadow-slate-950/30">
+      <Card className="overflow-hidden rounded-xl border-slate-800 bg-slate-900/80 text-slate-100 shadow-xl shadow-slate-950/30">
         <CardHeader className="border-b border-slate-800 bg-slate-900/70 px-4 py-4 sm:px-6">
           <CardTitle className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-base font-semibold sm:text-lg">Late Arrivals</span>

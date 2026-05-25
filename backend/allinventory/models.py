@@ -51,7 +51,7 @@ class Product(models.Model):
 
 
 class Manufacture(models.Model):
-    date = models.DateField(default=timezone.now().date(),null=True,blank=True)
+    date = models.DateField(null=True,blank=True)
     enterprise = models.ForeignKey('enterprise.Enterprise', on_delete=models.CASCADE, related_name='manufactures')
     branch = models.ForeignKey('enterprise.Branch', on_delete=models.CASCADE, related_name='manufactures', null=True, blank=True)
 

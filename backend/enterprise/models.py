@@ -90,6 +90,7 @@ class Employee(models.Model):
     employee_code = models.CharField(max_length=64,blank=True)
     name = models.CharField(max_length=255)
     avatar = models.ImageField(upload_to='employee_avatars/', blank=True, null=True)
+    hourly_rate = models.FloatField(default=0)
     enterprise = models.ForeignKey(
         Enterprise,
         on_delete=models.SET_NULL,

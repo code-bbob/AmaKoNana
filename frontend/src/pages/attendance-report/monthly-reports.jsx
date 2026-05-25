@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
-import { createDateSelection } from '../../lib/calendar-sync';
+import { createDateSelection, parseDateString, createBsSelection } from '../../lib/calendar-sync';
 
 function padDate(date) {
   const year = date.getFullYear();
@@ -19,10 +19,9 @@ function padDate(date) {
 function getMonthBounds() {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   return {
     startDate: padDate(start),
-    endDate: padDate(end),
+    endDate: padDate(now),
   };
 }
 
@@ -78,10 +77,24 @@ export default function MonthlyReports() {
     if (prefLoading || hasInitializedRangeRef.current) return;
 
     const nextFormat = dateFormat === 'bs' ? 'bs' : 'ad';
-    const startSelection = createDateSelection(initialBounds.startDate, 'ad');
-    const endSelection = createDateSelection(initialBounds.endDate, 'ad');
-    const nextStart = startSelection[nextFormat] || initialBounds.startDate;
-    const nextEnd = endSelection[nextFormat] || initialBounds.endDate;
+
+    let nextStart;
+    let nextEnd;
+
+    if (nextFormat === 'bs') {
+      // derive BS month-start and BS today directly
+      const endSelection = createDateSelection(initialBounds.endDate, 'ad');
+      const endBs = endSelection.bs || initialBounds.endDate;
+      const parsed = parseDateString(endBs);
+      const startBsSel = createBsSelection(parsed.year, parsed.month, 1);
+      nextStart = startBsSel.bs || initialBounds.startDate;
+      nextEnd = endBs;
+    } else {
+      const startSelection = createDateSelection(initialBounds.startDate, 'ad');
+      const endSelection = createDateSelection(initialBounds.endDate, 'ad');
+      nextStart = startSelection[nextFormat] || initialBounds.startDate;
+      nextEnd = endSelection[nextFormat] || initialBounds.endDate;
+    }
 
     hasInitializedRangeRef.current = true;
     setStartDate(nextStart);
@@ -155,9 +168,9 @@ export default function MonthlyReports() {
         <AttendanceDateFilter
           mode="range"
           initialDateFormat={currentDateFormat}
-          initialDateSourceFormat="ad"
-          initialStartDate={initialBounds.startDate}
-          initialEndDate={initialBounds.endDate}
+          initialDateSourceFormat={dateFormat === 'bs' ? 'bs' : 'ad'}
+          initialStartDate={dateFormat === 'bs' ? (createDateSelection(initialBounds.endDate, 'ad').bs ? createBsSelection(parseDateString(createDateSelection(initialBounds.endDate, 'ad').bs).year, parseDateString(createDateSelection(initialBounds.endDate, 'ad').bs).month, 1).bs : initialBounds.startDate) : initialBounds.startDate}
+          initialEndDate={dateFormat === 'bs' ? (createDateSelection(initialBounds.endDate, 'ad').bs || initialBounds.endDate) : initialBounds.endDate}
           applyLabel="Apply Range"
           onApply={({ startDate: nextStart, endDate: nextEnd, dateFormat: nextFormat }) => {
             setStartDate(nextStart);

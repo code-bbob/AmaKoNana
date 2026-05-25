@@ -1349,14 +1349,25 @@ class IClockDataParserView(APIView):
                 elif check_type_str == '1':
                     check_in_time = None
                     check_out_time = timestamp
+                    # check if there were any previous checkouts for the user on that date
+                    previous_checkouts = DailyAttendance.objects.filter(
+                        employee__employee_id=user_id,
+                        attendance_date=timestamp.date(),
+                        last_check_out__isnull=False
+                    ).order_by('-last_check_out')
+                    if previous_checkouts.exists():
+                        #find the Employee transaction for that date with type = daily_wage
+                        daily_wage_transaction = EmployeeTransaction.objects.filter(
+                            employee__employee_id=user_id,
+                        ) 
                 else:
                     logger.warning(f"Unknown check type '{check_type_str}' in line: {line}")
                     continue
 
                 # Get or create the employee
-                employee, created = Employee.objects.get_or_create(employee_id=user_id)
-                if created:
-                    logger.info(f"Created new employee with ID: {user_id}")
+                # employee, created = Employee.objects.get_or_create(employee_id=user_id)
+                # if created:
+                #     logger.info(f"Created new employee with ID: {user_id}")
 
                 # Create or update the attendance record
                 # This logic assumes one record per day per employee.

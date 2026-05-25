@@ -641,7 +641,7 @@ function AttendanceReportContent() {
           <Card className="border-slate-700 bg-slate-900/50 shadow-lg">
             <CardHeader className="border-b border-slate-700 flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Attendance Records</CardTitle>
+                <CardTitle className=" font-semibold">Attendance Records</CardTitle>
                 <CardDescription className="text-slate-400">
                   Staff attendance for {attendanceDate}
                 </CardDescription>
