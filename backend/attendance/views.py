@@ -1308,101 +1308,104 @@ def sse_events_view(request: HttpRequest):
     return response
 
 
-@method_decorator(csrf_exempt, name='dispatch')
-class IClockDataParserView(APIView):
-    """API endpoint for parsing and storing iClock device data"""
-    permission_classes = [AllowAny]
-    parser_classes = [PlainTextParser, FormParser, MultiPartParser, JSONParser]
+# @method_decorator(csrf_exempt, name='dispatch')
+# class IClockDataParserView(APIView):
+#     """API endpoint for parsing and storing iClock device data"""
+#     permission_classes = [AllowAny]
+#     parser_classes = [PlainTextParser, FormParser, MultiPartParser, JSONParser]
 
-    def post(self, request: HttpRequest, *args, **kwargs):
-        raw_request = getattr(request, '_request', request)
-        raw_body = getattr(raw_request, 'body', b'')
-        if isinstance(raw_body, bytes):
-            raw_body = raw_body.decode('utf-8', errors='ignore')
-        raw_body = str(raw_body).strip()
+#     def post(self, request: HttpRequest, *args, **kwargs):
+#         raw_request = getattr(request, '_request', request)
+#         raw_body = getattr(raw_request, 'body', b'')
+#         if isinstance(raw_body, bytes):
+#             raw_body = raw_body.decode('utf-8', errors='ignore')
+#         raw_body = str(raw_body).strip()
 
-        if not raw_body:
-            return Response({'error': 'No data received'}, status=400)
+#         if not raw_body:
+#             return Response({'error': 'No data received'}, status=400)
 
-        lines = raw_body.splitlines()
-        for line in lines:
-            try:
-                parts = line.split()
-                if len(parts) < 4:
-                    logger.warning(f"Skipping malformed line: {line}")
-                    continue
+#         lines = raw_body.splitlines()
+#         for line in lines:
+#             try:
+#                 parts = line.split()
+#                 if len(parts) < 4:
+#                     logger.warning(f"Skipping malformed line: {line}")
+#                     continue
 
-                # Format: 3	2026-05-04 20:52:43	0	1		0	0
-                # User ID, Timestamp, Checkin/Checkout type
-                user_id = parts[0]
-                timestamp_str = f"{parts[1]} {parts[2]}"
-                check_type_str = parts[3]
+#                 # Format: 3	2026-05-04 20:52:43	0	1		0	0
+#                 # User ID, Timestamp, Checkin/Checkout type
+#                 user_id = parts[0]
+#                 timestamp_str = f"{parts[1]} {parts[2]}"
+#                 check_type_str = parts[3]
 
-                # Parse the timestamp
-                timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+#                 # Parse the timestamp
+#                 timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
 
-                # Determine check-in or check-out
-                # 0 for check-in, 1 for check-out
-                if check_type_str == '0':
-                    check_in_time = timestamp
-                    check_out_time = None
-                elif check_type_str == '1':
-                    check_in_time = None
-                    check_out_time = timestamp
-                    # check if there were any previous checkouts for the user on that date
-                    previous_checkouts = DailyAttendance.objects.filter(
-                        employee__employee_id=user_id,
-                        attendance_date=timestamp.date(),
-                        last_check_out__isnull=False
-                    ).order_by('-last_check_out')
-                    if previous_checkouts.exists():
-                        #find the Employee transaction for that date with type = daily_wage
-                        daily_wage_transaction = EmployeeTransaction.objects.filter(
-                            employee__employee_id=user_id,
-                        ) 
-                else:
-                    logger.warning(f"Unknown check type '{check_type_str}' in line: {line}")
-                    continue
+#                 # Determine check-in or check-out
+#                 # 0 for check-in, 1 for check-out
+#                 if check_type_str == '0':
+#                     check_in_time = timestamp
+#                     check_out_time = None
+#                 elif check_type_str == '1':
+#                     check_in_time = None
+#                     check_out_time = timestamp
+#                     # check if there were any previous checkouts for the user on that date
+#                     previous_checkouts = DailyAttendance.objects.filter(
+#                         employee__employee_id=user_id,
+#                         attendance_date=timestamp.date(),
+#                         last_check_out__isnull=False
+#                     ).order_by('-last_check_out')
+#                     # if previous_checkouts.exists():
+#                     #     #find the Employee transaction for that date with type = daily_wage
+#                     #     daily_wage_transaction = EmployeeTransaction.objects.filter(
+#                     #         employee__employee_id=user_id,
+#                     #         transaction_date=timestamp.date(),
+#                     #         transaction_type='daily_wage'
+#                     #     )
+#                 else:
+#                     logger.warning(f"Unknown check type '{check_type_str}' in line: {line}")
+#                     continue
 
-                # Get or create the employee
-                # employee, created = Employee.objects.get_or_create(employee_id=user_id)
-                # if created:
-                #     logger.info(f"Created new employee with ID: {user_id}")
+#                 # Get or create the employee
+#                 employee, created = Employee.objects.get_or_create(employee_id=user_id)
+#                 print("yo chai her",employee, created)
+#                 if created:
+#                     logger.info(f"Created new employee with ID: {user_id}")
 
-                # Create or update the attendance record
-                # This logic assumes one record per day per employee.
-                # If multiple check-ins/outs per day are possible, this needs adjustment.
-                record, created = DailyAttendance.objects.get_or_create(
-                    employee=employee,
-                    attendance_date=timestamp.date(),
-                    defaults={'first_check_in': check_in_time, 'last_check_out': check_out_time}
-                )
+#                 # Create or update the attendance record
+#                 # This logic assumes one record per day per employee.
+#                 # If multiple check-ins/outs per day are possible, this needs adjustment.
+#                 record, created = DailyAttendance.objects.get_or_create(
+#                     employee=employee,
+#                     attendance_date=timestamp.date(),
+#                     defaults={'first_check_in': check_in_time, 'last_check_out': check_out_time}
+#                 )
 
-                # Ensure BS date is populated for created records (and kept consistent)
-                try:
-                    from attendance.date_utils import ad_to_bs
-                    from datetime import date as _date
+#                 # Ensure BS date is populated for created records (and kept consistent)
+#                 try:
+#                     from attendance.date_utils import ad_to_bs
+#                     from datetime import date as _date
 
-                    y, m, d = ad_to_bs(record.attendance_date)
-                    next_bs = _date(int(y), int(m), int(d))
-                    if created or record.attendance_date_bs != next_bs:
-                        record.attendance_date_bs = next_bs
-                        record.save(update_fields=['attendance_date_bs'])
-                except Exception:
-                    # Non-fatal: continue processing even if conversion fails
-                    pass
+#                     y, m, d = ad_to_bs(record.attendance_date)
+#                     next_bs = _date(int(y), int(m), int(d))
+#                     if created or record.attendance_date_bs != next_bs:
+#                         record.attendance_date_bs = next_bs
+#                         record.save(update_fields=['attendance_date_bs'])
+#                 except Exception:
+#                     # Non-fatal: continue processing even if conversion fails
+#                     pass
 
-                if not created:
-                    if check_in_time:
-                        record.first_check_in = check_in_time
-                    if check_out_time:
-                        record.last_check_out = check_out_time
-                    record.save()
+#                 if not created:
+#                     if check_in_time:
+#                         record.first_check_in = check_in_time
+#                     if check_out_time:
+#                         record.last_check_out = check_out_time
+#                     record.save()
                 
-                logger.info(f"Processed line: {line}")
+#                 logger.info(f"Processed line: {line}")
 
-            except Exception as e:
-                logger.error(f"Error processing line: {line} - {e}")
-                continue
+#             except Exception as e:
+#                 logger.error(f"Error processing line: {line} - {e}")
+#                 continue
 
-        return Response({'status': 'Data processed successfully'}, status=status.HTTP_200_OK)
+#         return Response({'status': 'Data processed successfully'}, status=status.HTTP_200_OK)

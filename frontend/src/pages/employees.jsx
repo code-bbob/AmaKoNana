@@ -54,7 +54,7 @@ export default function EmployeePage() {
   useEffect(() => {
     const fetchBranchEmployees = async () => {
       try {
-        const response = await api.get(`enterprise/employeebranch/${branchId}/`)
+        const response = await api.get(`enterprise/employee/branch/${branchId}/`)
         setEmployees(response.data)
         setFilteredEmployees(response.data)
         setBranchName(response?.data[0]?.brand_name)
@@ -89,7 +89,7 @@ export default function EmployeePage() {
   const handleAddEmployee = async (e) => {
     e.preventDefault()
     try{
-      const response = await api.post(`enterprise/employeebranch/${branchId}/`, { name: newEmployeeName, due: newEmployeeDue })
+      const response = await api.post(`enterprise/employee/branch/${branchId}/`, { name: newEmployeeName, due: newEmployeeDue })
       console.log('New Employee Added:', response.data)
       setIsSubmitting(true)
       setEmployees([...employees, response.data])
@@ -120,7 +120,7 @@ export default function EmployeePage() {
   const handleDeleteSelected = async () => {
     setIsDeleteDialogOpen(false)
     try {
-      await Promise.all(selectedIds.map((id) => api.delete(`enterprise/employeebranch/${id}/`)))
+      await Promise.all(selectedIds.map((id) => api.delete(`enterprise/employee/branch/${id}/`)))
       const remaining = employees.filter((x) => !selectedIds.includes(x.id))
       setEmployees(remaining)
       setFilteredEmployees((prev)=>prev.filter((x)=>!selectedIds.includes(x.id)))
@@ -136,7 +136,7 @@ export default function EmployeePage() {
     const payload = { name: (editForm.name||'').trim() }
     try {
       setIsSaving(true)
-      const r = await api.patch(`enterprise/employeebranch/${editForm.id}/`, payload)
+      const r = await api.patch(`enterprise/employee/branch/${editForm.id}/`, payload)
       const updated = r.data || { id: editForm.id, ...payload }
       setEmployees((prev)=> prev.map((x)=> x.id === editForm.id ? { ...x, ...updated } : x))
       setFilteredEmployees((prev)=> prev.map((x)=> x.id === editForm.id ? { ...x, ...updated } : x))

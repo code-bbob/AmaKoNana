@@ -1082,7 +1082,9 @@ class EmployeeTransactionSerializer(serializers.ModelSerializer):
         
         transaction = EmployeeTransactions.objects.create(**validated_data)
         employee = transaction.employee
+        print("Employee due before transaction:", employee.due)
         employee.due = (employee.due + transaction.amount) if employee.due is not None else +transaction.amount
+        print("Employee due after transaction:", employee.due)
         employee.save()
 
         if transaction_details:
