@@ -112,7 +112,7 @@ const AllIncomeExpenseReport = () => {
       // })
       setData({
         transactions,
-        net_cash_in_hand: response.data.net_cash_in_hand || cash,
+        net_cash_in_hand: response.data.net_cash_in_hand || 0,
         previous_closing_cash: response.data.previous_closing_cash || 0,
         totals: {
           cash,
