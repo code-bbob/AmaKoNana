@@ -110,9 +110,11 @@ const AllIncomeExpenseReport = () => {
       // 	// cheque += t.cheque_amount || 0
       // 	// transfer += t.transfer_amount || 0
       // })
+//
+        console.log("HERE RESPONSE", response.data.net_cash_in_hand)
       setData({
         transactions,
-        net_cash_in_hand: response.data.net_cash_in_hand || cash,
+        net_cash_in_hand: response.data.net_cash_in_hand || 0,
         previous_closing_cash: response.data.previous_closing_cash || 0,
         totals: {
           cash,
@@ -127,13 +129,14 @@ const AllIncomeExpenseReport = () => {
         total_expense: response.data.total_expense || 0,
         total_withdrawal: response.data.total_withdrawal || 0,
       });
+console.log(data);
+
     } catch (err) {
       setError("Failed to fetch income-expense report");
     } finally {
       setLoading(false);
     }
   };
-
   const handleDateFilter = (e) => {
     e.preventDefault();
     const params = {};
