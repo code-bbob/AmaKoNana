@@ -25,6 +25,7 @@ urlpatterns = [
     path('enterprise/',include('enterprise.urls')),
     path('allinventory/',include('allinventory.urls')),
     path('alltransaction/',include('alltransactions.urls')),
+    path('device/', include('device.api_urls')),
     # Orders app (customer orders / production orders)
     path('order/', include('order.urls')),
     path('attendance/', include('attendance.urls')),

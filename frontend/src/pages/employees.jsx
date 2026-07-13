@@ -22,6 +22,13 @@ import {
 import { Label } from "@/components/ui/label"
 import { Plus } from 'lucide-react'
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 
 
@@ -39,6 +46,8 @@ export default function EmployeePage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newEmployeeName, setNewEmployeeName] = useState('')
   const [newEmployeeDue, setNewEmployeeDue] = useState('')
+  const [devices, setDevices] = useState([])
+  const [selectedDeviceSerialNumber, setSelectedDeviceSerialNumber] = useState('none')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [role, setRole] = useState('')
   const [selectedIds, setSelectedIds] = useState([])
@@ -46,6 +55,7 @@ export default function EmployeePage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [editForm, setEditForm] = useState({ id: null, name: '' })
+  const [addEmployeeError, setAddEmployeeError] = useState('')
 
   useEffect(() => {
     console.log(role)
@@ -72,6 +82,21 @@ export default function EmployeePage() {
   }, [  branchId])
 
   useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        const response = await api.get('device/api/biometric/devices/')
+        const deviceList = response?.data?.devices ?? response?.data ?? []
+        setDevices(deviceList.filter((device) => device?.is_active !== false))
+      } catch (err) {
+        console.error('Error fetching biometric devices:', err)
+        setDevices([])
+      }
+    }
+
+    fetchDevices()
+  }, [])
+
+  useEffect(() => {
     // const isAdmin = Array.isArray(role) ? role.includes('Admin') : role === 'Admin'
   
     if (role === 'Admin') {
@@ -88,19 +113,40 @@ export default function EmployeePage() {
 
   const handleAddEmployee = async (e) => {
     e.preventDefault()
+    setAddEmployeeError('')
+    setIsSubmitting(true)
     try{
-      const response = await api.post(`enterprise/employee/branch/${branchId}/`, { name: newEmployeeName, due: newEmployeeDue })
+      const response = await api.post(`enterprise/employee/branch/${branchId}/`, {
+        name: newEmployeeName,
+        due: newEmployeeDue,
+      })
       console.log('New Employee Added:', response.data)
-      setIsSubmitting(true)
-      setEmployees([...employees, response.data])
-      setFilteredEmployees((prev)=>[...prev, response.data])
+      const createdEmployee = response.data
+
+      const shouldSync = selectedDeviceSerialNumber && selectedDeviceSerialNumber !== 'none'
+      if (shouldSync) {
+        try {
+          await api.post('device/api/employees/sync-device/', {
+            employee_id: createdEmployee.id,
+            device_serial_number: selectedDeviceSerialNumber,
+          })
+        } catch (syncError) {
+          console.error('Employee created, but device sync failed:', syncError)
+        }
+      }
+
+      setEmployees((prev) => [...prev, createdEmployee])
+      setFilteredEmployees((prev) => [...prev, createdEmployee])
       setNewEmployeeName('')
       setNewEmployeeDue('')
+      setSelectedDeviceSerialNumber('none')
       setIsDialogOpen(false)
       setIsDialogOpen(false)
     }
     catch (error) {
       console.error('Error adding employee:', error)
+      const message = error?.response?.data?.error || error?.response?.data?.detail || 'Failed to add employee.'
+      setAddEmployeeError(message)
     }
     finally {
       setIsSubmitting(false)
@@ -304,13 +350,39 @@ export default function EmployeePage() {
                   value={newEmployeeDue}
                   onChange={(e) => setNewEmployeeDue(e.target.value)}
                   className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
-                  placeholder="Enter employee's name"
+                  placeholder="Enter opening due amount"
+                  type="number"
+                  step="0.01"
                 />
+                <Label htmlFor="deviceSerialNumber" className="text-right">
+                  Biometric Device
+                </Label>
+                <div className="col-span-3">
+                  <Select
+                    value={selectedDeviceSerialNumber}
+                    onValueChange={setSelectedDeviceSerialNumber}
+                  >
+                    <SelectTrigger className="w-full bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500">
+                      <SelectValue placeholder={devices.length ? 'Select a device to sync' : 'No devices available'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Do not sync now</SelectItem>
+                      {devices.map((device) => (
+                        <SelectItem key={device.id} value={device.serial_number}>
+                          {device.name || device.serial_number}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+              {addEmployeeError ? (
+                <p className="text-sm text-red-400">{addEmployeeError}</p>
+              ) : null}
             </div>
             <DialogFooter>
               <Button type="button" disabled={isSubmitting} onClick={handleAddEmployee} className="bg-purple-600 hover:bg-purple-700 text-white">
-                Add Employee
+                {isSubmitting ? 'Saving...' : 'Add Employee'}
               </Button>
             </DialogFooter>
           </DialogContent>

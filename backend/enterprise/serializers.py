@@ -4,7 +4,7 @@ from datetime import time as _time
 from .models import Branch, Department, Enterprise
 from .models import Employee
 from device.models import BiometricDevice, EmployeeBiometricMapping, DeviceCommand
-
+from django.db import transaction
 
 
 class EnterpriseSerializer(serializers.ModelSerializer):
@@ -156,6 +156,7 @@ class EmployeeCreateSerializer(serializers.Serializer):
     employee_code = serializers.CharField(max_length=64, required=False, allow_blank=True)
     name = serializers.CharField(max_length=255)
     avatar = serializers.ImageField(required=False, allow_null=True)
+    due = serializers.FloatField(required=False, allow_null=True, default=0)
     enterprise_id = serializers.IntegerField(required=True)
     branch_id = serializers.IntegerField(required=True)
     department_id = serializers.IntegerField(required=False, allow_null=True)
@@ -219,6 +220,7 @@ class EmployeeCreateSerializer(serializers.Serializer):
         arrival_time = validated_data.pop('arrival_time', None)
         departure_time = validated_data.pop('departure_time', None)
         avatar = validated_data.pop('avatar', None)
+        due = validated_data.pop('due', 0) or 0
         is_active = validated_data.pop('is_active', True)
 
         with transaction.atomic():
@@ -257,6 +259,7 @@ class EmployeeCreateSerializer(serializers.Serializer):
                 address=address,
                 phone=phone,
                 dob=dob,
+                due=due,
                 is_active=is_active,
             )
 

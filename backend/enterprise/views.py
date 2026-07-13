@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_400_BAD_REQUEST
 from django.utils.dateparse import parse_date
 from datetime import datetime, date
-from .serializers import BranchSerializer, EnterpriseHierarchySerializer
+from .serializers import BranchSerializer, EnterpriseHierarchySerializer, EmployeeCreateSerializer
 from .models import Branch, Enterprise
 from .models import Employee
 from .serializers import EmployeeSerializer
@@ -59,13 +59,13 @@ class BranchEmployeeView(APIView):
         user = request.user
         enterprise = user.employee.enterprise
         if user.employee.role == 'Admin':
-            data = request.data
-            data['branch'] = id
-            data['enterprise'] = request.user.employee.enterprise.id
-            serializer = EmployeeSerializer(data=data)
+            data = request.data.copy()
+            data['branch_id'] = id
+            data['enterprise_id'] = request.user.employee.enterprise.id
+            serializer = EmployeeCreateSerializer(data=data, context={'request': request})
             if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
+                employee = serializer.save()
+                return Response(EmployeeSerializer(employee, context={'request': request}).data)
             return Response(serializer.errors)
         else:
             return Response("You are not authorized to view this page")

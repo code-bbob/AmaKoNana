@@ -53,5 +53,5 @@ export const hasBranchSelected = () => {
  */
 export const getSelectedBranchId = () => {
   const branch = getSelectedBranch();
-  return branch ? branch.id.toString() : null;
+  return branch ? branch.id?.toString() : null;
 };
