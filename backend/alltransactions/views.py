@@ -1845,7 +1845,7 @@ class ExpensesView(APIView):
         enterprise = user.employee.enterprise
         data['enterprise'] = enterprise.id 
         # Record who created the expense for consistency with other flows
-        data['employee'] = getattr(user, 'employee', None)
+        data['employee'] = getattr(user, 'employee', None).id
         serializer = ExpensesSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
@@ -2004,7 +2004,7 @@ class WithdrawalView(APIView):
         user = request.user
         enterprise = user.employee.enterprise
         data['enterprise'] = enterprise.id
-        data['employee'] = getattr(user, 'employee', None)
+        data['employee'] = getattr(user, 'employee', None).id if getattr(user, 'employee', None) else None
         serializer = WithdrawalSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
