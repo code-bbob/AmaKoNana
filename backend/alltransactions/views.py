@@ -165,7 +165,7 @@ class SalesTransactionView(APIView):
         loyalty_points_used = float(data.pop('loyalty_points_used', 0) or 0)
 
         data['enterprise'] = enterprise.id
-        data['employee'] = user.employee
+        data['employee'] = user.employee.id
 
         customer_for_loyalty = None
         sale_customer = None
