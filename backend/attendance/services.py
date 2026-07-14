@@ -247,22 +247,26 @@ def _worked_minutes_from_events(events) -> int:
     worked = end_time - first_check_in
     if worked.total_seconds() < 0:
         return 0
-
+    print("BEFORE BREAK CALCULATION: Worked time:", worked)
     break_total = timedelta()
     active_break_start: datetime | None = None
     for event in events:
         if event.event_type == AttendanceEvent.BREAK_OUT:
+            print("BREAK OUT EVENT:", event.event_time)
             if active_break_start is None:
                 active_break_start = event.event_time
         elif event.event_type == AttendanceEvent.BREAK_IN and active_break_start is not None:
+            print("BREAK IN EVENT:", event.event_time)
             if event.event_time > active_break_start:
                 break_total += event.event_time - active_break_start
             active_break_start = None
 
     if active_break_start is not None and end_time > active_break_start:
         break_total += end_time - active_break_start
+        print("ACTIVE BREAK NOT CLOSED. Adding break time until end_time:", end_time)
 
     total_minutes = int((worked - break_total).total_seconds() // 60)
+    print("AFTER BREAK CALCULATION: Worked time:", worked, "Break total:", break_total, "Total minutes:", total_minutes)
     return max(total_minutes, 0)
 
 
