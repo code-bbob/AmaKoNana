@@ -132,7 +132,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = [
-            'id', 'employee_code', 'name', 'avatar', 'email', 'address', 'phone', 'dob','due',
+            'id', 'employee_code', 'name', 'avatar', 'email', 'address', 'phone', 'dob','due', 'hourly_rate',
             'enterprise', 'branch', 'department', 'user', 'arrival_time', 'departure_time', 'is_active', 'created_at',
         ]
         read_only_fields = ['id', 'created_at']
@@ -157,6 +157,7 @@ class EmployeeCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
     avatar = serializers.ImageField(required=False, allow_null=True)
     due = serializers.FloatField(required=False, allow_null=True, default=0)
+    hourly_rate = serializers.FloatField(required=False, allow_null=True, default=0)
     enterprise_id = serializers.IntegerField(required=True)
     branch_id = serializers.IntegerField(required=True)
     department_id = serializers.IntegerField(required=False, allow_null=True)
@@ -221,6 +222,7 @@ class EmployeeCreateSerializer(serializers.Serializer):
         departure_time = validated_data.pop('departure_time', None)
         avatar = validated_data.pop('avatar', None)
         due = validated_data.pop('due', 0) or 0
+        hourly_rate = validated_data.pop('hourly_rate', 0) or 0
         is_active = validated_data.pop('is_active', True)
 
         with transaction.atomic():
@@ -260,6 +262,7 @@ class EmployeeCreateSerializer(serializers.Serializer):
                 phone=phone,
                 dob=dob,
                 due=due,
+                hourly_rate=hourly_rate,
                 is_active=is_active,
             )
 

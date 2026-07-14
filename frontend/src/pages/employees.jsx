@@ -46,6 +46,7 @@ export default function EmployeePage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newEmployeeName, setNewEmployeeName] = useState('')
   const [newEmployeeDue, setNewEmployeeDue] = useState('')
+  const [newEmployeeHourlyRate, setNewEmployeeHourlyRate] = useState('')
   const [devices, setDevices] = useState([])
   const [selectedDeviceSerialNumber, setSelectedDeviceSerialNumber] = useState('none')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -54,7 +55,7 @@ export default function EmployeePage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [editForm, setEditForm] = useState({ id: null, name: '' })
+  const [editForm, setEditForm] = useState({ id: null, name: '', hourly_rate: '' })
   const [addEmployeeError, setAddEmployeeError] = useState('')
 
   useEffect(() => {
@@ -119,6 +120,7 @@ export default function EmployeePage() {
       const response = await api.post(`enterprise/employee/branch/${branchId}/`, {
         name: newEmployeeName,
         due: newEmployeeDue,
+        hourly_rate: newEmployeeHourlyRate !== '' ? Number(newEmployeeHourlyRate) : 0,
       })
       console.log('New Employee Added:', response.data)
       const createdEmployee = response.data
@@ -139,6 +141,7 @@ export default function EmployeePage() {
       setFilteredEmployees((prev) => [...prev, createdEmployee])
       setNewEmployeeName('')
       setNewEmployeeDue('')
+      setNewEmployeeHourlyRate('')
       setSelectedDeviceSerialNumber('none')
       setIsDialogOpen(false)
       setIsDialogOpen(false)
@@ -159,7 +162,7 @@ export default function EmployeePage() {
 
   const openEdit = (item, e) => {
     e?.stopPropagation?.()
-    setEditForm({ id: item.id, name: item.name || '' })
+    setEditForm({ id: item.id, name: item.name || '', hourly_rate: item.hourly_rate ?? '' })
     setIsEditDialogOpen(true)
   }
 
@@ -180,6 +183,9 @@ export default function EmployeePage() {
     e?.preventDefault?.()
     if (!editForm.id) return
     const payload = { name: (editForm.name||'').trim() }
+    if (editForm.hourly_rate !== '' && editForm.hourly_rate !== null && editForm.hourly_rate !== undefined) {
+      payload.hourly_rate = Number(editForm.hourly_rate)
+    }
     try {
       setIsSaving(true)
       const r = await api.patch(`enterprise/employee/branch/${editForm.id}/`, payload)
@@ -354,6 +360,31 @@ export default function EmployeePage() {
                   type="number"
                   step="0.01"
                 />
+                <Label htmlFor="newEmployeeDue" className="text-right">
+                  Employee's Due
+                </Label>
+                <Input
+                  id="newEmployeeDue"
+                  value={newEmployeeDue}
+                  onChange={(e) => setNewEmployeeDue(e.target.value)}
+                  className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                  placeholder="Enter opening due amount"
+                  type="number"
+                  step="0.01"
+                />
+                <Label htmlFor="newEmployeeHourlyRate" className="text-right">
+                  Hourly Rate
+                </Label>
+                <Input
+                  id="newEmployeeHourlyRate"
+                  value={newEmployeeHourlyRate}
+                  onChange={(e) => setNewEmployeeHourlyRate(e.target.value)}
+                  className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                  placeholder="Enter hourly rate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                />
                 <Label htmlFor="deviceSerialNumber" className="text-right">
                   Biometric Device
                 </Label>
@@ -405,13 +436,13 @@ export default function EmployeePage() {
           </DialogContent>
         </Dialog>
 
-        {/* Edit dialog (name only) */}
+        {/* Edit dialog (name + hourly rate) */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[425px] bg-slate-800 text-white">
             <DialogHeader>
               <DialogTitle>Edit Employee</DialogTitle>
               <DialogDescription className="text-slate-400">
-                Update the employee name.
+                Update employee details.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleUpdate}>
@@ -427,6 +458,21 @@ export default function EmployeePage() {
                     className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
                     placeholder="Enter employee's name"
                     required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editEmployeeHourlyRate" className="text-right">
+                    Hourly Rate
+                  </Label>
+                  <Input
+                    id="editEmployeeHourlyRate"
+                    value={editForm.hourly_rate ?? ''}
+                    onChange={(e) => setEditForm((p) => ({ ...p, hourly_rate: e.target.value }))}
+                    className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                    placeholder="Enter hourly rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
                   />
                 </div>
               </div>
