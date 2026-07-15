@@ -47,6 +47,8 @@ export default function EmployeePage() {
   const [newEmployeeName, setNewEmployeeName] = useState('')
   const [newEmployeeDue, setNewEmployeeDue] = useState('')
   const [newEmployeeHourlyRate, setNewEmployeeHourlyRate] = useState('')
+  const [newEmployeeArrivalTime, setNewEmployeeArrivalTime] = useState('09:00')
+  const [newEmployeeDepartureTime, setNewEmployeeDepartureTime] = useState('18:00')
   const [devices, setDevices] = useState([])
   const [selectedDeviceSerialNumber, setSelectedDeviceSerialNumber] = useState('none')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -55,7 +57,7 @@ export default function EmployeePage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [editForm, setEditForm] = useState({ id: null, name: '', hourly_rate: '' })
+  const [editForm, setEditForm] = useState({ id: null, name: '', hourly_rate: '', arrival_time: '', departure_time: '' })
   const [addEmployeeError, setAddEmployeeError] = useState('')
 
   useEffect(() => {
@@ -121,6 +123,8 @@ export default function EmployeePage() {
         name: newEmployeeName,
         due: newEmployeeDue,
         hourly_rate: newEmployeeHourlyRate !== '' ? Number(newEmployeeHourlyRate) : 0,
+        arrival_time: newEmployeeArrivalTime || null,
+        departure_time: newEmployeeDepartureTime || null,
       })
       console.log('New Employee Added:', response.data)
       const createdEmployee = response.data
@@ -142,6 +146,8 @@ export default function EmployeePage() {
       setNewEmployeeName('')
       setNewEmployeeDue('')
       setNewEmployeeHourlyRate('')
+      setNewEmployeeArrivalTime('09:00')
+      setNewEmployeeDepartureTime('18:00')
       setSelectedDeviceSerialNumber('none')
       setIsDialogOpen(false)
       setIsDialogOpen(false)
@@ -162,7 +168,7 @@ export default function EmployeePage() {
 
   const openEdit = (item, e) => {
     e?.stopPropagation?.()
-    setEditForm({ id: item.id, name: item.name || '', hourly_rate: item.hourly_rate ?? '' })
+    setEditForm({ id: item.id, name: item.name || '', hourly_rate: item.hourly_rate ?? '', arrival_time: item.arrival_time || '', departure_time: item.departure_time || '' })
     setIsEditDialogOpen(true)
   }
 
@@ -185,6 +191,12 @@ export default function EmployeePage() {
     const payload = { name: (editForm.name||'').trim() }
     if (editForm.hourly_rate !== '' && editForm.hourly_rate !== null && editForm.hourly_rate !== undefined) {
       payload.hourly_rate = Number(editForm.hourly_rate)
+    }
+    if (editForm.arrival_time) {
+      payload.arrival_time = editForm.arrival_time
+    }
+    if (editForm.departure_time) {
+      payload.departure_time = editForm.departure_time
     }
     try {
       setIsSaving(true)
@@ -270,8 +282,10 @@ export default function EmployeePage() {
           <CardContent className="p-0">
             <div className="grid grid-cols-12 gap-4 p-4 text-sm font-medium text-slate-300 border-b border-slate-700">
               <div className="col-span-1"></div>
-              <div className="col-span-7 md:col-span-7">Employee</div>
-              <div className="col-span-3 md:col-span-3 text-right">Due Amount</div>
+              <div className="col-span-4 md:col-span-4">Employee</div>
+              <div className="col-span-2 md:col-span-2 text-center">Arrival</div>
+              <div className="col-span-2 md:col-span-2 text-center">Departure</div>
+              <div className="col-span-2 md:col-span-2 text-right">Due Amount</div>
               <div className="col-span-1 md:col-span-1 text-right">Edit</div>
             </div>
             {filteredEmployees?.map((employee) => (
@@ -290,12 +304,18 @@ export default function EmployeePage() {
                     className="border-gray-400"
                   />
                 </div>
-                <div className="col-span-7 md:col-span-7 flex items-center">
+                <div className="col-span-4 md:col-span-4 flex items-center">
                   <BookUser className="h-5 w-5 text-purple-400 mr-2 flex-shrink-0" />
                   <span className="text-white truncate">{employee.name}</span>
                 </div>
+                <div className="col-span-2 md:col-span-2 text-center text-slate-300">
+                  {employee.arrival_time || '09:00'}
+                </div>
+                <div className="col-span-2 md:col-span-2 text-center text-slate-300">
+                  {employee.departure_time || '18:00'}
+                </div>
                 
-                <div className="col-span-3 md:col-span-3 text-right text-white flex items-center justify-end gap-3">
+                <div className="col-span-2 md:col-span-2 text-right text-white flex items-center justify-end gap-3">
                   <span>{employee.due ? `RS. ${Number(employee?.due).toLocaleString()}` : 'N/A'}</span>
                 </div>
                 <div className="col-span-1 md:col-span-1 flex justify-end" onClick={(e)=>e.stopPropagation()}>
@@ -372,6 +392,26 @@ export default function EmployeePage() {
                   type="number"
                   step="0.01"
                   min="0"
+                />
+                <Label htmlFor="newEmployeeArrivalTime" className="text-right">
+                  Arrival Time
+                </Label>
+                <Input
+                  id="newEmployeeArrivalTime"
+                  value={newEmployeeArrivalTime}
+                  onChange={(e) => setNewEmployeeArrivalTime(e.target.value)}
+                  className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                  type="time"
+                />
+                <Label htmlFor="newEmployeeDepartureTime" className="text-right">
+                  Departure Time
+                </Label>
+                <Input
+                  id="newEmployeeDepartureTime"
+                  value={newEmployeeDepartureTime}
+                  onChange={(e) => setNewEmployeeDepartureTime(e.target.value)}
+                  className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                  type="time"
                 />
                 <Label htmlFor="deviceSerialNumber" className="text-right">
                   Biometric Device
@@ -461,6 +501,30 @@ export default function EmployeePage() {
                     type="number"
                     step="0.01"
                     min="0"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editArrivalTime" className="text-right">
+                    Arrival Time
+                  </Label>
+                  <Input
+                    id="editArrivalTime"
+                    value={editForm.arrival_time ?? ''}
+                    onChange={(e) => setEditForm((p) => ({ ...p, arrival_time: e.target.value }))}
+                    className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                    type="time"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editDepartureTime" className="text-right">
+                    Departure Time
+                  </Label>
+                  <Input
+                    id="editDepartureTime"
+                    value={editForm.departure_time ?? ''}
+                    onChange={(e) => setEditForm((p) => ({ ...p, departure_time: e.target.value }))}
+                    className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                    type="time"
                   />
                 </div>
               </div>
