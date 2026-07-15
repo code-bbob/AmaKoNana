@@ -348,18 +348,6 @@ export default function EmployeePage() {
                   className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
                   placeholder="Enter employee's name"
                 />
-                <Label htmlFor="newEmployeeName" className="text-right">
-                  Employee's Due
-                </Label>
-                <Input
-                  id="newEmployeeDue"
-                  value={newEmployeeDue}
-                  onChange={(e) => setNewEmployeeDue(e.target.value)}
-                  className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
-                  placeholder="Enter opening due amount"
-                  type="number"
-                  step="0.01"
-                />
                 <Label htmlFor="newEmployeeDue" className="text-right">
                   Employee's Due
                 </Label>
