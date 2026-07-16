@@ -49,6 +49,7 @@ export default function EmployeePage() {
   const [newEmployeeHourlyRate, setNewEmployeeHourlyRate] = useState('')
   const [newEmployeeArrivalTime, setNewEmployeeArrivalTime] = useState('09:00')
   const [newEmployeeDepartureTime, setNewEmployeeDepartureTime] = useState('18:00')
+  const [newEmployeeIsHourlyWage, setNewEmployeeIsHourlyWage] = useState(true)
   const [devices, setDevices] = useState([])
   const [selectedDeviceSerialNumber, setSelectedDeviceSerialNumber] = useState('none')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -57,7 +58,7 @@ export default function EmployeePage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [editForm, setEditForm] = useState({ id: null, name: '', hourly_rate: '', arrival_time: '', departure_time: '' })
+  const [editForm, setEditForm] = useState({ id: null, name: '', hourly_rate: '', arrival_time: '', departure_time: '', is_hourly_wage: true })
   const [addEmployeeError, setAddEmployeeError] = useState('')
 
   useEffect(() => {
@@ -125,6 +126,7 @@ export default function EmployeePage() {
         hourly_rate: newEmployeeHourlyRate !== '' ? Number(newEmployeeHourlyRate) : 0,
         arrival_time: newEmployeeArrivalTime || null,
         departure_time: newEmployeeDepartureTime || null,
+        is_hourly_wage: newEmployeeIsHourlyWage,
       })
       console.log('New Employee Added:', response.data)
       const createdEmployee = response.data
@@ -148,6 +150,7 @@ export default function EmployeePage() {
       setNewEmployeeHourlyRate('')
       setNewEmployeeArrivalTime('09:00')
       setNewEmployeeDepartureTime('18:00')
+      setNewEmployeeIsHourlyWage(true)
       setSelectedDeviceSerialNumber('none')
       setIsDialogOpen(false)
       setIsDialogOpen(false)
@@ -168,7 +171,7 @@ export default function EmployeePage() {
 
   const openEdit = (item, e) => {
     e?.stopPropagation?.()
-    setEditForm({ id: item.id, name: item.name || '', hourly_rate: item.hourly_rate ?? '', arrival_time: item.arrival_time || '', departure_time: item.departure_time || '' })
+    setEditForm({ id: item.id, name: item.name || '', hourly_rate: item.hourly_rate ?? '', arrival_time: item.arrival_time || '', departure_time: item.departure_time || '', is_hourly_wage: item.is_hourly_wage ?? true })
     setIsEditDialogOpen(true)
   }
 
@@ -198,6 +201,7 @@ export default function EmployeePage() {
     if (editForm.departure_time) {
       payload.departure_time = editForm.departure_time
     }
+    payload.is_hourly_wage = editForm.is_hourly_wage
     try {
       setIsSaving(true)
       const r = await api.patch(`enterprise/employee/branch/${editForm.id}/`, payload)
@@ -413,6 +417,18 @@ export default function EmployeePage() {
                   className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
                   type="time"
                 />
+                <Label htmlFor="newEmployeeIsHourlyWage" className="text-right">
+                  Hourly Wage
+                </Label>
+                <div className="col-span-3 flex items-center gap-2">
+                  <Checkbox
+                    id="newEmployeeIsHourlyWage"
+                    checked={newEmployeeIsHourlyWage}
+                    onCheckedChange={setNewEmployeeIsHourlyWage}
+                    className="border-gray-600 data-[state=checked]:bg-purple-600"
+                  />
+                  <span className="text-sm text-slate-400">Generate wage transactions on checkout</span>
+                </div>
                 <Label htmlFor="deviceSerialNumber" className="text-right">
                   Biometric Device
                 </Label>
@@ -526,6 +542,20 @@ export default function EmployeePage() {
                     className="col-span-3 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
                     type="time"
                   />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editIsHourlyWage" className="text-right">
+                    Hourly Wage
+                  </Label>
+                  <div className="col-span-3 flex items-center gap-2">
+                    <Checkbox
+                      id="editIsHourlyWage"
+                      checked={editForm.is_hourly_wage}
+                      onCheckedChange={(checked) => setEditForm((p) => ({ ...p, is_hourly_wage: checked }))}
+                      className="border-gray-600 data-[state=checked]:bg-purple-600"
+                    />
+                    <span className="text-sm text-slate-400">Generate wage transactions on checkout</span>
+                  </div>
                 </div>
               </div>
               <DialogFooter>

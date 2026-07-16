@@ -222,47 +222,48 @@ def adms_cdata(request):
             # if no other checkouts that day, then add a transaction
             attendance_today = DailyAttendance.objects.filter(employee=employee,attendance_date=event_time.date()).first()
             working_hours = attendance_today.worked_minutes / 60
-            if not attendance_today.last_check_out:
-                print("Adding transaction for employee", employee.id)
-                #get today's working hours
-                 
-                serializer = EmployeeTransactionSerializer(data={
-                    'employee': employee.id,
-                    'transaction_type': 'Daily Wage',
-                    'amount': employee.hourly_rate * working_hours,
-                    'branch': employee.branch.id if employee.branch else None,
-                    'enterprise': employee.enterprise.id,
-                    'employee_type': 'salary',
-                    'desc': f"Checked out after working for {working_hours:.2f} hours",
-                    'date': event_time.date(),
-                })
+            if employee.is_hourly_wage:
+                if not attendance_today.last_check_out:
+                    print("Adding transaction for employee", employee.id)
+                    #get today's working hours
+                     
+                    serializer = EmployeeTransactionSerializer(data={
+                        'employee': employee.id,
+                        'transaction_type': 'Daily Wage',
+                        'amount': employee.hourly_rate * working_hours,
+                        'branch': employee.branch.id if employee.branch else None,
+                        'enterprise': employee.enterprise.id,
+                        'employee_type': 'salary',
+                        'desc': f"Checked out after working for {working_hours:.2f} hours",
+                        'date': event_time.date(),
+                    })
 
-                serializer.is_valid(raise_exception=True)
-                et = serializer.save() 
-            else:
-                #delete the last transaction of type Daily Wage for today, since this is not a valid checkout
-                EmployeeTransactions.objects.filter(
-                    employee=employee,
-                    transaction_type='Daily Wage',
-                    date=event_time.date(),
-                ).delete()
-                #record a new transaction
-                serializer = EmployeeTransactionSerializer(data={
-                    'employee': employee.id,
-                    'transaction_type': 'Daily Wage',
-                    'amount': employee.hourly_rate * working_hours,
-                    'branch': employee.branch.id if employee.branch else None,
-                    'enterprise': employee.enterprise.id,
-                    'employee_type': 'salary',
-                    'desc': f"Checked out after working for {working_hours:.2f} hours",
-                    'date': event_time.date(),
-                })
+                    serializer.is_valid(raise_exception=True)
+                    et = serializer.save() 
+                else:
+                    #delete the last transaction of type Daily Wage for today, since this is not a valid checkout
+                    EmployeeTransactions.objects.filter(
+                        employee=employee,
+                        transaction_type='Daily Wage',
+                        date=event_time.date(),
+                    ).delete()
+                    #record a new transaction
+                    serializer = EmployeeTransactionSerializer(data={
+                        'employee': employee.id,
+                        'transaction_type': 'Daily Wage',
+                        'amount': employee.hourly_rate * working_hours,
+                        'branch': employee.branch.id if employee.branch else None,
+                        'enterprise': employee.enterprise.id,
+                        'employee_type': 'salary',
+                        'desc': f"Checked out after working for {working_hours:.2f} hours",
+                        'date': event_time.date(),
+                    })
 
-                serializer.is_valid(raise_exception=True)
-                et = serializer.save() 
-           
+                    serializer.is_valid(raise_exception=True)
+                    et = serializer.save() 
+               
 
-            print("Here is the transaction,", et)
+                print("Here is the transaction,", et)
         print("Done Recording")
 
     return _plain_text_response('OK')

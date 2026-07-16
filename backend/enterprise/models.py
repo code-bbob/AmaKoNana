@@ -127,6 +127,7 @@ class Employee(models.Model):
     dob = models.DateField(blank=True, null=True)
     role = models.CharField(choices=[('Admin', 'Admin'),('Manager', 'Manager'), ('Employee', 'Employee')], default='Employee', max_length=20)
     is_active = models.BooleanField(default=True)
+    is_hourly_wage = models.BooleanField(default=True)
     due = models.FloatField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
