@@ -286,7 +286,8 @@ export default function EmployeePage() {
           <CardContent className="p-0">
             <div className="grid grid-cols-12 gap-4 p-4 text-sm font-medium text-slate-300 border-b border-slate-700">
               <div className="col-span-1"></div>
-              <div className="col-span-4 md:col-span-4">Employee</div>
+              <div className="col-span-3 md:col-span-3">Employee</div>
+              <div className="col-span-1 mdLcol-span-1">Is Hourly </div>
               <div className="col-span-2 md:col-span-2 text-center">Arrival</div>
               <div className="col-span-2 md:col-span-2 text-center">Departure</div>
               <div className="col-span-2 md:col-span-2 text-right">Due Amount</div>
@@ -308,10 +309,14 @@ export default function EmployeePage() {
                     className="border-gray-400"
                   />
                 </div>
-                <div className="col-span-4 md:col-span-4 flex items-center">
+                <div className="col-span-3 md:col-span-3 flex items-center">
                   <BookUser className="h-5 w-5 text-purple-400 mr-2 flex-shrink-0" />
                   <span className="text-white truncate">{employee.name}</span>
                 </div>
+                <div className="col-span-1 md:col-span-1 flex items-center">
+                  <span className="text-white capitalize truncate">{employee.is_hourly_wage.toString()}</span>
+                </div>
+
                 <div className="col-span-2 md:col-span-2 text-center text-slate-300">
                   {employee.arrival_time || '09:00'}
                 </div>
