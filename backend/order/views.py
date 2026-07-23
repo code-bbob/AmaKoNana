@@ -38,7 +38,7 @@ class OrderView(APIView):
             orders_cname = orders.filter(customer_name__icontains=search)
             orders_cphone = orders.filter(customer_phone__icontains=search)
             orders_items = OrderItem.objects.filter(order__in=orders, item__icontains=search)
-            orders_bills = orders.filter(bill_number__icontains=search)
+            orders_bills = orders.filter(bill_no__icontains=search)
             orders = orders_cname | orders_cphone | orders_bills | Order.objects.filter(id__in=orders_items.values_list('order_id', flat=True))
 
         

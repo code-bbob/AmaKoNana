@@ -1048,7 +1048,7 @@ class CustomerView(APIView):
     def post(self,request):
         data = request.data
         enterprise = request.user.employee.enterprise
-        customer_name = data["customer_name"]
+        customer_name = data.get("customer_name", "")
         phone_number = data["phone_number"]
         customer = Customer.objects.create(name=customer_name, phone_number=phone_number, enterprise=enterprise)
         if customer:

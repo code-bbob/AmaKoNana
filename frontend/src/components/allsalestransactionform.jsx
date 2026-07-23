@@ -700,7 +700,6 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
       setCustomerLoyaltyPoints(parseFloat(res.data.loyalty_points) || 0);
       setUseLoyaltyPoints(false);
       setCustomerCheckMessage("Customer created successfully.");
-      // New customer will have total_spent = 0, so no discount eligibility
       setCustomerEligibleForDiscount(false);
       setShowNewCustomerDialog(false);
       setNewCustomerData({ customer_name: "", phone_number: "" });
@@ -1177,6 +1176,8 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
       <div className="flex-grow lg:ml-64 overflow-auto">
         <div className="">
           <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
+
+<p className="text-white text-3xl text-center p-6 font-bold">Aama Ko Nana</p>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl lg:text-3xl font-bold mb-6 text-white">
                 {isExchange ? "Sale Exchange" : "Add Sales Transaction"}
@@ -1827,12 +1828,16 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                 name="phone_number"
                                 placeholder="Phone number"
                                 value={formData.phone_number}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                  const val = e.target.value;
                                   setFormData((prev) => ({
                                     ...prev,
-                                    phone_number: e.target.value,
-                                  }))
-                                }
+                                    phone_number: val,
+                                  }));
+                                  if (val.length === 10) {
+                                    handleCheck(val);
+                                  }
+                                }}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") {
                                     e.preventDefault();
@@ -2516,28 +2521,11 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                 <DialogHeader>
                   <DialogTitle>Customer Not Found</DialogTitle>
                   <DialogDescription>
-                    This customer doesn't exist. Please enter their details to
+                    This customer doesn't exist. Enter their phone number to
                     create a new customer.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="customer_name" className="text-right">
-                      Name
-                    </Label>
-                    <Input
-                      id="customer_name"
-                      value={newCustomerData.customer_name}
-                      onChange={(e) =>
-                        setNewCustomerData({
-                          ...newCustomerData,
-                          customer_name: e.target.value,
-                        })
-                      }
-                      className="col-span-3 bg-slate-700 border-slate-600 text-white"
-                      placeholder="Enter customer name"
-                    />
-                  </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="customer_phone" className="text-right">
                       Phone

@@ -41,7 +41,10 @@ const EmployeeStatementPage = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [startDate, setStartDate] = useState("");
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  });
   const [endDate, setEndDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const api = useAxios();
@@ -85,11 +88,10 @@ const EmployeeStatementPage = () => {
     window.print();
   };
 
-  const calculateRunningBalance = (transactions) => {
-    let running = Number(data.employee_data.previous_due) || 0;
+  const calculateRunningBalance = (transactions, startBalance = 0) => {
+    let running = Number(startBalance) || 0;
     return transactions.map((transaction) => {
       const amt = Number(transaction.amount) || 0;
-      // Positive amounts are payments to employee (reduce payable to employee); negative increase due
       running += amt;
       return { ...transaction, due: running };
     });
@@ -106,12 +108,13 @@ const EmployeeStatementPage = () => {
 
     const details = tx.employee_transaction_details;
     const detailLines = details.map((detail) => {
+      const billNo = detail.bill_no || "N/A"
       const productName = detail.product_name || "Unknown";
       const rate = detail.rate || 0;
       const quantity = detail.quantity || 0;
       // Handle both direct values and nested objects with source/parsedValue
       const total = detail.total?.parsedValue || detail.total || 0;
-      return `${productName}: ${rate} × ${quantity} = Rs. ${total}`;
+      return `${billNo} -> ${productName}: ${rate} × ${quantity} = Rs. ${total}`;
     });
 
     const baseDesc = tx.desc ? `${tx.desc}\n` : "";
@@ -202,13 +205,13 @@ const EmployeeStatementPage = () => {
       alternateRowStyles: { fillColor: [245, 245, 245] },
     });
 
-    const totalCount = data.employee_transactions.length;
+    const totalCount = filteredTransactions.length;
     const totalDebit = Math.abs(
-      data.employee_transactions
+      filteredTransactions
         .filter((t) => t.amount < 0)
         .reduce((sum, t) => sum + t.amount, 0)
     );
-    const totalPaid = data.employee_transactions
+    const totalPaid = filteredTransactions
       .filter((t) => t.amount > 0)
       .reduce((sum, t) => sum + t.amount, 0);
     const currentDue = transactionsWithBalance[transactionsWithBalance.length - 1]?.due || 0;
@@ -255,9 +258,19 @@ const EmployeeStatementPage = () => {
     data.employee_data && data.employee_data.previous_due !== undefined
       ? Number(data.employee_data.previous_due)
       : 0;
+
+  const filteredTransactions = data.employee_transactions.filter((tx) => {
+    if (!startDate) return true;
+    return tx.date >= startDate;
+  });
+
+  const priorDue = previousDue + data.employee_transactions
+    .filter((tx) => startDate && tx.date < startDate)
+    .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+
   const transactionsWithBalance = calculateRunningBalance(
-    data.employee_transactions,
-    previousDue
+    filteredTransactions,
+    priorDue
   );
   const computedCurrentDue = transactionsWithBalance.length
     ? transactionsWithBalance[transactionsWithBalance.length - 1].due
@@ -421,13 +434,13 @@ const EmployeeStatementPage = () => {
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400 print:text-gray-600">Total Transactions:</span>
-                  <span className="font-semibold text-white print:text-black">{data.employee_transactions.length}</span>
+                  <span className="font-semibold text-white print:text-black">{filteredTransactions.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400 print:text-gray-600">Total Credited Amount:</span>
                   <span className="font-semibold text-green-400 print:text-green-600">
 
-                    NPR {data.employee_transactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
+                    NPR {filteredTransactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
                     
                   </span>
                 </div>
@@ -435,7 +448,7 @@ const EmployeeStatementPage = () => {
                   <span className="text-gray-400 print:text-gray-600">Total Paid Amount:</span>
                   <span className="font-semibold text-red-400 print:text-red-600">
                     NPR {Math.abs(
-                      data.employee_transactions.filter((t) => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)
+                      filteredTransactions.filter((t) => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)
                     ).toLocaleString()}
                   </span>
                 </div>
