@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import useAxios from '@/utils/useAxios';
+import { apiClient } from '@/lib/api-client';
 import Sidebar from '@/components/allsidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,9 +19,15 @@ import {
   Clock3,
   Download,
   ListChecks,
+  LogIn,
+  LogOut,
   UserCheck,
   UserX,
   Users,
+  X,
+  Search,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 
 const formatTime = (value) => {
@@ -76,6 +83,16 @@ export default function AttendancePage({ reportMode = false }) {
   const [lateArrivals, setLateArrivals] = useState([]);
   const [earlyDepartures, setEarlyDepartures] = useState([]);
   const [activeTab, setActiveTab] = useState(reportMode ? 'details' : 'overview');
+
+  // Manual punch modal state
+  const [manualPunchOpen, setManualPunchOpen] = useState(false);
+  const [punchEmployeeSearch, setPunchEmployeeSearch] = useState('');
+  const [punchSelectedEmployee, setPunchSelectedEmployee] = useState(null);
+  const [punchEventType, setPunchEventType] = useState(0);
+  const [punchEventTime, setPunchEventTime] = useState('');
+  const [punchReason, setPunchReason] = useState('');
+  const [punchLoading, setPunchLoading] = useState(false);
+  const [punchResult, setPunchResult] = useState(null);
 
   useEffect(() => {
     setActiveTab(reportMode ? 'details' : 'overview');
@@ -200,6 +217,58 @@ export default function AttendancePage({ reportMode = false }) {
       .sort((a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime())
       .slice(0, 6);
   }, [attendanceRows]);
+
+  const punchFilteredEmployees = useMemo(() => {
+    const query = punchEmployeeSearch.toLowerCase().trim();
+    return attendanceRows
+      .map((row) => row.employee)
+      .filter((emp) => emp && emp.id && emp.name)
+      .filter((emp) => {
+        if (!query) return true;
+        return (
+          emp.name.toLowerCase().includes(query) ||
+          (emp.employee_code || '').toLowerCase().includes(query)
+        );
+      });
+  }, [attendanceRows, punchEmployeeSearch]);
+
+  const resetManualPunch = useCallback(() => {
+    setManualPunchOpen(false);
+    setPunchEmployeeSearch('');
+    setPunchSelectedEmployee(null);
+    setPunchEventType(0);
+    setPunchEventTime('');
+    setPunchReason('');
+    setPunchLoading(false);
+    setPunchResult(null);
+  }, []);
+
+  const handleManualPunchSubmit = useCallback(async () => {
+    if (!punchSelectedEmployee) return;
+    setPunchLoading(true);
+    setPunchResult(null);
+    try {
+      const result = await apiClient.dashboard.manualPunch({
+        employeeId: punchSelectedEmployee.id,
+        eventType: punchEventType,
+        eventTime: punchEventTime || undefined,
+        reason: punchReason || undefined,
+      });
+      setPunchResult({ type: 'success', message: result.message || 'Punch recorded successfully' });
+      // Refresh attendance data
+      setTimeout(() => {
+        resetManualPunch();
+        window.location.reload();
+      }, 1200);
+    } catch (err) {
+      setPunchResult({
+        type: 'error',
+        message: err?.response?.data?.error || err.message || 'Failed to record punch',
+      });
+    } finally {
+      setPunchLoading(false);
+    }
+  }, [punchSelectedEmployee, punchEventType, punchEventTime, punchReason, resetManualPunch]);
 
   const detailRows = attendanceRows.slice(0, 12);
 
@@ -330,6 +399,10 @@ export default function AttendancePage({ reportMode = false }) {
             <Button className="bg-emerald-500 text-slate-950 hover:bg-emerald-400" onClick={handleDownloadCsv}>
               <Download className="mr-2 h-4 w-4" />
               Export CSV
+            </Button>
+            <Button className="bg-sky-500 text-slate-950 hover:bg-sky-400" onClick={() => setManualPunchOpen(true)}>
+              <LogIn className="mr-2 h-4 w-4" />
+              Manual Punch
             </Button>
           </div>
         </motion.div>
@@ -667,6 +740,200 @@ export default function AttendancePage({ reportMode = false }) {
           )}
         </div>
       </div>
+
+      {/* Manual Punch Modal */}
+      {manualPunchOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl bg-sky-500/10 p-2">
+                  <LogIn className="h-5 w-5 text-sky-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Manual Attendance Punch</h2>
+                  <p className="text-xs text-slate-400">Record check-in or check-out for an employee</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={resetManualPunch}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-5 px-6 py-5">
+              {/* Employee Search */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-300">Employee</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="Search by name or code..."
+                    value={punchSelectedEmployee ? punchSelectedEmployee.name : punchEmployeeSearch}
+                    onChange={(e) => {
+                      setPunchEmployeeSearch(e.target.value);
+                      setPunchSelectedEmployee(null);
+                    }}
+                    onFocus={() => {
+                      if (punchSelectedEmployee) {
+                        setPunchEmployeeSearch('');
+                        setPunchSelectedEmployee(null);
+                      }
+                    }}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 outline-none focus:border-sky-500 transition"
+                  />
+                </div>
+                {!punchSelectedEmployee && punchEmployeeSearch && (
+                  <div className="mt-1 max-h-40 overflow-y-auto rounded-xl border border-slate-700 bg-slate-950">
+                    {punchFilteredEmployees.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-slate-400">No employees found</div>
+                    ) : (
+                      punchFilteredEmployees.map((emp) => (
+                        <button
+                          key={emp.id}
+                          type="button"
+                          onClick={() => {
+                            setPunchSelectedEmployee(emp);
+                            setPunchEmployeeSearch('');
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-slate-800 transition"
+                        >
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500/10 text-xs font-semibold text-sky-400">
+                            {emp.name?.charAt(0)?.toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-medium text-white">{emp.name}</div>
+                            <div className="text-xs text-slate-400">{emp.employee_code || '-'}</div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+                {punchSelectedEmployee && (
+                  <div className="mt-2 flex items-center gap-3 rounded-xl border border-sky-500/30 bg-sky-500/5 px-4 py-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500/10 text-xs font-semibold text-sky-400">
+                      {punchSelectedEmployee.name?.charAt(0)?.toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-white">{punchSelectedEmployee.name}</div>
+                      <div className="text-xs text-slate-400">{punchSelectedEmployee.employee_code || '-'}</div>
+                    </div>
+                    <CheckCircle2 className="h-4 w-4 text-sky-400" />
+                  </div>
+                )}
+              </div>
+
+              {/* Event Type Toggle */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-300">Action</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPunchEventType(0)}
+                    className={`flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-medium transition ${
+                      punchEventType === 0
+                        ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
+                        : 'border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-300'
+                    }`}
+                  >
+                    <LogIn className="h-4 w-4" />
+                    Check-In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPunchEventType(1)}
+                    className={`flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-medium transition ${
+                      punchEventType === 1
+                        ? 'border-rose-500/50 bg-rose-500/10 text-rose-300'
+                        : 'border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-300'
+                    }`}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Check-Out
+                  </button>
+                </div>
+              </div>
+
+              {/* Event Time (optional) */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                  Time <span className="text-slate-500">(optional, defaults to now)</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={punchEventTime}
+                  onChange={(e) => setPunchEventTime(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none focus:border-sky-500 transition [color-scheme:dark]"
+                />
+              </div>
+
+              {/* Reason (optional) */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                  Reason <span className="text-slate-500">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Biometric not working, forgot to punch"
+                  value={punchReason}
+                  onChange={(e) => setPunchReason(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-sky-500 transition"
+                />
+              </div>
+
+              {/* Result Message */}
+              {punchResult && (
+                <div
+                  className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm ${
+                    punchResult.type === 'success'
+                      ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                      : 'border border-rose-500/30 bg-rose-500/10 text-rose-300'
+                  }`}
+                >
+                  {punchResult.type === 'success' ? (
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  )}
+                  {punchResult.message}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-slate-800 px-6 py-4">
+              <Button
+                variant="outline"
+                className="border-slate-700 bg-transparent text-slate-300 hover:bg-slate-800"
+                onClick={resetManualPunch}
+                disabled={punchLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                className={`${
+                  punchEventType === 0
+                    ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
+                    : 'bg-rose-500 text-white hover:bg-rose-400'
+                }`}
+                onClick={handleManualPunchSubmit}
+                disabled={!punchSelectedEmployee || punchLoading}
+              >
+                {punchLoading ? 'Recording...' : punchEventType === 0 ? 'Check In Employee' : 'Check Out Employee'}
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

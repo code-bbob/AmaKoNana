@@ -83,6 +83,15 @@ export const apiClient = {
       const res = await createClient().get(url);
       return res.data;
     },
+    manualPunch: async ({ employeeId, eventType, eventTime, reason }) => {
+      const res = await createClient().post('/attendance/api/manual-punch/', {
+        employee_id: employeeId,
+        event_type: eventType,
+        event_time: eventTime || undefined,
+        reason: reason || undefined,
+      });
+      return res.data;
+    },
   },
 };
 

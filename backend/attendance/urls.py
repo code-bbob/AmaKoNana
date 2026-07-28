@@ -13,6 +13,7 @@ from .views import (
     sse_events_view,
     LateArrivalsAPIView,
     EarlyDeparturesAPIView,
+    ManualPunchAPIView,
 )
 from .auth_views import LoginAPIView, LogoutAPIView, CurrentUserAPIView
 from .user_management_views import (
@@ -41,6 +42,10 @@ urlpatterns = [
     # Late arrivals and early departures
     path('api/dashboard/late-arrivals/', LateArrivalsAPIView.as_view(), name='late_arrivals'),
     path('api/dashboard/early-departures/', EarlyDeparturesAPIView.as_view(), name='early_departures'),
+
+    # Manual punch (admin)
+    path('api/manual-punch/', ManualPunchAPIView.as_view(), name='manual_punch'),
+
         # Monthly reports
         path('api/reports/monthly-summary/',
             __import__('attendance.views', fromlist=['MonthlySummaryAPIView']).MonthlySummaryAPIView.as_view(),

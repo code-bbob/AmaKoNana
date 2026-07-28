@@ -1028,6 +1028,75 @@ def _resolve_report_range(request: HttpRequest):
     return date(year, month, 1), date(year, month, last_day), meta
 
 
+class ManualPunchAPIView(APIView):
+    """Allow an admin to manually record a check-in or check-out for an employee.
+
+    POST /attendance/api/manual-punch/
+    {
+        "employee_id": 123,
+        "event_type": 0,           // 0=Check-In, 1=Check-Out
+        "event_time": "2026-07-26T09:15:00"  // optional, defaults to now
+    }
+    """
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def post(self, request: HttpRequest):
+        enterprise = _resolve_user_enterprise(request.user)
+        if enterprise is None:
+            return Response({'error': 'No enterprise is mapped to this user'}, status=403)
+
+        employee_id = request.data.get('employee_id')
+        event_type = request.data.get('event_type')
+        event_time_raw = request.data.get('event_time')
+
+        if employee_id is None:
+            return Response({'error': 'employee_id is required'}, status=400)
+        if event_type is None:
+            return Response({'error': 'event_type is required (0=Check-In, 1=Check-Out)'}, status=400)
+
+        try:
+            event_type = int(event_type)
+        except (TypeError, ValueError):
+            return Response({'error': 'event_type must be an integer'}, status=400)
+
+        if event_type not in (AttendanceEvent.CHECK_IN, AttendanceEvent.CHECK_OUT):
+            return Response({'error': 'event_type must be 0 (Check-In) or 1 (Check-Out)'}, status=400)
+
+        try:
+            employee = Employee.objects.get(id=employee_id, enterprise=enterprise)
+        except Employee.DoesNotExist:
+            return Response({'error': 'Employee not found for your enterprise'}, status=404)
+
+        event_time = None
+        if event_time_raw:
+            event_time = parse_device_timestamp(event_time_raw)
+
+        reason = request.data.get('reason', '')
+
+        summary, event = record_device_event(
+            employee=employee,
+            event_type=event_type,
+            event_time=event_time,
+            device_serial='manual',
+            raw_payload={'admin_id': str(request.user.id), 'reason': reason},
+            source='manual',
+        )
+
+        return Response({
+            'success': True,
+            'message': f"{'Check-in' if event_type == 0 else 'Check-out'} recorded for {employee.name}",
+            'event': {
+                'id': event.id,
+                'employee_id': employee.id,
+                'employee_name': employee.name,
+                'event_type': event.event_type,
+                'event_time': event.event_time.isoformat(),
+                'source': event.source,
+            },
+            'summary': _serialize_summary_min(summary),
+        }, status=201)
+
+
 class MonthlySummaryAPIView(APIView):
     """Return a compact monthly attendance summary per employee.
 
