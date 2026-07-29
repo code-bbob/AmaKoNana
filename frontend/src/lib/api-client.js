@@ -72,10 +72,11 @@ export const apiClient = {
       const res = await createClient().get(url);
       return res.data;
     },
-    getMonthlySummaryDetailed: async ({ branchId, departmentId, startDate, endDate, dateFormat }) => {
+    getMonthlySummaryDetailed: async ({ branchId, departmentId, employeeId, startDate, endDate, dateFormat }) => {
       const params = new URLSearchParams();
       if (branchId) params.append('branch_id', String(branchId));
       if (departmentId) params.append('department_id', String(departmentId));
+      if (employeeId) params.append('employee_id', String(employeeId));
       if (startDate) params.append('start_date', String(startDate));
       if (endDate) params.append('end_date', String(endDate));
       if (dateFormat) params.append('date_format', String(dateFormat));

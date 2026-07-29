@@ -46,6 +46,7 @@ import AllBranchSelectionPage from "./pages/allBranchSelect";
 import EmployeeTransactions from "./pages/employeetransactions";
 import EmployeeTransactionForm from "./pages/employeeTransactionForm";
 import EmployeeTransactionEditForm from "./pages/editEmployeeTransactionForm";
+import EmployeeAttendancePage from "./pages/employeeAttendancePage";
 import AllDebtorsPage from "./pages/allDebtorsPage";
 import AllDebtorTransactions from "./pages/allDebtorTransactions";
 import DebtorTransactionForm from "./pages/allDebtorTransactionForm";
@@ -134,6 +135,7 @@ function App() {
           <Route path="income-expense-report/branch/:branchId" element={<AllDailyReport />} />
 
           <Route path="employee/branch/:branchId" element={<EmployeePage/>}/>
+          <Route path="employee/:employeeId/branch/:branchId" element={<EmployeeAttendancePage />} />
 
           <Route path="attendance/branch/:branchId" element={<AttendancePage />} />
           <Route path="attendance-report/branch/:branchId" element={<AttendanceReportLayout />}>

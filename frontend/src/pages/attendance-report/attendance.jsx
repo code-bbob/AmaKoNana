@@ -198,7 +198,7 @@ export default function AttendanceTab() {
                 ) : rowsSource.map((row, idx) => (
                   <TableRow key={row.employee?.id || idx}>
                     <TableCell>{displayStart + idx}</TableCell>
-                    <TableCell className="font-medium text-white"><Button variant="link" className="h-auto px-0 text-emerald-400" onClick={() => row.employee?.id && navigate(`/staff/${row.employee.id}`)} disabled={!row.employee?.id}>{row.employee?.name || 'Unknown'}</Button></TableCell>
+                    <TableCell className="font-medium text-white"><Button variant="link" className="h-auto px-0 text-emerald-400" onClick={() => row.employee?.id && navigate(`/employee/${row.employee.id}/branch/${branchId}`)} disabled={!row.employee?.id}>{row.employee?.name || 'Unknown'}</Button></TableCell>
                     <TableCell><Badge className={`${row.present ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`}>{row.present ? 'Present' : 'Absent'}</Badge></TableCell>
                     <TableCell>{formatTime(row.check_in)}</TableCell>
                     <TableCell>{formatTime(row.check_out)}</TableCell>

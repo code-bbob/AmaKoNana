@@ -703,7 +703,7 @@ function AttendanceReportContent() {
                                 className="h-auto px-0 text-emerald-400 hover:text-emerald-300"
                                 onClick={() => {
                                   if (row.employee?.id) {
-                                    navigate(`/staff/${row.employee.id}`);
+                                    navigate(`/employee/${row.employee.id}/branch/${branchId}`);
                                   }
                                 }}
                                 disabled={!row.employee?.id}
