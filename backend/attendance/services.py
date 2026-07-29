@@ -607,7 +607,7 @@ def get_late_arrivals(attendance_date=None, branch_id=None, department_id=None, 
     """Fetch employees who arrived late on a given day, with optional branch/department filter.
     
     Args:
-        attendance_date: Date to check (default today)
+        attendance_date: Date to check (defauviewlt today)
         branch_id: Filter by branch ID (optional)
         department_id: Filter by department ID (optional)
     
