@@ -34,6 +34,8 @@ from .services import (
 )
 from .serializers import DailyAttendanceSerializer
 from .models import DailyAttendance, AttendanceEvent
+from alltransactions.models import EmployeeTransactions
+from alltransactions.serializers import EmployeeTransactionSerializer
 from enterprise.models import Employee, Enterprise, Branch, Department
 import calendar
 from rest_framework import status
@@ -1081,6 +1083,40 @@ class ManualPunchAPIView(APIView):
             raw_payload={'admin_id': str(request.user.id), 'reason': reason},
             source='manual',
         )
+
+        if event_type == AttendanceEvent.CHECK_OUT and employee.is_hourly_wage:
+            working_hours = min(summary.worked_minutes / 60, 9)
+            if not summary.last_check_out:
+                serializer = EmployeeTransactionSerializer(data={
+                    'employee': employee.id,
+                    'transaction_type': 'Daily Wage',
+                    'amount': employee.hourly_rate * working_hours,
+                    'branch': employee.branch.id if employee.branch else None,
+                    'enterprise': employee.enterprise.id,
+                    'employee_type': 'salary',
+                    'desc': f"Checked out after working for {working_hours:.2f} hours",
+                    'date': event.event_time.date(),
+                })
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+            else:
+                EmployeeTransactions.objects.filter(
+                    employee=employee,
+                    transaction_type='Daily Wage',
+                    date=event.event_time.date(),
+                ).delete()
+                serializer = EmployeeTransactionSerializer(data={
+                    'employee': employee.id,
+                    'transaction_type': 'Daily Wage',
+                    'amount': employee.hourly_rate * working_hours,
+                    'branch': employee.branch.id if employee.branch else None,
+                    'enterprise': employee.enterprise.id,
+                    'employee_type': 'salary',
+                    'desc': f"Checked out after working for {working_hours:.2f} hours",
+                    'date': event.event_time.date(),
+                })
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
 
         return Response({
             'success': True,

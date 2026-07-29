@@ -221,8 +221,7 @@ def adms_cdata(request):
         if event_code == 1:  # Check-out
             # if no other checkouts that day, then add a transaction
             attendance_today = DailyAttendance.objects.filter(employee=employee,attendance_date=event_time.date()).first()
-            billed_minutes = min(attendance_today.worked_minutes, 540)
-            working_hours = billed_minutes / 60
+            working_hours = min(attendance_today.worked_minutes / 60, 9)
             if employee.is_hourly_wage:
                 if not attendance_today.last_check_out:
                     print("Adding transaction for employee", employee.id)
