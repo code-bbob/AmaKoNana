@@ -1885,11 +1885,11 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                   amount_paid: loyaltySelected ? 0 : prev.amount_paid,
                                   amount_received: loyaltySelected ? "" : prev.amount_received,
                                   cash_amount:
-                                    value === "cash" ? paymentTargetAmount : 0,
+                                    value === "cash" ? paymentTargetAmount : value === "mixed" ? "" : 0,
                                   card_amount:
-                                    value === "card" ? paymentTargetAmount : 0,
+                                    value === "card" ? paymentTargetAmount : value === "mixed" ? "" : 0,
                                   online_amount:
-                                    value === "online" ? paymentTargetAmount : 0,
+                                    value === "online" ? paymentTargetAmount : value === "mixed" ? "" : 0,
                                 }));
                               }}
                             >
@@ -2141,10 +2141,11 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                   type="number"
                                   value={formData.cash_amount}
                                   onChange={(e) => {
-                                    const val = parseFloat(e.target.value) || 0;
-                                    const card = formData.card_amount;
-                                    const online = formData.online_amount;
-                                    const sum = val + card + online;
+                                    const val = e.target.value;
+                                    const parsed = parseFloat(val) || 0;
+                                    const card = parseFloat(formData.card_amount) || 0;
+                                    const online = parseFloat(formData.online_amount) || 0;
+                                    const sum = parsed + card + online;
                                     setFormData((prev) => ({
                                       ...prev,
                                       cash_amount: val,
@@ -2162,10 +2163,11 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                   type="number"
                                   value={formData.online_amount}
                                   onChange={(e) => {
-                                    const val = parseFloat(e.target.value) || 0;
-                                    const cash = formData.cash_amount;
-                                    const card = formData.card_amount;
-                                    const sum = cash + card + val;
+                                    const val = e.target.value;
+                                    const parsed = parseFloat(val) || 0;
+                                    const cash = parseFloat(formData.cash_amount) || 0;
+                                    const card = parseFloat(formData.card_amount) || 0;
+                                    const sum = cash + card + parsed;
                                     setFormData((prev) => ({
                                       ...prev,
                                       online_amount: val,
@@ -2183,10 +2185,11 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                   type="number"
                                   value={formData.card_amount}
                                   onChange={(e) => {
-                                    const val = parseFloat(e.target.value) || 0;
-                                    const cash = formData.cash_amount;
-                                    const online = formData.online_amount;
-                                    const sum = cash + online + val;
+                                    const val = e.target.value;
+                                    const parsed = parseFloat(val) || 0;
+                                    const cash = parseFloat(formData.cash_amount) || 0;
+                                    const online = parseFloat(formData.online_amount) || 0;
+                                    const sum = cash + online + parsed;
                                     setFormData((prev) => ({
                                       ...prev,
                                       card_amount: val,
