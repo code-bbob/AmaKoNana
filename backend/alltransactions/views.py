@@ -1696,7 +1696,7 @@ class ProductTransferView(APIView):
             'sales': sales,
             'bill_no': '000',
             'method': 'transfer',
-            'employee': request.user.employee
+            'employee': request.user.employee.id
         }
 
         purchase_data = {
@@ -1706,7 +1706,7 @@ class ProductTransferView(APIView):
             'purchase': purchase,
             'bill_no': '000',
             'method': 'transfer',
-            'employee': request.user.employee
+            'employee': request.user.employee.id
         }
         # sale_transaction = SalesTransactionSerializer().create({
         #     'enterprise': enterprise,
