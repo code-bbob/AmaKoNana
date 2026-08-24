@@ -132,7 +132,7 @@ function App() {
           <Route path="withdrawals/form/branch/:branchId" element={<AllWithdrawalForm />} />
           <Route path="withdrawals/branch/:branchId/edit/:withdrawalId" element={<EditAllWithdrawal />} />
           <Route path="withdrawals-report/branch/:branchId" element={<AllWithdrawalsReport />} />
-          <Route path="ierax/:branchId" element={<AllDailyReport />} />
+          <Route path="ierox/:branchId" element={<AllDailyReport />} />
 
           <Route path="employee/branch/:branchId" element={<EmployeePage/>}/>
           <Route path="employee/:employeeId/branch/:branchId" element={<EmployeeAttendancePage />} />
