@@ -201,6 +201,7 @@ class SalesTransactionView(APIView):
             data['cash_amount'] = 0
             data['card_amount'] = 0
             data['online_amount'] = 0
+            data['fonepay_amount'] = 0
             data['credited_amount'] = 0
 
         serializer = SalesTransactionSerializer(data=data)
@@ -336,6 +337,7 @@ class SalesTransactionView(APIView):
             new_data['cash_amount'] = 0
             new_data['card_amount'] = 0
             new_data['online_amount'] = 0
+            new_data['fonepay_amount'] = 0
             new_data['credited_amount'] = 0
             new_data['method'] = 'loyalty'
 
@@ -832,6 +834,7 @@ class SalesReportView(APIView):
         cash_sales = 0
         card_sales = 0
         online_sales = 0
+        fonepay_sales = 0
         st = []
         write_off = 0
         rows = []
@@ -840,9 +843,10 @@ class SalesReportView(APIView):
                 if sale.sales_transaction.is_ncm == False and sale.sales_transaction.method != "loyalty":
                     write_off += sale.sales_transaction.total_amount - sale.sales_transaction.amount_paid
                 st.append(sale.sales_transaction.id)
-                cash_sales += sale.sales_transaction.cash_amount
-                card_sales += sale.sales_transaction.card_amount
-                online_sales += sale.sales_transaction.online_amount
+                cash_sales += sale.sales_transaction.cash_amount or 0
+                card_sales += sale.sales_transaction.card_amount or 0
+                online_sales += sale.sales_transaction.online_amount or 0
+                fonepay_sales += sale.sales_transaction.fonepay_amount or 0
             line_subtotal = (sale.unit_price or 0) * (sale.quantity or 0)
             line_discount = sale.discount or 0
             line_net = line_subtotal - line_discount
@@ -873,6 +877,7 @@ class SalesReportView(APIView):
             "cash_sales": cash_sales,
             "card_sales": card_sales,
             "online_sales": online_sales,
+            "fonepay_sales": fonepay_sales,
         })
         return Response(rows)
 
@@ -2095,6 +2100,7 @@ class IncomeExpenseReportView(APIView):
         total_cash_income = 0
         total_online_income = 0
         total_card_income = 0
+        total_fonepay_income = 0
         total_cash_expense = 0
         total_online_expense = 0
         total_card_expense = 0
@@ -2145,12 +2151,14 @@ class IncomeExpenseReportView(APIView):
                 'cash_amount': sale.cash_amount,
                 'card_amount': sale.card_amount,
                 'online_amount': sale.online_amount,
+                'fonepay_amount': sale.fonepay_amount,
                 'type': 'Sale',
                 'date': sale.date
             })
             total_cash_income += sale.cash_amount or 0
             total_card_income += sale.card_amount or 0
             total_online_income += sale.online_amount or 0
+            total_fonepay_income += sale.fonepay_amount or 0
             total_income += sale.amount_paid or 0
 
         orders = Order.objects.filter(enterprise=enterprise, received_date__range=(report_start_date, report_end_date))
@@ -2288,10 +2296,13 @@ class IncomeExpenseReportView(APIView):
             "cash" : 1,
             "card" : 2,
             "online" : 3,
-            "mixed" : 4,
-            "credit" : 5,
-            "loyalty":6,
-            "N/A" : 7,
+            "fonepay" : 4,
+            "mixed" : 5,
+            "credit" : 6,
+            "loyalty":7,
+            "N/A" : 8,
+            "transfer": 9,
+            "cheque": 10,
         }
         net_cash_in_hand = (closing_cash.amount if closing_cash else 0) + total_cash_income - total_cash_expense - total_withdrawal
         list1.sort(key=lambda x: (
@@ -2307,6 +2318,7 @@ class IncomeExpenseReportView(APIView):
             'total_online_expense': total_online_expense,
             'total_card_income': total_card_income,
             'total_card_expense': total_card_expense,
+            'total_fonepay_income': total_fonepay_income,
             'previous_closing_cash': closing_cash.amount if closing_cash else 0,
             'net_cash_in_hand': net_cash_in_hand,
             'total_income': total_income,

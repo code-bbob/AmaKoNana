@@ -89,6 +89,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
     cash_amount: "",
     card_amount: "",
     online_amount: "",
+    fonepay_amount: "",
   });
   const [products, setProducts] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -208,7 +209,8 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
       const sum =
         (parseFloat(formData.cash_amount) || 0) +
         (parseFloat(formData.card_amount) || 0) +
-        (parseFloat(formData.online_amount) || 0);
+        (parseFloat(formData.online_amount) || 0) +
+        (parseFloat(formData.fonepay_amount) || 0);
       setChange(Math.max(0, sum - paymentTargetAmount).toFixed(2));
       return;
     }
@@ -220,6 +222,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
     formData.cash_amount,
     formData.card_amount,
     formData.online_amount,
+    formData.fonepay_amount,
     formData.method,
     paymentTargetAmount,
     formData.amount_paid,
@@ -237,6 +240,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
         (parseFloat(prev.cash_amount) || 0) === 0 &&
         (parseFloat(prev.online_amount) || 0) === 0 &&
         (parseFloat(prev.card_amount) || 0) === 0 &&
+        (parseFloat(prev.fonepay_amount) || 0) === 0 &&
         (parseFloat(prev.credited_amount) || 0) === 0
       ) {
         return prev;
@@ -249,6 +253,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
         cash_amount: 0,
         online_amount: 0,
         card_amount: 0,
+        fonepay_amount: 0,
         credited_amount: 0,
         debtor: "",
       };
@@ -272,6 +277,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
         cash_amount: 0,
         online_amount: 0,
         card_amount: 0,
+        fonepay_amount: 0,
         credited_amount: 0,
       };
 
@@ -280,6 +286,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
         if (target === "cash") next.cash_amount = prepaidAmount;
         else if (target === "online") next.online_amount = prepaidAmount;
         else if (target === "card") next.card_amount = prepaidAmount;
+        else if (target === "fonepay") next.fonepay_amount = prepaidAmount;
         else if (target === "credit") next.credited_amount = prepaidAmount;
       }
 
@@ -381,6 +388,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
             cash_amount: data.cash_amount?.toString() || "",
             card_amount: data.card_amount?.toString() || "",
             online_amount: data.online_amount?.toString() || "",
+            fonepay_amount: data.fonepay_amount?.toString() || "",
           }));
           // If the saved transaction used loyalty, preserve that state
           if (data.method === "loyalty") {
@@ -394,6 +402,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
               cash_amount: 0,
               card_amount: 0,
               online_amount: 0,
+              fonepay_amount: 0,
             }));
           } else {
             setOriginalSaleMethod(data.method || "cash");
@@ -645,6 +654,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
         cash_amount: canUseLoyaltyNow ? 0 : prev.cash_amount,
         card_amount: canUseLoyaltyNow ? 0 : prev.card_amount,
         online_amount: canUseLoyaltyNow ? 0 : prev.online_amount,
+        fonepay_amount: canUseLoyaltyNow ? 0 : prev.fonepay_amount,
       }));
       setCustomerCheckMessage(
         canUseLoyaltyNow ? "Customer found. Loyalty applied." : "Customer found.",
@@ -760,7 +770,8 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
       const mixedAmount =
         (parseFloat(formData.cash_amount) || 0) +
         (parseFloat(formData.card_amount) || 0) +
-        (parseFloat(formData.online_amount) || 0);
+        (parseFloat(formData.online_amount) || 0) +
+        (parseFloat(formData.fonepay_amount) || 0);
       const prepaidTotal = (() => {
         const enteredAmountPaid = parseFloat(
           formData.amountPaid ?? formData.amount_paid,
@@ -799,6 +810,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
         cash_amount: parseFloat(formData.cash_amount) || 0,
         card_amount: parseFloat(formData.card_amount) || 0,
         online_amount: parseFloat(formData.online_amount) || 0,
+        fonepay_amount: parseFloat(formData.fonepay_amount) || 0,
         amount_paid: rawPaid,
         credited_amount: formData.credited_amount || 0,
         is_sale_exchange: isExchange,
@@ -815,6 +827,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
         payload.cash_amount = 0;
         payload.card_amount = 0;
         payload.online_amount = 0;
+        payload.fonepay_amount = 0;
         payload.credited_amount = 0;
         payload.method = "loyalty";
       }
@@ -823,6 +836,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
         payload.cash_amount = 0;
         payload.online_amount = 0;
         payload.card_amount = 0;
+        payload.fonepay_amount = 0;
 
         if (exchangeExceededAmount <= 0) {
           payload.amount_paid = 0;
@@ -833,12 +847,15 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
           payload.cash_amount = parseFloat(formData.cash_amount) || 0;
           payload.card_amount = parseFloat(formData.card_amount) || 0;
           payload.online_amount = parseFloat(formData.online_amount) || 0;
+          payload.fonepay_amount = parseFloat(formData.fonepay_amount) || 0;
         } else if (formData.method === "cash") {
           payload.cash_amount = payload.amount_paid;
         } else if (formData.method === "online") {
           payload.online_amount = payload.amount_paid;
         } else if (formData.method === "card") {
           payload.card_amount = payload.amount_paid;
+        } else if (formData.method === "fonepay") {
+          payload.fonepay_amount = payload.amount_paid;
         } else if (formData.method === "credit") {
           payload.credited_amount = Math.max(
             0,
@@ -854,6 +871,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
         payload.cash_amount = 0;
         payload.online_amount = 0;
         payload.card_amount = 0;
+        payload.fonepay_amount = 0;
         payload.credited_amount = 0;
         payload.writeoff = 0;
 
@@ -863,6 +881,8 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
           payload.online_amount = prepaidTotal;
         else if (formData.prepaid_target === "card")
           payload.card_amount = prepaidTotal;
+        else if (formData.prepaid_target === "fonepay")
+          payload.fonepay_amount = prepaidTotal;
         else if (formData.prepaid_target === "credit")
           payload.credited_amount = prepaidTotal;
       } else if (formData.is_ncm && !formData.prepaid) {
@@ -873,6 +893,8 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
         payload.online_amount = payload.amount_paid;
       } else if (formData.method == "card") {
         payload.card_amount = payload.amount_paid;
+      } else if (formData.method == "fonepay") {
+        payload.fonepay_amount = payload.amount_paid;
       }
       console.log("Prepared payload for submission:", payload);
 
@@ -1153,7 +1175,8 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
     const cash = parseFloat(formData.cash_amount) || 0;
     const card = parseFloat(formData.card_amount) || 0;
     const online = parseFloat(formData.online_amount) || 0;
-    const sum = cash + card + online; // raw sum
+    const fonepay = parseFloat(formData.fonepay_amount) || 0;
+    const sum = cash + card + online + fonepay; // raw sum
     setPayable(paymentTargetAmount);
     setFormData((prev) => ({
       ...prev,
@@ -1164,6 +1187,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
     formData.cash_amount,
     formData.card_amount,
     formData.online_amount,
+    formData.fonepay_amount,
     formData.method,
     paymentTargetAmount,
   ]);
@@ -1890,6 +1914,8 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                     value === "card" ? paymentTargetAmount : value === "mixed" ? "" : 0,
                                   online_amount:
                                     value === "online" ? paymentTargetAmount : value === "mixed" ? "" : 0,
+                                  fonepay_amount:
+                                    value === "fonepay" ? paymentTargetAmount : value === "mixed" ? "" : 0,
                                 }));
                               }}
                             >
@@ -1905,6 +1931,9 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                 </SelectItem>
                                 <SelectItem value="online" className="text-white">
                                   Online
+                                </SelectItem>
+                                <SelectItem value="fonepay" className="text-white">
+                                  Fonepay
                                 </SelectItem>
                                 {(
                                   (originalSaleMethod === "loyalty") ||
@@ -2005,6 +2034,12 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                           className="text-white"
                                         >
                                           Online Amount
+                                        </SelectItem>
+                                        <SelectItem
+                                          value="fonepay"
+                                          className="text-white"
+                                        >
+                                          Fonepay Amount
                                         </SelectItem>
                                         <SelectItem
                                           value="cash"
@@ -2132,7 +2167,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
 
                         {formData.method === "mixed" && (
                           <div className="space-y-3">
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                               <div>
                                 <Label className="text-slate-300 mb-1">
                                   Cash
@@ -2145,7 +2180,8 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                     const parsed = parseFloat(val) || 0;
                                     const card = parseFloat(formData.card_amount) || 0;
                                     const online = parseFloat(formData.online_amount) || 0;
-                                    const sum = parsed + card + online;
+                                    const fonepay = parseFloat(formData.fonepay_amount) || 0;
+                                    const sum = parsed + card + online + fonepay;
                                     setFormData((prev) => ({
                                       ...prev,
                                       cash_amount: val,
@@ -2167,7 +2203,8 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                     const parsed = parseFloat(val) || 0;
                                     const cash = parseFloat(formData.cash_amount) || 0;
                                     const card = parseFloat(formData.card_amount) || 0;
-                                    const sum = cash + card + parsed;
+                                    const fonepay = parseFloat(formData.fonepay_amount) || 0;
+                                    const sum = cash + card + parsed + fonepay;
                                     setFormData((prev) => ({
                                       ...prev,
                                       online_amount: val,
@@ -2189,10 +2226,34 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                     const parsed = parseFloat(val) || 0;
                                     const cash = parseFloat(formData.cash_amount) || 0;
                                     const online = parseFloat(formData.online_amount) || 0;
-                                    const sum = cash + online + parsed;
+                                    const fonepay = parseFloat(formData.fonepay_amount) || 0;
+                                    const sum = cash + online + parsed + fonepay;
                                     setFormData((prev) => ({
                                       ...prev,
                                       card_amount: val,
+                                      amount_paid: sum,
+                                    }));
+                                  }}
+                                  className="bg-slate-800 border-slate-700 text-white"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-slate-300 mb-1">
+                                  Fonepay
+                                </Label>
+                                <Input
+                                  type="number"
+                                  value={formData.fonepay_amount}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const parsed = parseFloat(val) || 0;
+                                    const cash = parseFloat(formData.cash_amount) || 0;
+                                    const online = parseFloat(formData.online_amount) || 0;
+                                    const card = parseFloat(formData.card_amount) || 0;
+                                    const sum = cash + online + card + parsed;
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      fonepay_amount: val,
                                       amount_paid: sum,
                                     }));
                                   }}
@@ -2206,7 +2267,8 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                 {(
                                   (parseFloat(formData.cash_amount) || 0) +
                                   (parseFloat(formData.card_amount) || 0) +
-                                  (parseFloat(formData.online_amount) || 0)
+                                  (parseFloat(formData.online_amount) || 0) +
+                                  (parseFloat(formData.fonepay_amount) || 0)
                                 ).toFixed(2)}
                               </span>
                             </div>
@@ -2215,7 +2277,8 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                                 const sum =
                                   (parseFloat(formData.cash_amount) || 0) +
                                   (parseFloat(formData.card_amount) || 0) +
-                                  (parseFloat(formData.online_amount) || 0);
+                                  (parseFloat(formData.online_amount) || 0) +
+                                  (parseFloat(formData.fonepay_amount) || 0);
                                 return (
                                   <>
                                     <div className="bg-slate-800 border border-slate-700 rounded p-2 flex justify-between">

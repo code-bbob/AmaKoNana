@@ -24,6 +24,11 @@ import {
   User,
   Phone,
   CreditCard,
+  Plus,
+  ChevronsUpDown,
+  Check,
+  Trash2,
+  Pencil,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -31,6 +36,29 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import useAxios from "@/utils/useAxios";
 import { useNavigate, useParams } from "react-router-dom";
 import jsPDF from "jspdf";
@@ -49,6 +77,58 @@ const EmployeeStatementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const api = useAxios();
   const navigate = useNavigate();
+
+  // Add/Edit transaction dialog state
+  const [dialogMode, setDialogMode] = useState(null); // null | "add" | "edit"
+  const [editingTxId, setEditingTxId] = useState(null);
+  const [txForm, setTxForm] = useState({
+    date: new Date().toISOString().split("T")[0],
+    amount: "",
+    desc: "",
+    employee_type: "salary",
+    transaction_type: "Payment",
+  });
+  const [entries, setEntries] = useState([{ bill_no: "", product: "", product_name: "", quantity: "", rate: "" }]);
+  const [openProduct, setOpenProduct] = useState([false]);
+  const [products, setProducts] = useState([]);
+  const [subLoading, setSubLoading] = useState(false);
+  const [formError, setFormError] = useState(null);
+  // Delete confirmation state
+  const [deleteTx, setDeleteTx] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+
+  // Auto-calc amount for incentive type
+  useEffect(() => {
+    if (txForm.employee_type === "incentive") {
+      const total = entries.reduce((sum, e) => {
+        const q = parseFloat(e.quantity) || 0;
+        const r = parseFloat(e.rate) || 0;
+        return sum + q * r;
+      }, 0);
+      setTxForm((prev) => ({ ...prev, amount: total }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, txForm.employee_type]);
+
+  useEffect(() => {
+    if (txForm.employee_type === "incentive" && txForm.transaction_type !== "Salary Credited") {
+      setTxForm((prev) => ({ ...prev, transaction_type: "Salary Credited" }));
+    }
+  }, [txForm.employee_type, txForm.transaction_type]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const productRes = await api.get(`allinventory/incentiveproduct/branch/${branchId}/`);
+        setProducts(productRes.data?.results ?? productRes.data ?? []);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+      }
+    };
+    if (dialogMode !== null && products.length === 0) fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dialogMode]);
 
   useEffect(() => {
     fetchEmployeeStatement();
@@ -82,6 +162,147 @@ const EmployeeStatementPage = () => {
     const params = { start_date: startDate, end_date: endDate };
     if (searchTerm) params.search = searchTerm;
     fetchEmployeeStatement(params);
+  };
+
+  const handleTxChange = (e) => {
+    const { name, value } = e.target;
+    if (formError) setFormError(null);
+    setTxForm((prevState) => ({ ...prevState, [name]: value }));
+  };
+
+  const resetTxForm = () => {
+    setDialogMode(null);
+    setEditingTxId(null);
+    setTxForm({
+      date: new Date().toISOString().split("T")[0],
+      amount: "",
+      desc: "",
+      employee_type: "salary",
+      transaction_type: "Payment",
+    });
+    setEntries([{ bill_no: "", product: "", product_name: "", quantity: "", rate: "" }]);
+    setOpenProduct([false]);
+    setFormError(null);
+  };
+
+  const openAddDialog = () => {
+    resetTxForm();
+    setDialogMode("add");
+  };
+
+  const openEditDialog = (tx) => {
+    setEditingTxId(tx.id);
+    setFormError(null);
+    setTxForm({
+      date: tx.date,
+      amount: Math.abs(Number(tx.amount)),
+      desc: tx.desc || "",
+      employee_type: tx.employee_type || "salary",
+      transaction_type: tx.transaction_type || "Payment",
+    });
+    const details = tx.employee_transaction_details || [];
+    const baseEntries = details.length
+      ? details.map((d) => ({
+          id: d.id,
+          bill_no: d.bill_no || "",
+          product: d.product ? d.product.toString() : "",
+          product_name: d.product_name || "",
+          quantity: d.quantity?.toString() || "",
+          rate: d.rate?.toString() || "",
+        }))
+      : [{ bill_no: "", product: "", product_name: "", quantity: "", rate: "" }];
+    setEntries(baseEntries);
+    setOpenProduct(baseEntries.map(() => false));
+    setDialogMode("edit");
+  };
+
+  const handleDeleteTransaction = async () => {
+    if (!deleteTx) return;
+    try {
+      setDeleteLoading(true);
+      setDeleteError(null);
+      await api.delete(`alltransaction/employeetransaction/${deleteTx.id}/`);
+      setDeleteTx(null);
+      fetchEmployeeStatement();
+    } catch (err) {
+      console.error("Error deleting data:", err);
+      setDeleteError("Failed to delete employee transaction. Please try again.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleAddTransaction = async (e) => {
+    e.preventDefault();
+
+    if (!txForm.date?.trim()) {
+      setFormError("Date is required");
+      return;
+    }
+    if (!txForm.amount || parseFloat(txForm.amount) <= 0) {
+      setFormError("Amount is required and must be greater than 0");
+      return;
+    }
+    if (!txForm.transaction_type?.trim()) {
+      setFormError("Transaction Type is required");
+      return;
+    }
+
+    if (txForm.employee_type === "incentive") {
+      const hasValidEntry = entries.some(
+        (en) => en.product && en.quantity && en.rate &&
+          parseFloat(en.quantity) > 0 && parseFloat(en.rate) > 0
+      );
+      if (!hasValidEntry) {
+        setFormError("At least one complete incentive entry (product, quantity, rate) is required");
+        return;
+      }
+    }
+
+    try {
+      setSubLoading(true);
+      setFormError(null);
+      const payload = {
+        date: txForm.date,
+        employee: employeeId,
+        amount: txForm.amount,
+        desc: txForm.desc?.trim() || "",
+        branch: branchId,
+        employee_type: txForm.employee_type,
+        transaction_type: txForm.employee_type === "incentive" ? "Salary Credited" : txForm.transaction_type,
+      };
+      if (txForm.employee_type === "incentive") {
+        payload.employee_transaction_details = entries
+          .filter((en) => en.product || en.quantity || en.rate)
+          .map((en) => {
+            const quantity = parseFloat(en.quantity) || 0;
+            const rate = parseFloat(en.rate) || 0;
+            return {
+              bill_no: en.bill_no?.trim() || "",
+              product: en.product ? Number(en.product) : null,
+              quantity,
+              rate,
+              total: quantity * rate,
+            };
+          });
+      }
+      if (dialogMode === "edit") {
+        await api.patch(`alltransaction/employeetransaction/${editingTxId}/`, payload);
+      } else {
+        await api.post("alltransaction/employeetransaction/", payload);
+      }
+      resetTxForm();
+      fetchEmployeeStatement();
+    } catch (err) {
+      console.error("Error submitting data:", err);
+      setFormError(
+        dialogMode === "edit"
+          ? "Failed to update employee transaction. Please try again."
+          : "Failed to submit employee transaction. Please try again."
+      );
+    } finally {
+      setSubLoading(false);
+    }
   };
 
   const handlePrint = () => {
@@ -404,6 +625,7 @@ const EmployeeStatementPage = () => {
                   <TableHead className="text-white print:text-black font-semibold">Description</TableHead>
                   <TableHead className="text-right text-white print:text-black font-semibold">Amount</TableHead>
                   <TableHead className="text-right text-white print:text-black font-semibold">Due Balance</TableHead>
+                  <TableHead className="text-right text-white print:text-black font-semibold print:hidden">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -422,6 +644,35 @@ const EmployeeStatementPage = () => {
                     </TableCell>
                     <TableCell className="text-right font-semibold text-white print:text-black">
                       NPR {Number(tx.due).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right print:hidden">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          aria-label="Edit transaction"
+                          className="h-8 w-8 bg-slate-700 border-slate-500 text-blue-400 hover:bg-blue-600 hover:text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditDialog(tx);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          aria-label="Delete transaction"
+                          className="h-8 w-8 bg-slate-700 border-slate-500 text-red-400 hover:bg-red-600 hover:text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteError(null);
+                            setDeleteTx(tx);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -467,6 +718,310 @@ const EmployeeStatementPage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Floating Add Transaction Button */}
+      <Button
+        onClick={openAddDialog}
+        size="icon"
+        className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-900/50 print:hidden"
+        aria-label="Add employee transaction"
+      >
+        <Plus className="h-7 w-7" />
+      </Button>
+
+      {/* Add/Edit Employee Transaction Dialog */}
+      <Dialog open={dialogMode !== null} onOpenChange={(o) => { if (!o) resetTxForm(); }}>
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-xl md:max-w-3xl lg:max-w-4xl max-h-[92vh] overflow-y-auto overscroll-contain bg-slate-800 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle>
+              {dialogMode === "edit" ? "Edit Transaction" : "Add Transaction"} - {data.employee_data.name}
+            </DialogTitle>
+            <DialogDescription className="text-slate-300">
+              Add a new transaction for this employee.
+            </DialogDescription>
+          </DialogHeader>
+          {formError && <p className="text-red-400 mb-4">{formError}</p>}
+          <form onSubmit={handleAddTransaction} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <Label htmlFor="tx_date" className="text-sm font-medium text-white mb-2">
+                  Date
+                </Label>
+                <Input
+                  type="date"
+                  id="tx_date"
+                  name="date"
+                  value={txForm.date}
+                  onChange={handleTxChange}
+                  className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                  required
+                />
+              </div>
+              <div className="flex flex-col">
+                <Label htmlFor="tx_employee_type" className="text-sm font-medium text-white mb-2">
+                  Type
+                </Label>
+                <Select
+                  value={txForm.employee_type}
+                  onValueChange={(value) => handleTxChange({ target: { name: "employee_type", value } })}
+                >
+                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-700 border-slate-600 text-white">
+                    <SelectItem value="salary">Salary</SelectItem>
+                    <SelectItem value="incentive">Incentive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col">
+                <Label htmlFor="tx_transaction_type" className="text-sm font-medium text-white mb-2">
+                  Transaction Type
+                </Label>
+                <Select
+                  value={txForm.transaction_type}
+                  onValueChange={(value) => handleTxChange({ target: { name: "transaction_type", value } })}
+                  disabled={txForm.employee_type === "incentive"}
+                >
+                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500">
+                    <SelectValue placeholder="Transaction Type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-700 border-slate-600 text-white">
+                    {txForm.employee_type !== "incentive" && <SelectItem value="Payment">Payment</SelectItem>}
+                    <SelectItem value="Salary Credited">Salary Credited</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col">
+                <Label htmlFor="tx_amount" className="text-sm font-medium text-white mb-2">
+                  Amount
+                </Label>
+                <Input
+                  type="number"
+                  id="tx_amount"
+                  name="amount"
+                  value={txForm.amount}
+                  onChange={handleTxChange}
+                  className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="Enter amount"
+                  required
+                  disabled={txForm.employee_type === "incentive"}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <Label htmlFor="tx_desc" className="text-sm font-medium text-white mb-2">
+                Description
+              </Label>
+              <Input
+                type="text"
+                id="tx_desc"
+                name="desc"
+                value={txForm.desc}
+                onChange={handleTxChange}
+                className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                placeholder="Enter description"
+              />
+            </div>
+
+            {txForm.employee_type === "incentive" && (
+              <div className="space-y-4">
+                {entries.map((entry, idx) => (
+                  <div key={idx} className="bg-slate-700 text-white p-4 rounded-md shadow">
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                      <div>
+                        <Label className="text-sm font-medium text-white mb-2 block">Bill No.</Label>
+                        <Input
+                          type="text"
+                          value={entry.bill_no || ""}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setEntries((prev) => prev.map((it, i) => (i === idx ? { ...it, bill_no: v } : it)));
+                          }}
+                          className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="Enter bill no"
+                        />
+                      </div>
+
+                      {/* Product combobox */}
+                      <div className="flex flex-col col-span-2">
+                        <Label className="text-sm font-medium text-white mb-2">Product</Label>
+                        <Popover open={openProduct[idx]} onOpenChange={(o) => setOpenProduct((prev) => {
+                          const copy = [...prev];
+                          copy[idx] = o;
+                          return copy;
+                        })}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={openProduct[idx]}
+                              className="w-full justify-between bg-slate-600 border-slate-500 text-white hover:bg-slate-500"
+                            >
+                              {entry.product
+                                ? (products.find((p) => p.id.toString() === entry.product)?.name || "Select a product...")
+                                : "Select a product..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0 bg-slate-800 border-slate-700">
+                            <Command className="bg-slate-700 border-slate-600">
+                              <CommandInput placeholder="Search product..." className="bg-slate-700 text-white" />
+                              <CommandList>
+                                <CommandEmpty>No product found.</CommandEmpty>
+                                <CommandGroup>
+                                  {products.map((p) => (
+                                    <CommandItem
+                                      key={p.id}
+                                      onSelect={() => {
+                                        setEntries((prev) => prev.map((it, i) => (
+                                          i === idx
+                                            ? { ...it, product: p.id.toString(), product_name: p.name, rate: p.rate }
+                                            : it
+                                        )));
+                                        setOpenProduct((prev) => {
+                                          const copy = [...prev];
+                                          copy[idx] = false;
+                                          return copy;
+                                        });
+                                      }}
+                                      className="text-white hover:bg-slate-600"
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          entry.product === p.id.toString() ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {p.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      {/* Quantity */}
+                      <div>
+                        <Label className="text-sm font-medium text-white mb-2 block">Quantity</Label>
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          value={entry.quantity}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setEntries((prev) => prev.map((it, i) => (i === idx ? { ...it, quantity: v } : it)));
+                          }}
+                          className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      {/* Rate */}
+                      <div>
+                        <Label className="text-sm font-medium text-white mb-2 block">Rate</Label>
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          value={entry.rate}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setEntries((prev) => prev.map((it, i) => (i === idx ? { ...it, rate: v } : it)));
+                          }}
+                          className="bg-slate-600 border-slate-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      {/* Total (non-editable) */}
+                      <div>
+                        <Label className="text-sm font-medium text-white mb-2 block">Total</Label>
+                        <div className="bg-slate-600 border border-slate-500 rounded px-3 py-2 text-white text-sm">
+                          {(parseFloat(entry.quantity) || 0) * (parseFloat(entry.rate) || 0)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {entries.length > 1 && (
+                      <Button
+                        type="button"
+                        aria-label="Remove item"
+                        size="sm"
+                        className="bg-red-600 mt-3 hover:bg-red-700 text-white"
+                        onClick={() => {
+                          setEntries((prev) => prev.filter((_, i) => i !== idx));
+                          setOpenProduct((prev) => prev.filter((_, i) => i !== idx));
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" /> Remove Item
+                      </Button>
+                    )}
+                  </div>
+                ))}
+
+                <Button
+                  type="button"
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                  onClick={() => {
+                    setEntries((prev) => [...prev, { bill_no: "", product: "", product_name: "", quantity: "", rate: "" }]);
+                    setOpenProduct((prev) => [...prev, false]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Add Another
+                </Button>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                type="submit"
+                disabled={subLoading}
+                className="w-full bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-600 disabled:cursor-not-allowed"
+              >
+                {subLoading
+                  ? (dialogMode === "edit" ? "Updating..." : "Submitting...")
+                  : (dialogMode === "edit" ? "Update Employee Transaction" : "Submit Employee Transaction")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteTx !== null} onOpenChange={(o) => { if (!o) { setDeleteTx(null); setDeleteError(null); } }}>
+        <DialogContent className="bg-slate-800 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Are you absolutely sure?</DialogTitle>
+            <DialogDescription className="text-slate-300">
+              This will permanently delete this transaction of{" "}
+              <span className="font-semibold text-white">{data.employee_data.name}</span> dated{" "}
+              <span className="font-semibold text-white">
+                {deleteTx ? format(new Date(deleteTx.date), "MMM dd, yyyy") : ""}
+              </span>{" "}
+              for NPR {deleteTx ? Math.abs(Number(deleteTx.amount)).toLocaleString() : ""}. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError && <p className="text-red-400">{deleteError}</p>}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="border-slate-500 text-black hover:bg-slate-700"
+              onClick={() => { setDeleteTx(null); setDeleteError(null); }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteTransaction}
+              disabled={deleteLoading}
+              className="bg-red-600 hover:bg-red-700 text-white disabled:bg-gray-600 disabled:cursor-not-allowed"
+            >
+              {deleteLoading ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

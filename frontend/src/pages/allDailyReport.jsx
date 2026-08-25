@@ -63,6 +63,7 @@ const AllIncomeExpenseReport = () => {
     cash: "text-green-400",
     online: "text-blue-400",
     card: "text-purple-400",
+    fonepay: "text-cyan-400",
     mixed: "text-yellow-400",
     default: "text-slate-200",
   };
@@ -94,6 +95,7 @@ const AllIncomeExpenseReport = () => {
       let cash = response.data.total_cash_income;
       let card = response.data.total_card_income;
       let online = response.data.total_online_income;
+      let fonepay = response.data.total_fonepay_income || 0;
       let cash_expense = response.data.total_cash_expense;
       let card_expense = response.data.total_card_expense;
       let online_expense = response.data.total_online_expense;
@@ -120,6 +122,7 @@ const AllIncomeExpenseReport = () => {
           cash,
           card,
           online,
+          fonepay,
           cash_expense,
           card_expense,
           online_expense,
@@ -443,12 +446,23 @@ console.log(data);
                   })}
                 </span>
               </div>
-			   <div className="flex justify-between mb-2">
+			  <div className="flex justify-between mb-2">
                 <span className="font-semibold text-white print:text-black">
                   Online Income:
                 </span>
                 <span className="text-white print:text-black">
                   {data.totals.online.toLocaleString("en-US", {
+                    style: "currency",
+                    currency: "NPR",
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="font-semibold text-white print:text-black">
+                  Fonepay Income:
+                </span>
+                <span className="text-white print:text-black">
+                  {data.totals.fonepay.toLocaleString("en-US", {
                     style: "currency",
                     currency: "NPR",
                   })}

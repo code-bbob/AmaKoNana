@@ -52,6 +52,7 @@ export default function EditAllSalesTransactionForm() {
     cash_amount: 0,
     card_amount: 0,
     online_amount: 0,
+    fonepay_amount: 0,
     debtor: "",
     amount_paid: "",
     credited_amount: "",
@@ -113,8 +114,8 @@ export default function EditAllSalesTransactionForm() {
   // Mixed payment dialog states
   const [showMixedDialog, setShowMixedDialog] = useState(false);
   const [prevMethod, setPrevMethod] = useState("");
-  const [mixedOptions, setMixedOptions] = useState({ cash: true, online: true, card: false });
-  const [mixedAmounts, setMixedAmounts] = useState({ cash_amount: "", card_amount: "", online_amount: "" });
+  const [mixedOptions, setMixedOptions] = useState({ cash: true, online: true, card: false, fonepay: false });
+  const [mixedAmounts, setMixedAmounts] = useState({ cash_amount: "", card_amount: "", online_amount: "", fonepay_amount: "" });
   const [mixedError, setMixedError] = useState("");
 
 
@@ -140,6 +141,7 @@ export default function EditAllSalesTransactionForm() {
           cash_amount: data.cash_amount?.toString() || "0",
           card_amount: data.card_amount?.toString() || "0",
           online_amount: data.online_amount?.toString() || "0",
+          fonepay_amount: data.fonepay_amount?.toString() || "0",
         });
         setOriginalSalesData(data);
         setFormData({
@@ -184,6 +186,7 @@ export default function EditAllSalesTransactionForm() {
           cash_amount: data.cash_amount ?? 0,
           card_amount: data.card_amount ?? 0,
           online_amount: data.online_amount ?? 0,
+          fonepay_amount: data.fonepay_amount ?? 0,
           debtor: data.debtor,
           amount_paid: data.amount_paid,
           credited_amount: data.credited_amount?.toString() || "",
@@ -277,6 +280,7 @@ export default function EditAllSalesTransactionForm() {
         cash_amount: prev.method === "cash" ? paid : 0,
         card_amount: prev.method === "card" ? paid : 0,
         online_amount: prev.method === "online" ? paid : 0,
+        fonepay_amount: prev.method === "fonepay" ? paid : 0,
       };
     });
   }, [formData.amount_paid, formData.method]);
@@ -298,6 +302,7 @@ export default function EditAllSalesTransactionForm() {
         cash_amount: 0,
         online_amount: 0,
         card_amount: 0,
+        fonepay_amount: 0,
         credited_amount: 0,
       };
 
@@ -306,6 +311,7 @@ export default function EditAllSalesTransactionForm() {
         if (target === "cash") next.cash_amount = prepaidAmount;
         else if (target === "online") next.online_amount = prepaidAmount;
         else if (target === "card") next.card_amount = prepaidAmount;
+        else if (target === "fonepay") next.fonepay_amount = prepaidAmount;
         else if (target === "credit") next.credited_amount = prepaidAmount;
       }
 
@@ -427,6 +433,7 @@ const handleNewProductVendorChange = (ids) => {
       cash_amount: value === "cash" ? paid : 0,
       card_amount: value === "card" ? paid : 0,
       online_amount: value === "online" ? paid : 0,
+      fonepay_amount: value === "fonepay" ? paid : 0,
     });
   };
 
@@ -437,9 +444,10 @@ const handleNewProductVendorChange = (ids) => {
       cash_amount: newOpts.cash ? mixedAmounts.cash_amount : "",
       card_amount: newOpts.card ? mixedAmounts.card_amount : "",
       online_amount: newOpts.online ? mixedAmounts.online_amount : "",
+      fonepay_amount: newOpts.fonepay ? mixedAmounts.fonepay_amount : "",
     };
     setMixedAmounts(next);
-    recalcMixedRemainder(next);
+    recalcMixedRemainder(next, newOpts);
   };
 
   const handleMixedAmountChange = (field, value) => {
@@ -455,25 +463,39 @@ const handleNewProductVendorChange = (ids) => {
     const cash = Number(formData.cash_amount) || 0;
     const card = Number(formData.card_amount) || 0;
     const online = Number(formData.online_amount) || 0;
+    const fonepay = Number(formData.fonepay_amount) || 0;
     const opts = {
       cash: cash > 0,
       card: card > 0,
       online: online > 0,
+      fonepay: fonepay > 0,
     };
+    if (!opts.cash && !opts.card && !opts.online && !opts.fonepay) {
+      opts.cash = true;
+      opts.online = true;
+      opts.fonepay = false;
+    }
     setMixedOptions(opts);
     setMixedAmounts({
       cash_amount: opts.cash ? String(cash) : "",
       card_amount: opts.card ? String(card) : "",
       online_amount: opts.online ? String(online) : "",
+      fonepay_amount: opts.fonepay ? String(fonepay) : "",
     });
     setMixedError("");
     setShowMixedDialog(true);
   };
 
-  const recalcMixedRemainder = (amountsObj) => {
+  const recalcMixedRemainder = (amountsObj, optionsObj = mixedOptions) => {
     const base = parseFloat(formData.amount_paid) || 0;
-    const order = ["cash_amount", "online_amount", "card_amount"];
-    const enabled = order.filter((k) => (k === "cash_amount" ? mixedOptions.cash : k === "online_amount" ? mixedOptions.online : mixedOptions.card));
+    const order = ["cash_amount", "online_amount", "card_amount", "fonepay_amount"];
+    const enabled = order.filter((k) => {
+      if (k === "cash_amount") return optionsObj.cash;
+      if (k === "online_amount") return optionsObj.online;
+      if (k === "card_amount") return optionsObj.card;
+      return optionsObj.fonepay;
+    });
+    if (enabled.length < 2) return;
     if (enabled.length === 2) {
       const firstKey = enabled[0];
       const secondKey = enabled[1];
@@ -509,13 +531,14 @@ const handleNewProductVendorChange = (ids) => {
     const cash = mixedOptions.cash ? (parseFloat(mixedAmounts.cash_amount) || 0) : 0;
     const card = mixedOptions.card ? (parseFloat(mixedAmounts.card_amount) || 0) : 0;
     const online = mixedOptions.online ? (parseFloat(mixedAmounts.online_amount) || 0) : 0;
-    const sum = cash + card + online;
+    const fonepay = mixedOptions.fonepay ? (parseFloat(mixedAmounts.fonepay_amount) || 0) : 0;
+    const sum = cash + card + online + fonepay;
     const finalAmount = parseFloat(formData.amount_paid) || 0;
     if (Math.abs(sum - finalAmount) > 0.005) {
       setMixedError(`Sum of mixed amounts (NPR ${sum.toFixed(2)}) must equal Amount Paid (NPR ${finalAmount.toFixed(2)})`);
       return;
     }
-    setFormData({ ...formData, method: "mixed", cash_amount: cash, card_amount: card, online_amount: online });
+    setFormData({ ...formData, method: "mixed", cash_amount: cash, card_amount: card, online_amount: online, fonepay_amount: fonepay });
     setShowMixedDialog(false);
   };
 
@@ -741,10 +764,12 @@ const handleNewProductVendorChange = (ids) => {
     const origCash = Number(originalSalesData.cash_amount || 0);
     const origCard = Number(originalSalesData.card_amount || 0);
     const origOnline = Number(originalSalesData.online_amount || 0);
+    const origFonepay = Number(originalSalesData.fonepay_amount || 0);
     if (
       Number(formData.cash_amount || 0) !== origCash ||
       Number(formData.card_amount || 0) !== origCard ||
-      Number(formData.online_amount || 0) !== origOnline
+      Number(formData.online_amount || 0) !== origOnline ||
+      Number(formData.fonepay_amount || 0) !== origFonepay
     ) {
       return true;
     }
@@ -823,6 +848,7 @@ const handleNewProductVendorChange = (ids) => {
         cash_amount: Number(formData.cash_amount) || 0,
         card_amount: Number(formData.card_amount) || 0,
         online_amount: Number(formData.online_amount) || 0,
+        fonepay_amount: Number(formData.fonepay_amount) || 0,
       };
 
       const originalTotal = totalAmount;
@@ -830,7 +856,7 @@ const handleNewProductVendorChange = (ids) => {
       const rawPaid = formData.is_ncm
         ? (formData.prepaid ? ((parseFloat(originalTotal) || 0) + deliveryChargeValue) : 0)
         : formData.method === "mixed"
-        ? (parseFloat(formData.cash_amount) || 0) + (parseFloat(formData.card_amount) || 0) + (parseFloat(formData.online_amount) || 0)
+        ? (parseFloat(formData.cash_amount) || 0) + (parseFloat(formData.card_amount) || 0) + (parseFloat(formData.online_amount) || 0) + (parseFloat(formData.fonepay_amount) || 0)
         : (parseFloat(formData.amount_paid) || 0);
 
       payload.amount_paid = rawPaid;
@@ -843,11 +869,13 @@ const handleNewProductVendorChange = (ids) => {
         payload.cash_amount = 0;
         payload.online_amount = 0;
         payload.card_amount = 0;
+        payload.fonepay_amount = 0;
         payload.credited_amount = 0;
 
         if (formData.prepaid_target === "cash") payload.cash_amount = prepaidTotal;
         else if (formData.prepaid_target === "online") payload.online_amount = prepaidTotal;
         else if (formData.prepaid_target === "card") payload.card_amount = prepaidTotal;
+        else if (formData.prepaid_target === "fonepay") payload.fonepay_amount = prepaidTotal;
         else if (formData.prepaid_target === "credit") payload.credited_amount = prepaidTotal;
       } else if (formData.is_ncm && !formData.prepaid) {
         payload.amount_paid = 0;
@@ -857,6 +885,8 @@ const handleNewProductVendorChange = (ids) => {
         payload.online_amount = payload.amount_paid;
       } else if (formData.method === "card") {
         payload.card_amount = payload.amount_paid;
+      } else if (formData.method === "fonepay") {
+        payload.fonepay_amount = payload.amount_paid;
       }
 
       await api.patch(`alltransaction/salestransaction/${salesId}/`, payload);
@@ -1282,6 +1312,7 @@ const handleNewProductVendorChange = (ids) => {
                       <SelectItem value="cash">Cash</SelectItem>
                       <SelectItem value="card">Card</SelectItem>
                       <SelectItem value="online">Online</SelectItem>
+                      <SelectItem value="fonepay">Fonepay</SelectItem>
                       <SelectItem value="mixed">Mixed</SelectItem>
                       <SelectItem value="credit">Credit</SelectItem>
                     </SelectContent>
@@ -1353,6 +1384,7 @@ const handleNewProductVendorChange = (ids) => {
                               </SelectTrigger>
                               <SelectContent className="bg-slate-800 border-slate-700">
                                 <SelectItem value="online" className="text-white">Online Amount</SelectItem>
+                                <SelectItem value="fonepay" className="text-white">Fonepay Amount</SelectItem>
                                 <SelectItem value="cash" className="text-white">Cash Amount</SelectItem>
                                 <SelectItem value="card" className="text-white">Card Amount</SelectItem>
                                 <SelectItem value="credit" className="text-white">Credit Amount</SelectItem>
@@ -1616,6 +1648,10 @@ const handleNewProductVendorChange = (ids) => {
                 <Checkbox checked={mixedOptions.card} onCheckedChange={() => handleMixedOptionToggle('card')} />
                 <span>Card</span>
               </label>
+              <label className="flex items-center gap-2">
+                <Checkbox checked={mixedOptions.fonepay} onCheckedChange={() => handleMixedOptionToggle('fonepay')} />
+                <span>Fonepay</span>
+              </label>
             </div>
 
             <div className="grid grid-cols-1 gap-3">
@@ -1635,6 +1671,12 @@ const handleNewProductVendorChange = (ids) => {
                 <div className="flex flex-col">
                   <Label className="text-white mb-2">Card Amount</Label>
                   <Input type="number" value={mixedAmounts.card_amount} onChange={(e) => handleMixedAmountChange('card_amount', e.target.value)} className="bg-slate-700 text-white" />
+                </div>
+              )}
+              {mixedOptions.fonepay && (
+                <div className="flex flex-col">
+                  <Label className="text-white mb-2">Fonepay Amount</Label>
+                  <Input type="number" value={mixedAmounts.fonepay_amount} onChange={(e) => handleMixedAmountChange('fonepay_amount', e.target.value)} className="bg-slate-700 text-white" />
                 </div>
               )}
             </div>

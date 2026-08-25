@@ -28,6 +28,7 @@ const AllSalesReport = () => {
     cash: "text-green-400",
     online: "text-blue-400",
     card: "text-purple-400",
+    fonepay: "text-cyan-400",
     mixed: "text-yellow-400",
     default: "text-slate-200",
   }
@@ -318,6 +319,13 @@ const AllSalesReport = () => {
                  <span className="text-white print:text-black">Online Sales:</span>
                 <span className="text-white print:text-black">
                   {data?.online_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}
+                </span> 
+              </div>
+
+              <div className="flex justify-between font-bold text-sm">
+                 <span className="text-white print:text-black">Fonepay Sales:</span>
+                <span className="text-white print:text-black">
+                  {data?.fonepay_sales?.toLocaleString("en-US", { style: "currency", currency: "NPR" })}
                 </span> 
               </div>
               
