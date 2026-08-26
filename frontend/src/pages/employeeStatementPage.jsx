@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Printer,
   Download,
@@ -66,9 +67,15 @@ import "jspdf-autotable";
 
 const EmployeeStatementPage = () => {
   const { employeeId, branchId } = useParams();
+  const MONTHS = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeMonth, setActiveMonth] = useState(() => new Date().getMonth());
   const [startDate, setStartDate] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
@@ -131,10 +138,26 @@ const EmployeeStatementPage = () => {
   }, [dialogMode]);
 
   useEffect(() => {
-    fetchEmployeeStatement();
+    fetchAllTransactions();
   }, [employeeId]);
 
   const fetchEmployeeStatement = async (params = {}) => {
+    setLoading(true);
+    try {
+      const queryString = new URLSearchParams(params).toString();
+      const response = await api.get(
+        `alltransaction/employee/statement/${employeeId}/?${queryString}`
+      );
+      setData(response.data);
+    } catch (err) {
+      setError("Failed to fetch employee statement");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch all transactions once (no date filters) for month tab filtering
+  const fetchAllTransactions = async (params = {}) => {
     setLoading(true);
     try {
       const queryString = new URLSearchParams(params).toString();
@@ -154,14 +177,14 @@ const EmployeeStatementPage = () => {
     const params = { search: searchTerm };
     if (startDate) params.start_date = startDate;
     if (endDate) params.end_date = endDate;
-    fetchEmployeeStatement(params);
+    fetchAllTransactions(params);
   };
 
   const handleDateSearch = async (e) => {
     e.preventDefault();
     const params = { start_date: startDate, end_date: endDate };
     if (searchTerm) params.search = searchTerm;
-    fetchEmployeeStatement(params);
+    fetchAllTransactions(params);
   };
 
   const handleTxChange = (e) => {
@@ -223,7 +246,7 @@ const EmployeeStatementPage = () => {
       setDeleteError(null);
       await api.delete(`alltransaction/employeetransaction/${deleteTx.id}/`);
       setDeleteTx(null);
-      fetchEmployeeStatement();
+      fetchAllTransactions();
     } catch (err) {
       console.error("Error deleting data:", err);
       setDeleteError("Failed to delete employee transaction. Please try again.");
@@ -475,30 +498,46 @@ const EmployeeStatementPage = () => {
     );
   if (!data) return null;
 
-  const previousDue =
-    data.employee_data && data.employee_data.previous_due !== undefined
-      ? Number(data.employee_data.previous_due)
-      : 0;
+  const currentYear = new Date().getFullYear();
 
-  const filteredTransactions = data.employee_transactions.filter((tx) => {
-    if (!startDate) return true;
-    return tx.date >= startDate;
+  // Calculate running balance across ALL transactions to get the cumulative due at any point
+  const allTxSorted = [...data.employee_transactions].sort((a, b) => {
+    if (a.date === b.date) return a.id - b.id;
+    return a.date.localeCompare(b.date);
   });
 
-  const priorDue = previousDue + data.employee_transactions
-    .filter((tx) => startDate && tx.date < startDate)
-    .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+  const baseDue = data.employee_data?.previous_due !== undefined
+    ? Number(data.employee_data.previous_due)
+    : 0;
 
-  const transactionsWithBalance = calculateRunningBalance(
-    filteredTransactions,
-    priorDue
-  );
+  // Build a map of date -> cumulative running balance at end of that transaction
+  let runningBalance = baseDue;
+  const txWithCumulativeBalance = allTxSorted.map((tx) => {
+    runningBalance += Number(tx.amount) || 0;
+    return { ...tx, cumulativeBalance: runningBalance };
+  });
+
+  // Compute previousDue for the active month
+  const monthStart = `${currentYear}-${String(activeMonth + 1).padStart(2, "0")}-01`;
+  const monthEnd = `${currentYear}-${String(activeMonth + 1).padStart(2, "0")}-31`;
+
+  // Previous due = running balance of all transactions before the active month
+  const txBeforeMonth = txWithCumulativeBalance.filter((tx) => tx.date < monthStart);
+  const previousDue = txBeforeMonth.length > 0
+    ? txBeforeMonth[txBeforeMonth.length - 1].cumulativeBalance
+    : baseDue;
+
+  // Filter to active month
+  const filteredTransactions = txWithCumulativeBalance.filter((tx) => {
+    return tx.date >= monthStart && tx.date <= monthEnd;
+  });
+
+  const transactionsWithBalance = calculateRunningBalance(filteredTransactions, previousDue);
   const computedCurrentDue = transactionsWithBalance.length
     ? transactionsWithBalance[transactionsWithBalance.length - 1].due
     : previousDue;
 
   const handleRowClick = (tx) => {
-    // navigate to edit employee transaction page
     navigate(`/employee-transactions/branch/${branchId}/editform/${tx.id}`);
   };
 
@@ -542,8 +581,15 @@ const EmployeeStatementPage = () => {
                 <div className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5 text-green-400" />
                   <div>
-                    <p className="text-sm text-gray-400 print:text-gray-600">Current Due</p>
+                    <p className="text-sm text-gray-400 print:text-gray-600">Month Due ({MONTHS[activeMonth]})</p>
                     <p className="text-lg text-green-400 print:text-green-600">NPR {Number(computedCurrentDue).toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-yellow-400" />
+                  <div>
+                    <p className="text-sm text-gray-400 print:text-gray-600">Overall Due</p>
+                    <p className="text-lg text-yellow-400 print:text-yellow-600">NPR {Number(baseDue + allTxSorted.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)).toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -552,6 +598,41 @@ const EmployeeStatementPage = () => {
         </CardHeader>
 
         <CardContent className="pt-6">
+          {/* Month Tabs */}
+          <Tabs value={activeMonth.toString()} onValueChange={(val) => setActiveMonth(Number(val))} className="mb-6 print:hidden">
+            <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-slate-800 p-1">
+              {MONTHS.map((month, idx) => {
+                const mStart = `${currentYear}-${String(idx + 1).padStart(2, "0")}-01`;
+                const mEnd = `${currentYear}-${String(idx + 1).padStart(2, "0")}-31`;
+                const hasTransactions = data.employee_transactions.some(
+                  (tx) => tx.date >= mStart && tx.date <= mEnd
+                );
+                const isCurrentMonth = idx === new Date().getMonth();
+                return (
+                  <TabsTrigger
+                    key={month}
+                    value={idx.toString()}
+                    className={cn(
+                      "flex-1 min-w-[60px] text-xs sm:text-sm py-2 px-1",
+                      hasTransactions && "font-semibold",
+                      isCurrentMonth && idx === activeMonth && "bg-emerald-600 text-white",
+                      !isCurrentMonth && idx === activeMonth && "bg-purple-600 text-white"
+                    )}
+                  >
+                    {month}
+                    {hasTransactions && (
+                      <span className="ml-1 text-[10px] opacity-70">
+                        {data.employee_transactions.filter(
+                          (tx) => tx.date >= mStart && tx.date <= mEnd
+                        ).length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </Tabs>
+
           <div className="mb-6 space-y-4 lg:space-y-0 lg:flex lg:flex-wrap lg:items-center lg:gap-4 print:hidden">
             <form onSubmit={handleSearch} className="w-full lg:w-auto">
               <div className="relative">
@@ -629,6 +710,24 @@ const EmployeeStatementPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {/* Previous Due row */}
+                {previousDue !== 0 && (
+                  <TableRow className="bg-amber-900/30 print:bg-amber-50">
+                    <TableCell className="font-medium text-amber-400 print:text-amber-700">
+                      {MONTHS[activeMonth]} 1, {currentYear}
+                    </TableCell>
+                    <TableCell className="text-amber-400 print:text-amber-700 font-semibold">
+                      Previous Due (carried forward)
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-amber-400 print:text-amber-700">
+                      -
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-amber-400 print:text-amber-700">
+                      NPR {Number(previousDue).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="print:hidden"></TableCell>
+                  </TableRow>
+                )}
                 {transactionsWithBalance.map((tx, index) => (
                   <TableRow
                     key={tx.id}
@@ -682,6 +781,7 @@ const EmployeeStatementPage = () => {
 
           <div className="mt-6 flex justify-end">
             <div className="w-80 bg-slate-800 p-6 rounded-lg print:bg-gray-100 print:border print:border-gray-200">
+              <h3 className="text-white print:text-black font-semibold mb-3">{MONTHS[activeMonth]} {currentYear} Summary</h3>
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400 print:text-gray-600">Total Transactions:</span>

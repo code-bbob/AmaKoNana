@@ -14,8 +14,8 @@ export const apiClient = {
   request: (url, opts) => createClient().request({ url, ...opts }).then(r => r.data),
   auth: {
     getCurrentUser: async () => {
-      const res = await createClient().get('/userauth/user-info/');
-      return res.data;
+      const res = await createClient().get('/userauth/info/');
+      return res.data?.userinfo || res.data;
     },
   },
   enterprise: {
@@ -91,6 +91,17 @@ export const apiClient = {
         event_time: eventTime || undefined,
         reason: reason || undefined,
       });
+      return res.data;
+    },
+    selfPunch: async ({ eventType, eventTime }) => {
+      const res = await createClient().post('/attendance/api/self-punch/', {
+        event_type: eventType,
+        event_time: eventTime || undefined,
+      });
+      return res.data;
+    },
+    getSelfAttendance: async () => {
+      const res = await createClient().get('/attendance/api/self-attendance/');
       return res.data;
     },
   },

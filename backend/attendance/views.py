@@ -1086,37 +1086,23 @@ class ManualPunchAPIView(APIView):
 
         if event_type == AttendanceEvent.CHECK_OUT and employee.is_hourly_wage:
             working_hours = min(summary.worked_minutes / 60, 9)
-            if not summary.last_check_out:
-                serializer = EmployeeTransactionSerializer(data={
-                    'employee': employee.id,
-                    'transaction_type': 'Daily Wage',
-                    'amount': employee.hourly_rate * working_hours,
-                    'branch': employee.branch.id if employee.branch else None,
-                    'enterprise': employee.enterprise.id,
-                    'employee_type': 'salary',
-                    'desc': f"Checked out after working for {working_hours:.2f} hours",
-                    'date': event.event_time.date(),
-                })
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
-            else:
-                EmployeeTransactions.objects.filter(
-                    employee=employee,
-                    transaction_type='Daily Wage',
-                    date=event.event_time.date(),
-                ).delete()
-                serializer = EmployeeTransactionSerializer(data={
-                    'employee': employee.id,
-                    'transaction_type': 'Daily Wage',
-                    'amount': employee.hourly_rate * working_hours,
-                    'branch': employee.branch.id if employee.branch else None,
-                    'enterprise': employee.enterprise.id,
-                    'employee_type': 'salary',
-                    'desc': f"Checked out after working for {working_hours:.2f} hours",
-                    'date': event.event_time.date(),
-                })
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
+            EmployeeTransactions.objects.filter(
+                employee=employee,
+                transaction_type='Daily Wage',
+                date=event.event_time.date(),
+            ).delete()
+            serializer = EmployeeTransactionSerializer(data={
+                'employee': employee.id,
+                'transaction_type': 'Daily Wage',
+                'amount': employee.hourly_rate * working_hours,
+                'branch': employee.branch.id if employee.branch else None,
+                'enterprise': employee.enterprise.id,
+                'employee_type': 'salary',
+                'desc': f"Checked out after working for {working_hours:.2f} hours",
+                'date': event.event_time.date(),
+            })
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
 
         return Response({
             'success': True,
@@ -1131,6 +1117,121 @@ class ManualPunchAPIView(APIView):
             },
             'summary': _serialize_summary_min(summary),
         }, status=201)
+
+
+class SelfPunchAPIView(APIView):
+    """Allow any authenticated employee to record their own check-in or check-out.
+
+    POST /attendance/api/self-punch/
+    {
+        "event_type": 0,              // 0=Check-In, 1=Check-Out
+        "event_time": "2026-07-26T09:15:00"  // optional, defaults to now
+    }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: HttpRequest):
+        user = request.user
+        if not hasattr(user, 'employee') or user.employee is None:
+            return Response({'error': 'No employee profile linked to your account'}, status=400)
+
+        employee = user.employee
+        event_type = request.data.get('event_type')
+        event_time_raw = request.data.get('event_time')
+
+        if event_type is None:
+            return Response({'error': 'event_type is required (0=Check-In, 1=Check-Out)'}, status=400)
+
+        try:
+            event_type = int(event_type)
+        except (TypeError, ValueError):
+            return Response({'error': 'event_type must be an integer'}, status=400)
+
+        if event_type not in (AttendanceEvent.CHECK_IN, AttendanceEvent.CHECK_OUT):
+            return Response({'error': 'event_type must be 0 (Check-In) or 1 (Check-Out)'}, status=400)
+
+        event_time = None
+        if event_time_raw:
+            event_time = parse_device_timestamp(event_time_raw)
+
+        summary, event = record_device_event(
+            employee=employee,
+            event_type=event_type,
+            event_time=event_time,
+            device_serial='self',
+            raw_payload={'user_id': str(user.id), 'source': 'self_punch'},
+            source='manual',
+        )
+
+        if event_type == AttendanceEvent.CHECK_OUT and employee.is_hourly_wage:
+            working_hours = min(summary.worked_minutes / 60, 9)
+            EmployeeTransactions.objects.filter(
+                employee=employee,
+                transaction_type='Daily Wage',
+                date=event.event_time.date(),
+            ).delete()
+            serializer = EmployeeTransactionSerializer(data={
+                'employee': employee.id,
+                'transaction_type': 'Daily Wage',
+                'amount': employee.hourly_rate * working_hours,
+                'branch': employee.branch.id if employee.branch else None,
+                'enterprise': employee.enterprise.id,
+                'employee_type': 'salary',
+                'desc': f"Checked out after working for {working_hours:.2f} hours",
+                'date': event.event_time.date(),
+            })
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+        return Response({
+            'success': True,
+            'message': f"{'Check-in' if event_type == 0 else 'Check-out'} recorded successfully",
+            'event': {
+                'id': event.id,
+                'employee_id': employee.id,
+                'employee_name': employee.name,
+                'event_type': event.event_type,
+                'event_time': event.event_time.isoformat(),
+                'source': event.source,
+            },
+            'summary': _serialize_summary_min(summary),
+        }, status=201)
+
+
+class SelfAttendanceAPIView(APIView):
+    """Return the current user's attendance summary for today."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: HttpRequest):
+        user = request.user
+        if not hasattr(user, 'employee') or user.employee is None:
+            return Response({'error': 'No employee profile linked to your account'}, status=400)
+
+        employee = user.employee
+        today = timezone.localdate()
+
+        try:
+            summary = DailyAttendance.objects.get(employee=employee, attendance_date=today)
+        except DailyAttendance.DoesNotExist:
+            return Response({
+                'attendance_date': str(today),
+                'first_check_in': None,
+                'last_check_out': None,
+                'last_event_type': None,
+                'last_event_time': None,
+                'worked_minutes': 0,
+                'present': False,
+            })
+
+        return Response({
+            'attendance_date': str(today),
+            'first_check_in': _dt_iso(summary.first_check_in),
+            'last_check_out': _dt_iso(summary.last_check_out),
+            'last_event_type': summary.last_event_type,
+            'last_event_time': _dt_iso(summary.last_event_time),
+            'worked_minutes': int(summary.worked_minutes or 0),
+            'present': bool(summary.present),
+        })
 
 
 class MonthlySummaryAPIView(APIView):

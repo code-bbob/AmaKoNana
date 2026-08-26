@@ -83,6 +83,15 @@ export default function AttendancePage({ reportMode = false }) {
   const [lateArrivals, setLateArrivals] = useState([]);
   const [earlyDepartures, setEarlyDepartures] = useState([]);
   const [activeTab, setActiveTab] = useState(reportMode ? 'details' : 'overview');
+  const [userRole, setUserRole] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
+
+  // Self punch state (non-admin)
+  const [selfPunchEventType, setSelfPunchEventType] = useState(0);
+  const [selfPunchLoading, setSelfPunchLoading] = useState(false);
+  const [selfPunchResult, setSelfPunchResult] = useState(null);
+  const [selfPunchTime, setSelfPunchTime] = useState(null);
+  const [selfAttendance, setSelfAttendance] = useState(null);
 
   // Manual punch modal state
   const [manualPunchOpen, setManualPunchOpen] = useState(false);
@@ -100,6 +109,24 @@ export default function AttendancePage({ reportMode = false }) {
 
   useEffect(() => {
     let cancelled = false;
+    apiClient.auth.getCurrentUser().then((data) => {
+      if (!cancelled) {
+        setUserInfo(data);
+        setUserRole(data?.role || (data?.is_admin ? 'Admin' : 'Employee'));
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        setUserRole('Employee');
+      }
+    });
+    apiClient.dashboard.getSelfAttendance().then((data) => {
+      if (!cancelled) setSelfAttendance(data);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
 
     const loadAttendance = async () => {
       if (!branchId) {
@@ -107,6 +134,15 @@ export default function AttendancePage({ reportMode = false }) {
         setLoading(false);
         return;
       }
+
+      // Skip loading dashboard data for non-admin users
+      if (userRole && userRole !== 'Admin') {
+        setLoading(false);
+        return;
+      }
+
+      // Wait until role is known
+      if (!userRole) return;
 
       try {
         setLoading(true);
@@ -157,7 +193,7 @@ export default function AttendancePage({ reportMode = false }) {
     return () => {
       cancelled = true;
     };
-  }, [ branchId, selectedDepartmentId]);
+  }, [ branchId, selectedDepartmentId, userRole]);
 
   const activePayload = selectedDepartmentId ? departmentPayload : branchPayload;
   const activeNode = selectedDepartmentId ? activePayload?.department : activePayload?.branch;
@@ -270,6 +306,30 @@ export default function AttendancePage({ reportMode = false }) {
     }
   }, [punchSelectedEmployee, punchEventType, punchEventTime, punchReason, resetManualPunch]);
 
+  const handleSelfPunchSubmit = useCallback(async (eventType) => {
+    setSelfPunchLoading(true);
+    setSelfPunchResult(null);
+    setSelfPunchTime(null);
+    try {
+      const result = await apiClient.dashboard.selfPunch({
+        eventType,
+      });
+      const recordedTime = result?.event?.event_time;
+      setSelfPunchEventType(eventType);
+      setSelfPunchResult({ type: 'success', message: result.message || 'Attendance recorded' });
+      setSelfPunchTime(recordedTime || null);
+      // Refresh today's attendance data
+      apiClient.dashboard.getSelfAttendance().then((data) => setSelfAttendance(data)).catch(() => {});
+    } catch (err) {
+      setSelfPunchResult({
+        type: 'error',
+        message: err?.response?.data?.error || err.message || 'Failed to record attendance',
+      });
+    } finally {
+      setSelfPunchLoading(false);
+    }
+  }, []);
+
   const detailRows = attendanceRows.slice(0, 12);
 
   const handleDownloadCsv = () => {
@@ -348,6 +408,145 @@ export default function AttendancePage({ reportMode = false }) {
               </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Non-admin self-punch view
+  if (userRole && userRole !== 'Admin') {
+    const formatPunchTime = (isoString) => {
+      if (!isoString) return null;
+      const d = new Date(isoString);
+      if (Number.isNaN(d.getTime())) return null;
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const checkedIn = selfAttendance?.first_check_in;
+    const checkedOut = selfAttendance?.last_check_out;
+    const workedMinutes = selfAttendance?.worked_minutes || 0;
+    const workedH = Math.floor(workedMinutes / 60);
+    const workedM = workedMinutes % 60;
+
+    return (
+      <div className="flex min-h-screen bg-slate-950 text-white">
+        <Sidebar className="hidden lg:block w-64 flex-shrink-0" />
+        <div className="flex-1 p-4 px-8 lg:p-6 lg:ml-64 overflow-y-auto flex flex-col items-center">
+          <motion.div
+            initial={{ opacity: 0, y: -18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="mb-8 text-center mt-8"
+          >
+            <div className="flex items-center justify-center gap-2 text-xs uppercase tracking-[0.22em] text-slate-400">
+              <CalendarDays className="h-4 w-4" />
+              Attendance
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-white mt-2">Mark Your Attendance</h1>
+            <p className="mt-2 text-sm text-slate-300">
+              {userInfo?.name ? `Welcome, ${userInfo.name}` : 'Record your check-in or check-out for today'}.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-lg">
+            <Card className="border-slate-800 bg-slate-900/70 text-white shadow-xl shadow-black/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LogIn className="h-5 w-5 text-emerald-400" />
+                  Check In
+                </CardTitle>
+                <CardDescription className="text-slate-400">Start your work day</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {checkedIn ? (
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-center">
+                    <p className="text-xs text-slate-400">Checked in at</p>
+                    <p className="text-2xl font-bold text-emerald-300 tracking-tight">{formatPunchTime(checkedIn)}</p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 text-center">Not checked in yet</p>
+                )}
+                <Button
+                  className="w-full bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+                  onClick={() => handleSelfPunchSubmit(0)}
+                  disabled={selfPunchLoading || !!checkedIn}
+                >
+                  {selfPunchLoading && selfPunchEventType === 0 ? 'Recording...' : checkedIn ? 'Done' : 'Check In Now'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-800 bg-slate-900/70 text-white shadow-xl shadow-black/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LogOut className="h-5 w-5 text-rose-400" />
+                  Check Out
+                </CardTitle>
+                <CardDescription className="text-slate-400">End your work day</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {checkedOut ? (
+                  <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-center">
+                    <p className="text-xs text-slate-400">Checked out at</p>
+                    <p className="text-2xl font-bold text-rose-300 tracking-tight">{formatPunchTime(checkedOut)}</p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 text-center">Not checked out yet</p>
+                )}
+                <Button
+                  className="w-full bg-rose-500 text-white hover:bg-rose-400"
+                  onClick={() => handleSelfPunchSubmit(1)}
+                  disabled={selfPunchLoading || !checkedIn}
+                >
+                  {selfPunchLoading && selfPunchEventType === 1 ? 'Recording...' : checkedOut ? 'Update Checkout' : 'Check Out Now'}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {workedMinutes > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900/70 px-6 py-4 text-center"
+            >
+              <p className="text-xs text-slate-400">Total worked today</p>
+              <p className="text-2xl font-bold text-white tracking-tight">{workedH}h {workedM}m</p>
+            </motion.div>
+          )}
+
+          {selfPunchResult && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`mt-6 w-full max-w-lg rounded-2xl px-6 py-5 text-center ${
+                selfPunchResult.type === 'success'
+                  ? 'border border-emerald-500/30 bg-emerald-500/10'
+                  : 'border border-rose-500/30 bg-rose-500/10'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-3">
+                {selfPunchResult.type === 'success' ? (
+                  <CheckCircle2 className="h-10 w-10 text-emerald-400" />
+                ) : (
+                  <AlertCircle className="h-10 w-10 text-rose-400" />
+                )}
+                <p className={`text-sm font-medium ${
+                  selfPunchResult.type === 'success' ? 'text-emerald-300' : 'text-rose-300'
+                }`}>
+                  {selfPunchResult.message}
+                </p>
+                {selfPunchResult.type === 'success' && selfPunchTime && (
+                  <div className="mt-1">
+                    <p className="text-xs text-slate-400">Recorded at</p>
+                    <p className="text-2xl font-bold text-white tracking-tight">
+                      {formatPunchTime(selfPunchTime)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
     );

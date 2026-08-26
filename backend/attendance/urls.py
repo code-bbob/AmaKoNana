@@ -14,6 +14,8 @@ from .views import (
     LateArrivalsAPIView,
     EarlyDeparturesAPIView,
     ManualPunchAPIView,
+    SelfPunchAPIView,
+    SelfAttendanceAPIView,
 )
 from .auth_views import LoginAPIView, LogoutAPIView, CurrentUserAPIView
 from .user_management_views import (
@@ -45,6 +47,10 @@ urlpatterns = [
 
     # Manual punch (admin)
     path('api/manual-punch/', ManualPunchAPIView.as_view(), name='manual_punch'),
+
+    # Self punch (any authenticated employee)
+    path('api/self-punch/', SelfPunchAPIView.as_view(), name='self_punch'),
+    path('api/self-attendance/', SelfAttendanceAPIView.as_view(), name='self_attendance'),
 
         # Monthly reports
         path('api/reports/monthly-summary/',
