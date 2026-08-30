@@ -361,7 +361,7 @@ export default function AttendancePage({ reportMode = false }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-slate-950 text-white">
+      <div className="flex min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
         <Sidebar className="hidden lg:block w-64 flex-shrink-0" />
         <div className="flex-1 p-4 px-8 lg:p-6 lg:ml-64">
           <div className="space-y-6">
@@ -384,7 +384,7 @@ export default function AttendancePage({ reportMode = false }) {
 
   if (error) {
     return (
-      <div className="flex min-h-screen bg-slate-950 text-white">
+      <div className="flex min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
         <Sidebar className="hidden lg:block w-64 flex-shrink-0" />
         <div className="flex-1 p-4 px-8 lg:p-6 lg:ml-64 flex items-center justify-center">
           <Card className="w-full max-w-xl border-rose-500/20 bg-slate-900/80 text-white shadow-2xl">
@@ -429,7 +429,7 @@ export default function AttendancePage({ reportMode = false }) {
     const workedM = workedMinutes % 60;
 
     return (
-      <div className="flex min-h-screen bg-slate-950 text-white">
+      <div className="flex min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
         <Sidebar className="hidden lg:block w-64 flex-shrink-0" />
         <div className="flex-1 p-4 px-8 lg:p-6 lg:ml-64 overflow-y-auto flex flex-col items-center">
           <motion.div
@@ -553,7 +553,7 @@ export default function AttendancePage({ reportMode = false }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-white">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
       <Sidebar className="hidden lg:block w-64 flex-shrink-0" />
       <div className="flex-1 p-4 px-8 lg:p-6 lg:ml-64 overflow-y-auto">
         <motion.div

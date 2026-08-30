@@ -20,7 +20,6 @@ import {
   Download,
   ChevronDown,
   Search,
-  Calendar,
   ArrowLeft,
   User,
   Phone,
@@ -64,18 +63,61 @@ import useAxios from "@/utils/useAxios";
 import { useNavigate, useParams } from "react-router-dom";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { createDateSelection, parseDateString } from "@/lib/calendar-sync";
+import { getTodayDate } from "bs-ad-calendar-react";
+import { AttendanceDateFilter } from "@/components/AttendanceDateFilter";
+
+function padNum(value) {
+  return String(value).padStart(2, "0");
+}
+
+function adDelta(adDate, dayOffset) {
+  const d = new Date(`${adDate}T00:00:00`);
+  d.setDate(d.getDate() + dayOffset);
+  return `${d.getFullYear()}-${padNum(d.getMonth() + 1)}-${padNum(d.getDate())}`;
+}
+
+function getBsMonthAdRange(bsYear, monthIndex) {
+  const startBs = `${bsYear}-${padNum(monthIndex + 1)}-01`;
+  let nextYear = bsYear;
+  let nextMonth = monthIndex + 1;
+  if (monthIndex === 11) {
+    nextYear = bsYear + 1;
+    nextMonth = 0;
+  }
+  const nextStartBs = `${nextYear}-${padNum(nextMonth + 1)}-01`;
+  const adStart = createDateSelection(startBs, "bs").ad || startBs;
+  const adNextStart = createDateSelection(nextStartBs, "bs").ad || nextStartBs;
+  const adEnd = adDelta(adNextStart, -1);
+  return { adStart, adEnd };
+}
+
+function formatDateBs(adDateString) {
+  if (!adDateString) return adDateString;
+  return createDateSelection(adDateString, "ad").bs || adDateString;
+}
 
 const EmployeeStatementPage = () => {
   const { employeeId, branchId } = useParams();
-  const MONTHS = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  const BS_MONTHS_SHORT = [
+    "Baisakh", "Jestha", "Asar", "Shrawan", "Bhadra", "Ashwin",
+    "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra",
+  ];
+  const BS_MONTHS_FULL = [
+    "Baisakh", "Jestha", "Asar", "Shrawan", "Bhadra", "Ashwin",
+    "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra",
   ];
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeMonth, setActiveMonth] = useState(() => new Date().getMonth());
+  const [activeMonth, setActiveMonth] = useState(() => {
+    const now = new Date();
+    const todayAd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const bs = createDateSelection(todayAd, "ad").bs || todayAd;
+    const parsed = parseDateString(bs);
+    return Number.isFinite(parsed.month) ? parsed.month : now.getMonth();
+  });
   const [startDate, setStartDate] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
@@ -180,9 +222,13 @@ const EmployeeStatementPage = () => {
     fetchAllTransactions(params);
   };
 
-  const handleDateSearch = async (e) => {
-    e.preventDefault();
-    const params = { start_date: startDate, end_date: endDate };
+  const handleRangeApply = ({ startDate: selStart, endDate: selEnd, dateFormat: fmt }) => {
+    // The statement API only accepts AD dates; convert the chosen AD/BS selection back to AD.
+    const adStart = createDateSelection(selStart, fmt).ad || selStart;
+    const adEnd = createDateSelection(selEnd, fmt).ad || selEnd;
+    setStartDate(adStart);
+    setEndDate(adEnd);
+    const params = { start_date: adStart, end_date: adEnd };
     if (searchTerm) params.search = searchTerm;
     fetchAllTransactions(params);
   };
@@ -498,7 +544,15 @@ const EmployeeStatementPage = () => {
     );
   if (!data) return null;
 
-  const currentYear = new Date().getFullYear();
+  const currentBsToday = getTodayDate("BS");
+  const currentYear = currentBsToday.year;
+
+  // Compute AD boundaries for each of the 12 BS months of the current BS year
+  const bsMonthRanges = Array.from({ length: 12 }, (_, m) => getBsMonthAdRange(currentYear, m));
+
+  // BS start/end of the active month, for the date picker to reflect the selected tab
+  const activeBsStart = createDateSelection(bsMonthRanges[activeMonth].adStart, "ad").bs || bsMonthRanges[activeMonth].adStart;
+  const activeBsEnd = createDateSelection(bsMonthRanges[activeMonth].adEnd, "ad").bs || bsMonthRanges[activeMonth].adEnd;
 
   // Calculate running balance across ALL transactions to get the cumulative due at any point
   const allTxSorted = [...data.employee_transactions].sort((a, b) => {
@@ -517,9 +571,9 @@ const EmployeeStatementPage = () => {
     return { ...tx, cumulativeBalance: runningBalance };
   });
 
-  // Compute previousDue for the active month
-  const monthStart = `${currentYear}-${String(activeMonth + 1).padStart(2, "0")}-01`;
-  const monthEnd = `${currentYear}-${String(activeMonth + 1).padStart(2, "0")}-31`;
+  // Compute previousDue for the active month (using AD boundaries of the active BS month)
+  const monthStart = bsMonthRanges[activeMonth].adStart;
+  const monthEnd = bsMonthRanges[activeMonth].adEnd;
 
   // Previous due = running balance of all transactions before the active month
   const txBeforeMonth = txWithCumulativeBalance.filter((tx) => tx.date < monthStart);
@@ -581,7 +635,7 @@ const EmployeeStatementPage = () => {
                 <div className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5 text-green-400" />
                   <div>
-                    <p className="text-sm text-gray-400 print:text-gray-600">Month Due ({MONTHS[activeMonth]})</p>
+                    <p className="text-sm text-gray-400 print:text-gray-600">Month Due ({BS_MONTHS_FULL[activeMonth]})</p>
                     <p className="text-lg text-green-400 print:text-green-600">NPR {Number(computedCurrentDue).toLocaleString()}</p>
                   </div>
                 </div>
@@ -601,13 +655,14 @@ const EmployeeStatementPage = () => {
           {/* Month Tabs */}
           <Tabs value={activeMonth.toString()} onValueChange={(val) => setActiveMonth(Number(val))} className="mb-6 print:hidden">
             <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-slate-800 p-1">
-              {MONTHS.map((month, idx) => {
-                const mStart = `${currentYear}-${String(idx + 1).padStart(2, "0")}-01`;
-                const mEnd = `${currentYear}-${String(idx + 1).padStart(2, "0")}-31`;
+              {BS_MONTHS_SHORT.map((month, idx) => {
+                const range = bsMonthRanges[idx];
+                const mStart = range.adStart;
+                const mEnd = range.adEnd;
                 const hasTransactions = data.employee_transactions.some(
                   (tx) => tx.date >= mStart && tx.date <= mEnd
                 );
-                const isCurrentMonth = idx === new Date().getMonth();
+                const isCurrentMonth = idx === currentBsToday.month;
                 return (
                   <TabsTrigger
                     key={month}
@@ -633,7 +688,19 @@ const EmployeeStatementPage = () => {
             </TabsList>
           </Tabs>
 
-          <div className="mb-6 space-y-4 lg:space-y-0 lg:flex lg:flex-wrap lg:items-center lg:gap-4 print:hidden">
+          <div className="mb-6 space-y-4 lg:space-y-0 lg:flex lg:flex-wrap lg:items-center lg:justify-between lg:gap-4 print:hidden">
+             <AttendanceDateFilter
+              mode="range"
+              title="Filter by Date"
+              initialDateFormat="bs"
+              initialDateSourceFormat="bs"
+              initialStartDate={activeBsStart}
+              initialEndDate={activeBsEnd}
+              applyLabel="Filter by Date"
+              onApply={handleRangeApply}
+              className="w-auto"
+            />
+
             <form onSubmit={handleSearch} className="w-full lg:w-auto">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -642,41 +709,12 @@ const EmployeeStatementPage = () => {
                   placeholder="Search transactions..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full lg:w-64 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                  className="pl-10 w-full lg:w-96 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
                 />
               </div>
             </form>
 
-            <form
-              onSubmit={handleDateSearch}
-              className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4"
-            >
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="startDate" className="text-white whitespace-nowrap">Start:</Label>
-                <Input
-                  type="date"
-                  id="startDate"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="endDate" className="text-white whitespace-nowrap">End:</Label>
-                <Input
-                  type="date"
-                  id="endDate"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
-                />
-              </div>
-              <Button type="submit" className="w-full lg:w-auto bg-purple-600 hover:bg-purple-700 text-white">
-                <Calendar className="w-4 h-4 mr-2" />
-                Filter by Date
-              </Button>
-            </form>
-
+           
             <div className="flex space-x-2">
               <Button onClick={handlePrint} className="bg-blue-500 hover:bg-blue-600 text-white">
                 <Printer className="mr-2 h-4 w-4" />
@@ -714,7 +752,7 @@ const EmployeeStatementPage = () => {
                 {previousDue !== 0 && (
                   <TableRow className="bg-amber-900/30 print:bg-amber-50">
                     <TableCell className="font-medium text-amber-400 print:text-amber-700">
-                      {MONTHS[activeMonth]} 1, {currentYear}
+                      {BS_MONTHS_FULL[activeMonth]} 1, {currentYear}
                     </TableCell>
                     <TableCell className="text-amber-400 print:text-amber-700 font-semibold">
                       Previous Due (carried forward)
@@ -735,7 +773,7 @@ const EmployeeStatementPage = () => {
                     className={`${index % 2 === 0 ? "bg-slate-800 print:bg-white" : "bg-slate-750 print:bg-gray-50"} hover:bg-slate-700 print:hover:bg-gray-100`}
                   >
                     <TableCell className="font-medium text-white print:text-black">
-                      {format(new Date(tx.date), "MMM dd, yyyy")}
+                      {formatDateBs(tx.date)}
                     </TableCell>
                     <TableCell className="text-white print:text-black max-w-xs whitespace-pre-wrap">{formatDescriptionWithDetails(tx)}</TableCell>
                     <TableCell className={`text-right font-semibold ${getTransactionTypeColor(tx.amount)} print:text-black`}>
@@ -781,7 +819,7 @@ const EmployeeStatementPage = () => {
 
           <div className="mt-6 flex justify-end">
             <div className="w-80 bg-slate-800 p-6 rounded-lg print:bg-gray-100 print:border print:border-gray-200">
-              <h3 className="text-white print:text-black font-semibold mb-3">{MONTHS[activeMonth]} {currentYear} Summary</h3>
+              <h3 className="text-white print:text-black font-semibold mb-3">{BS_MONTHS_FULL[activeMonth]} {currentYear} Summary</h3>
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400 print:text-gray-600">Total Transactions:</span>

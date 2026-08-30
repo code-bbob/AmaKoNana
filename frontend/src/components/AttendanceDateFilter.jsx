@@ -70,6 +70,7 @@ export function AttendanceDateFilter({
   initialEndDate,
   applyLabel = 'Apply Filter',
   onApply,
+  className,
 }) {
   const defaultFormat = initialDateFormat ?? getDateFormatPreference();
   const [dateFormat, setDateFormat] = useState(defaultFormat);
@@ -140,7 +141,7 @@ export function AttendanceDateFilter({
   };
 
   return (
-    <Card className="w-full rounded-2xl border-slate-800 bg-slate-900/80 text-slate-100 shadow-lg shadow-slate-950/20">
+    <Card className={cn('w-full rounded-2xl border-slate-800 bg-transparent text-slate-100 shadow-lg shadow-slate-950/20', className)}>
       <CardContent className="pt-4">
         <div className="flex flex-col gap-4">
           <div className={cn('flex gap-4 flex-wrap', isSingle ? 'flex-col' : '')}>
@@ -182,13 +183,10 @@ export function AttendanceDateFilter({
                 />
               </div>
             )}
-          </div>
-
-          <div className="flex items-center justify-between gap-3">
-            <Button type="button" onClick={handleApply} className="h-9 rounded-full bg-emerald-600 px-5 font-medium text-white hover:bg-emerald-700">
+            <Button type="button" onClick={handleApply} className="h-9 mt-6 rounded-full bg-emerald-600 px-5 font-medium text-white hover:bg-emerald-700">
               {applyLabel}
             </Button>
-            <div className="inline-flex w-fit rounded-full border border-slate-800 bg-slate-950 p-1 shadow-sm">
+            <div className="inline-flex mt-5 w-fit rounded-full border border-slate-800 bg-slate-950 p-1 shadow-sm">
               <Button
                 type="button"
                 size="sm"
@@ -208,7 +206,11 @@ export function AttendanceDateFilter({
                 BS
               </Button>
             </div>
+
           </div>
+
+          {/* <div className="flex items-center justify-between gap-3"> */}
+          {/* </div> */}
         </div>
       </CardContent>
     </Card>

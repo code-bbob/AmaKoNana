@@ -16,7 +16,7 @@ export default function AttendanceReportLayout() {
     }`;
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-white">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
       <Sidebar className="hidden lg:block w-64 flex-shrink-0" />
       <div className="flex-1 p-4 px-8 lg:p-6 lg:ml-64 overflow-y-auto">
         <div className="mb-8 flex items-center justify-between">
