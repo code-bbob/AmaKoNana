@@ -29,6 +29,7 @@ import {
   Check,
   Trash2,
   Pencil,
+  Package,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -124,6 +125,7 @@ const EmployeeStatementPage = () => {
   });
   const [endDate, setEndDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showProductBreakdown, setShowProductBreakdown] = useState(false);
   const api = useAxios();
   const navigate = useNavigate();
 
@@ -591,6 +593,24 @@ const EmployeeStatementPage = () => {
     ? transactionsWithBalance[transactionsWithBalance.length - 1].due
     : previousDue;
 
+  // Aggregate how much of each product this employee made/earned in the active BS month
+  const productBreakdown = filteredTransactions.reduce((acc, tx) => {
+    const details = tx.employee_transaction_details || [];
+    details.forEach((detail) => {
+      const name = detail.product_name || "Unknown Product";
+      const qty = parseFloat(detail.quantity) || 0;
+      const total = Number(detail.total?.parsedValue ?? detail.total) || 0;
+      const entry = acc.get(name) || { product: name, quantity: 0, total: 0, count: 0 };
+      entry.quantity += qty;
+      entry.total += total;
+      entry.count += 1;
+      acc.set(name, entry);
+    });
+    return acc;
+  }, new Map());
+  const productBreakdownList = Array.from(productBreakdown.values()).sort((a, b) => b.total - a.total);
+  const hasProductData = productBreakdownList.length > 0;
+
   const handleRowClick = (tx) => {
     navigate(`/employee-transactions/branch/${branchId}/editform/${tx.id}`);
   };
@@ -818,6 +838,15 @@ const EmployeeStatementPage = () => {
           </div>
 
           <div className="mt-6 flex justify-end">
+            {hasProductData && (
+              <Button
+                onClick={() => setShowProductBreakdown(true)}
+                className="mr-3 bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                <Package className="mr-2 h-4 w-4" />
+                Products Made ({BS_MONTHS_FULL[activeMonth]})
+              </Button>
+            )}
             <div className="w-80 bg-slate-800 p-6 rounded-lg print:bg-gray-100 print:border print:border-gray-200">
               <h3 className="text-white print:text-black font-semibold mb-3">{BS_MONTHS_FULL[activeMonth]} {currentYear} Summary</h3>
               <div className="space-y-1">
@@ -1156,6 +1185,52 @@ const EmployeeStatementPage = () => {
               className="bg-red-600 hover:bg-red-700 text-white disabled:bg-gray-600 disabled:cursor-not-allowed"
             >
               {deleteLoading ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Product Breakdown Dialog */}
+      <Dialog open={showProductBreakdown} onOpenChange={setShowProductBreakdown}>
+        <DialogContent className="w-full max-w-xl bg-slate-800 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-purple-400" />
+              Products Made in {BS_MONTHS_FULL[activeMonth]} {currentYear}
+            </DialogTitle>
+            <DialogDescription className="text-slate-300">
+              {activeBsStart} - {activeBsEnd} (BS) &middot; {data.employee_data.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-lg border border-slate-600 overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-700">
+                  <TableHead className="text-white font-semibold">Product</TableHead>
+                  <TableHead className="text-right text-white font-semibold">Quantity</TableHead>
+                  <TableHead className="text-right text-white font-semibold">Total Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {productBreakdownList.map((item, index) => (
+                  <TableRow key={item.product} className={index % 2 === 0 ? "bg-slate-800" : "bg-slate-750"}>
+                    <TableCell className="font-medium text-white">{item.product}</TableCell>
+                    <TableCell className="text-right text-white">{item.quantity}</TableCell>
+                    <TableCell className="text-right font-semibold text-green-400">
+                      NPR {Number(item.total).toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="border-slate-500 text-black hover:bg-slate-700"
+              onClick={() => setShowProductBreakdown(false)}
+            >
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
