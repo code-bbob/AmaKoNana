@@ -38,10 +38,10 @@ export default function ProductIncentivesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", rate: "" });
+  const [form, setForm] = useState({ name: "", rate: "", is_set: false, set_bonus: "" });
   // Edit dialog state
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ id: null, name: "", rate: "" });
+  const [editForm, setEditForm] = useState({ id: null, name: "", rate: "", is_set: false, set_bonus: "" });
 
   // Fetch incentives for this branch
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function ProductIncentivesPage() {
   const toggleSelect = (id) =>
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
-  const resetForm = () => setForm({ name: "", rate: "" });
+  const resetForm = () => setForm({ name: "", rate: "", is_set: false, set_bonus: "" });
 
   const handleAdd = async (e) => {
     e?.preventDefault?.();
@@ -81,7 +81,13 @@ export default function ProductIncentivesPage() {
 
     try {
       setIsSaving(true);
-      const payload = { name: form.name.trim(), rate: rateNum, branch: Number(branchId) };
+      const payload = {
+        name: form.name.trim(),
+        rate: rateNum,
+        is_set: !!form.is_set,
+        set_bonus: form.is_set ? parseFloat(form.set_bonus) || 0 : 0,
+        branch: Number(branchId),
+      };
       const r = await api.post("allinventory/incentiveproduct/", payload);
       // Some endpoints paginate; append defensively
       const newItem = r.data;
@@ -106,9 +112,14 @@ export default function ProductIncentivesPage() {
     }
   };
 
-  // Open edit dialog with selected item
   const openEdit = (item) => {
-    setEditForm({ id: item.id, name: item.name || "", rate: String(item.rate ?? "") });
+    setEditForm({
+      id: item.id,
+      name: item.name || "",
+      rate: String(item.rate ?? ""),
+      is_set: !!item.is_set,
+      set_bonus: String(item.set_bonus ?? ""),
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -119,6 +130,8 @@ export default function ProductIncentivesPage() {
     const payload = {
       name: (editForm.name || "").trim(),
       rate: parseFloat(editForm.rate) || 0,
+      is_set: !!editForm.is_set,
+      set_bonus: editForm.is_set ? parseFloat(editForm.set_bonus) || 0 : 0,
     };
     try {
       setIsSaving(true);
@@ -215,8 +228,10 @@ export default function ProductIncentivesPage() {
           <CardContent className="p-0 overflow-x-auto">
             <div className="grid grid-cols-12 gap-2 p-2 sm:p-4 text-xs sm:text-sm font-medium text-slate-300 border-b border-slate-700">
               <div className="col-span-1"></div>
-              <div className="col-span-7 lg:col-span-7">Name</div>
-              <div className="col-span-3 lg:col-span-3 text-right">Rate</div>
+              <div className="col-span-4 lg:col-span-4">Name</div>
+              <div className="col-span-2 lg:col-span-2 text-center">Set</div>
+              <div className="col-span-2 lg:col-span-2 text-right">Rate</div>
+              <div className="col-span-2 lg:col-span-2 text-right">Set Bonus</div>
               <div className="col-span-1 lg:col-span-1 text-right">Edit</div>
             </div>
 
@@ -238,14 +253,28 @@ export default function ProductIncentivesPage() {
                     className="border-gray-400"
                   />
                 </div>
-                <div className="col-span-7 lg:col-span-7 flex items-center">
+                <div className="col-span-4 lg:col-span-4 flex items-center">
 
                   <Container className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-purple-400 mr-1 sm:mr-2 flex-shrink-0" />
                   <span className="text-white text-xs sm:text-sm lg:text-base truncate">{item.name}</span>
                 </div>
-                <div className="col-span-3 lg:col-span-3 text-right">
+                <div className="col-span-2 lg:col-span-2 text-center">
+                  {item.is_set ? (
+                    <span className="inline-flex items-center rounded-full bg-purple-600/30 px-2 py-0.5 text-[10px] sm:text-xs font-medium text-purple-200">
+                      Set
+                    </span>
+                  ) : (
+                    <span className="text-slate-500 text-xs">-</span>
+                  )}
+                </div>
+                <div className="col-span-2 lg:col-span-2 text-right">
                   <span className="text-white text-xs sm:text-sm lg:text-base">
                     RS. {typeof item.rate === "number" ? item.rate.toFixed(2) : item.rate}
+                  </span>
+                </div>
+                <div className="col-span-2 lg:col-span-2 text-right">
+                  <span className="text-white text-xs sm:text-sm lg:text-base">
+                    {item.is_set && item.set_bonus ? `RS. ${Number(item.set_bonus).toFixed(2)}` : "-"}
                   </span>
                 </div>
                 <div className="col-span-1 lg:col-span-1 flex justify-end">
@@ -326,6 +355,29 @@ export default function ProductIncentivesPage() {
                   required
                 />
               </div>
+              <div className="flex items-center gap-2 pt-2">
+                <Checkbox
+                  id="is_set"
+                  checked={!!form.is_set}
+                  onCheckedChange={(v) => setForm((p) => ({ ...p, is_set: !!v }))}
+                  className="border-gray-400"
+                />
+                <Label htmlFor="is_set" className="text-white cursor-pointer">This product is a set</Label>
+              </div>
+              {form.is_set && (
+                <div>
+                  <Label htmlFor="set_bonus">Set Bonus</Label>
+                  <Input
+                    id="set_bonus"
+                    type="number"
+                    step="0.01"
+                    value={form.set_bonus}
+                    onChange={(e) => setForm((p) => ({ ...p, set_bonus: e.target.value }))}
+                    className="mt-1 bg-slate-700 text-white border-slate-600"
+                    placeholder="e.g., 50"
+                  />
+                </div>
+              )}
             </div>
             <DialogFooter className="mt-6">
               <Button type="submit" disabled={isSaving} className="w-full bg-purple-600 hover:bg-purple-700">
@@ -371,6 +423,29 @@ export default function ProductIncentivesPage() {
                   required
                 />
               </div>
+              <div className="flex items-center gap-2 pt-2">
+                <Checkbox
+                  id="edit-is-set"
+                  checked={!!editForm.is_set}
+                  onCheckedChange={(v) => setEditForm((p) => ({ ...p, is_set: !!v }))}
+                  className="border-gray-400"
+                />
+                <Label htmlFor="edit-is-set" className="text-white cursor-pointer">This product is a set</Label>
+              </div>
+              {editForm.is_set && (
+                <div>
+                  <Label htmlFor="edit-set-bonus">Set Bonus</Label>
+                  <Input
+                    id="edit-set-bonus"
+                    type="number"
+                    step="0.01"
+                    value={editForm.set_bonus}
+                    onChange={(e) => setEditForm((p) => ({ ...p, set_bonus: e.target.value }))}
+                    className="mt-1 bg-slate-700 text-white border-slate-600"
+                    placeholder="Set Bonus"
+                  />
+                </div>
+              )}
             </div>
             <DialogFooter className="mt-6">
               <Button type="submit" disabled={isSaving} className="w-full bg-purple-600 hover:bg-purple-700">

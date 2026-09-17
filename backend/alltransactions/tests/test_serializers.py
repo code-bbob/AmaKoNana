@@ -1,8 +1,9 @@
 import datetime
 from django.test import TestCase
-from alltransactions.models import Employee, EmployeeTransactions
-from alltransactions.serializers import EmployeeSerializer, EmployeeTransactionSerializer
-from enterprise.models import Enterprise
+from alltransactions.models import EmployeeTransactions
+from alltransactions.serializers import EmployeeTransactionSerializer
+from allinventory.models import IncentiveProduct
+from enterprise.models import Employee, Enterprise
 from rest_framework.exceptions import ValidationError
 
 class EmployeeTransactionSerializerTestCase(TestCase):
@@ -191,6 +192,154 @@ class EmployeeTransactionSerializerTestCase(TestCase):
         transaction.delete()
         self.employee1.refresh_from_db()
         self.assertEqual(self.employee1.due, 500)
+
+
+class EmployeeTransactionSetBonusTestCase(TestCase):
+    def setUp(self):
+        self.enterprise = Enterprise.objects.create(name="Test Enterprise")
+        self.employee = Employee.objects.create(name="Emp A", due=0, enterprise=self.enterprise, employee_code="E001")
+        self.set_product = IncentiveProduct.objects.create(
+            name="Product A", rate=100, is_set=True, set_bonus=50, enterprise=self.enterprise
+        )
+        self.other_set = IncentiveProduct.objects.create(
+            name="Product C", rate=80, is_set=True, set_bonus=20, enterprise=self.enterprise
+        )
+        self.normal_product = IncentiveProduct.objects.create(
+            name="Product B", rate=100, is_set=False, enterprise=self.enterprise
+        )
+
+    def _incentive_data(self, details, amount):
+        return {
+            'date': datetime.date.today(),
+            'employee': self.employee.pk,
+            'amount': amount,
+            'enterprise': self.enterprise.pk,
+            'employee_type': 'incentive',
+            'transaction_type': 'Salary Credited',
+            'employee_transaction_details': details,
+        }
+
+    def test_create_set_product_transaction_posts_bonus(self):
+        data = self._incentive_data([
+            {'bill_no': '123', 'product': self.set_product.pk, 'quantity': 3, 'rate': 100, 'total': 300},
+        ], 300)
+        serializer = EmployeeTransactionSerializer(data=data)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        tx = serializer.save()
+
+        bonuses = tx.bonus_transactions.all()
+        self.assertEqual(bonuses.count(), 1)
+        bonus = bonuses.first()
+        self.assertEqual(bonus.amount, 150)  # 50 * 3
+        self.assertIn("123", bonus.desc)
+        self.assertEqual(bonus.transaction_type, "Salary Credited")
+
+        self.employee.refresh_from_db()
+        self.assertEqual(self.employee.due, 300 + 150)
+
+    def test_no_bonus_for_non_set_products(self):
+        data = self._incentive_data([
+            {'bill_no': '456', 'product': self.normal_product.pk, 'quantity': 1, 'rate': 100, 'total': 100},
+        ], 100)
+        serializer = EmployeeTransactionSerializer(data=data)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        tx = serializer.save()
+
+        self.assertEqual(tx.bonus_transactions.count(), 0)
+        self.employee.refresh_from_db()
+        self.assertEqual(self.employee.due, 100)
+
+    def test_multiple_sets_aggregate_into_single_bonus(self):
+        data = self._incentive_data([
+            {'bill_no': '111', 'product': self.set_product.pk, 'quantity': 2, 'rate': 100, 'total': 200},
+            {'bill_no': '222', 'product': self.other_set.pk, 'quantity': 5, 'rate': 80, 'total': 400},
+        ], 600)
+        serializer = EmployeeTransactionSerializer(data=data)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        tx = serializer.save()
+
+        bonuses = tx.bonus_transactions.all()
+        self.assertEqual(bonuses.count(), 1)
+        self.assertEqual(bonuses.first().amount, 50 * 2 + 20 * 5)  # 200
+        self.assertIn("111", bonuses.first().desc)
+        self.assertIn("222", bonuses.first().desc)
+
+        self.employee.refresh_from_db()
+        self.assertEqual(self.employee.due, 600 + 200)
+
+    def test_delete_parent_reverses_bonus_flow(self):
+        data = self._incentive_data([
+            {'bill_no': '123', 'product': self.set_product.pk, 'quantity': 3, 'rate': 100, 'total': 300},
+        ], 300)
+        serializer = EmployeeTransactionSerializer(data=data)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        tx = serializer.save()
+        tx_id = tx.pk
+
+        self.employee.refresh_from_db()
+        self.assertEqual(self.employee.due, 450)
+        self.assertEqual(EmployeeTransactions.objects.filter(bonus_for_id=tx_id).count(), 1)
+
+        tx.delete()
+        self.assertEqual(EmployeeTransactions.objects.filter(bonus_for_id=tx_id).count(), 0)
+        self.employee.refresh_from_db()
+        self.assertEqual(self.employee.due, 0)
+
+    def test_update_regenerates_bonus_from_new_details(self):
+        data = self._incentive_data([
+            {'bill_no': '123', 'product': self.set_product.pk, 'quantity': 3, 'rate': 100, 'total': 300},
+        ], 300)
+        serializer = EmployeeTransactionSerializer(data=data)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        tx = serializer.save()
+        self.assertEqual(tx.bonus_transactions.count(), 1)
+
+        update_data = self._incentive_data([
+            {'bill_no': '999', 'product': self.set_product.pk, 'quantity': 1, 'rate': 100, 'total': 100},
+        ], 100)
+        update_serializer = EmployeeTransactionSerializer(instance=tx, data=update_data)
+        self.assertTrue(update_serializer.is_valid(), update_serializer.errors)
+        tx = update_serializer.save()
+
+        bonuses = tx.bonus_transactions.all()
+        self.assertEqual(bonuses.count(), 1)
+        self.assertEqual(bonuses.first().amount, 50)
+        self.assertIn("999", bonuses.first().desc)
+        self.assertNotIn("123", bonuses.first().desc)
+
+        self.employee.refresh_from_db()
+        self.assertEqual(self.employee.due, 100 + 50)
+
+    def test_update_change_employee_with_bonus_migrates_bonus(self):
+        employee2 = Employee.objects.create(name="Emp B", due=100, enterprise=self.enterprise, employee_code="E002")
+        data = self._incentive_data([
+            {'bill_no': '111', 'product': self.set_product.pk, 'quantity': 3, 'rate': 100, 'total': 300},
+        ], 300)
+        serializer = EmployeeTransactionSerializer(data=data)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        tx = serializer.save()
+
+        self.assertEqual(tx.bonus_transactions.count(), 1)
+        self.assertEqual(tx.bonus_transactions.first().amount, 150)
+        self.employee.refresh_from_db()
+        self.assertEqual(self.employee.due, 450)
+
+        update_data = self._incentive_data([
+            {'bill_no': '999', 'product': self.set_product.pk, 'quantity': 3, 'rate': 100, 'total': 300},
+        ], 300)
+        update_data['employee'] = employee2.pk
+        update_serializer = EmployeeTransactionSerializer(instance=tx, data=update_data)
+        self.assertTrue(update_serializer.is_valid(), update_serializer.errors)
+        tx = update_serializer.save()
+
+        self.assertEqual(tx.bonus_transactions.count(), 1)
+        self.assertEqual(tx.bonus_transactions.first().amount, 150)
+        self.assertEqual(tx.bonus_transactions.first().employee_id, employee2.pk)
+
+        self.employee.refresh_from_db()
+        employee2.refresh_from_db()
+        self.assertEqual(self.employee.due, 0)
+        self.assertEqual(employee2.due, 100 + 300 + 150)
 
 
 class NCMSerializerTestCase(TestCase):

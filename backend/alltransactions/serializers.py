@@ -1069,7 +1069,9 @@ class EmployeeTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployeeTransactions
         fields = '__all__'
+        read_only_fields = ['bonus_for']
 
+    @transaction.atomic
     def create(self, validated_data):
         
         transaction_details = validated_data.pop('employee_transaction_details', None)
@@ -1083,19 +1085,25 @@ class EmployeeTransactionSerializer(serializers.ModelSerializer):
         transaction = EmployeeTransactions.objects.create(**validated_data)
         employee = transaction.employee
         print("Employee due before transaction:", employee.due)
-        employee.due = (employee.due + transaction.amount) if employee.due is not None else +transaction.amount
-        print("Employee due after transaction:", employee.due)
-        employee.save()
+        bonus_total = 0
 
         if transaction_details:
             for detail in transaction_details:
                 EmployeeTransactionDetail.objects.create(employee_transaction=transaction, **detail)
+            bonus_total = self._build_set_bonus(transaction)
+
+        employee.refresh_from_db()
+        employee.due = (employee.due or 0) + (transaction.amount or 0) + bonus_total
+        print("Employee due after transaction:", employee.due)
+        employee.save()
 
         return transaction
     
+    @transaction.atomic
     def update(self, instance, validated_data):
-        old_employee = instance.employee
+        old_employee_id = instance.employee_id
         old_amount = instance.amount or 0
+        old_bonus_total = sum(bonus.amount or 0 for bonus in instance.bonus_transactions.all())
         transaction_type = validated_data.get('transaction_type', instance.transaction_type)
         new_amount = validated_data.get('amount', instance.amount or 0)
 
@@ -1114,6 +1122,12 @@ class EmployeeTransactionSerializer(serializers.ModelSerializer):
         instance.save()
         instance.refresh_from_db()
 
+        new_employee_id = instance.employee_id
+        final_amount = instance.amount or 0
+
+        # Drop auto-posted set-bonus transactions from the old state
+        self._delete_set_bonus(instance)
+
         # Replace details if provided
         if details_data is not None:
             # Delete existing and recreate
@@ -1121,22 +1135,60 @@ class EmployeeTransactionSerializer(serializers.ModelSerializer):
             for detail in details_data:
                 EmployeeTransactionDetail.objects.create(employee_transaction=instance, **detail)
 
-        # Adjust employee due based on any amount and/or employee change
-        new_employee = instance.employee
-        final_amount = instance.amount or 0
-        if old_employee == new_employee:
-            # Reverse old, apply new
-            new_employee.due = (new_employee.due or 0) + final_amount - old_amount
-            new_employee.save()
+        # Auto-post set-bonus transactions for the new state
+        new_bonus_total = self._build_set_bonus(instance)
+
+        # Adjust employee due with a net reversal/addition (fresh reads to avoid stale in-memory values)
+        if old_employee_id == new_employee_id:
+            employee = Employee.objects.get(id=new_employee_id)
+            employee.refresh_from_db()
+            employee.due = (employee.due or 0) - old_amount - old_bonus_total + final_amount + new_bonus_total
+            employee.save()
         else:
-            # Give back to old, charge new
-            old_employee.due = (old_employee.due or 0) - old_amount
-            new_employee.due = (new_employee.due or 0) + final_amount
+            old_employee = Employee.objects.get(id=old_employee_id)
+            old_employee.refresh_from_db()
+            old_employee.due = (old_employee.due or 0) - old_amount - old_bonus_total
             old_employee.save()
+            new_employee = Employee.objects.get(id=new_employee_id)
+            new_employee.refresh_from_db()
+            new_employee.due = (new_employee.due or 0) + final_amount + new_bonus_total
             new_employee.save()
 
         return instance
-    
+
+    def _delete_set_bonus(self, transaction):
+        transaction.bonus_transactions.all().delete()
+
+    def _build_set_bonus(self, transaction):
+        total_bonus = 0.0
+        breakdowns = []
+        details = transaction.employee_transaction_details.select_related('product')
+        for detail in details:
+            product = detail.product
+            if product and product.is_set and (product.set_bonus or 0):
+                bonus = float(product.set_bonus) * (detail.quantity or 0)
+                if bonus:
+                    total_bonus += bonus
+                    bill = detail.bill_no or '-'
+                    breakdowns.append(f"{product.name} (bill {bill}) x{detail.quantity} = {bonus}")
+        if total_bonus <= 0:
+            return 0
+        desc = f"Set bonus for sets - {', '.join(breakdowns)}"
+        if len(desc) > 250:
+            desc = desc[:250]
+        EmployeeTransactions.objects.create(
+            date=transaction.date,
+            employee=transaction.employee,
+            amount=total_bonus,
+            enterprise=transaction.enterprise,
+            branch=transaction.branch,
+            desc=desc,
+            employee_type='incentive',
+            transaction_type='Salary Credited',
+            bonus_for=transaction,
+        )
+        return total_bonus
+
     def get_employee_name(self,obj):
         return obj.employee.name
 

@@ -78,6 +78,8 @@ class ManufactureItem(models.Model):
 class IncentiveProduct(models.Model):
     name = models.CharField(max_length=255)
     rate = models.FloatField(null=True, blank=True, default=0)
+    is_set = models.BooleanField(default=False)
+    set_bonus = models.FloatField(null=True, blank=True, default=0)
     enterprise = models.ForeignKey('enterprise.Enterprise', on_delete=models.CASCADE,related_name='incentive_products')
     branch = models.ForeignKey('enterprise.Branch', on_delete=models.CASCADE,related_name='incentive_products', null=True, blank=True)
 

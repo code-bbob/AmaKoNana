@@ -5,6 +5,7 @@ import useAxios from "@/utils/useAxios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, ChevronsUpDown, Check, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -60,7 +61,7 @@ function EmployeeTransactionForm() {
   const [products, setProducts] = useState([]);
   const [showNewIncentive, setShowNewIncentive] = useState(false);
   const [activeRow, setActiveRow] = useState(null);
-  const [newIncentive, setNewIncentive] = useState({ name: "", rate: "" });
+  const [newIncentive, setNewIncentive] = useState({ name: "", rate: "", is_set: false, set_bonus: "" });
   const [savingIncentive, setSavingIncentive] = useState(false);
 
   // Auto-calc amount for incentive type
@@ -209,7 +210,13 @@ function EmployeeTransactionForm() {
     if (!newIncentive.name?.trim() || isNaN(parseFloat(newIncentive.rate))) return;
     try {
       setSavingIncentive(true);
-      const payload = { name: newIncentive.name.trim(), rate: parseFloat(newIncentive.rate), branch: Number(branchId) };
+      const payload = {
+        name: newIncentive.name.trim(),
+        rate: parseFloat(newIncentive.rate),
+        is_set: !!newIncentive.is_set,
+        set_bonus: newIncentive.is_set ? parseFloat(newIncentive.set_bonus) || 0 : 0,
+        branch: Number(branchId),
+      };
       const r = await api.post("allinventory/incentiveproduct/", payload);
       const created = r.data;
       setProducts((prev) => [created, ...prev]);
@@ -219,7 +226,7 @@ function EmployeeTransactionForm() {
         )));
       }
       setShowNewIncentive(false);
-      setNewIncentive({ name: "", rate: "" });
+      setNewIncentive({ name: "", rate: "", is_set: false, set_bonus: "" });
       setActiveRow(null);
     } catch (err) {
       console.error(err);
@@ -452,6 +459,11 @@ function EmployeeTransactionForm() {
                                           )}
                                         />
                                         {p.name}
+                                        {p.is_set && (
+                                          <span className="ml-2 inline-flex items-center rounded-full bg-purple-600/40 px-1.5 py-0.5 text-[10px] font-medium text-purple-100">
+                                            Set
+                                          </span>
+                                        )}
                                       </CommandItem>
                                     ))}
                                   </CommandGroup>
@@ -555,7 +567,7 @@ function EmployeeTransactionForm() {
         </div>
       </div>
       {/* New Incentive Dialog */}
-      <Dialog open={showNewIncentive} onOpenChange={(o) => { setShowNewIncentive(o); if (!o) { setNewIncentive({ name: "", rate: "" }); setActiveRow(null); } }}>
+      <Dialog open={showNewIncentive} onOpenChange={(o) => { setShowNewIncentive(o); if (!o) { setNewIncentive({ name: "", rate: "", is_set: false, set_bonus: "" }); setActiveRow(null); } }}>
         <DialogContent className="bg-slate-800 text-white">
           <DialogHeader>
             <DialogTitle>Add New Incentive</DialogTitle>
@@ -570,6 +582,21 @@ function EmployeeTransactionForm() {
               <Label htmlFor="new_rate">Rate</Label>
               <Input id="new_rate" type="number" step="0.01" className="mt-1 bg-slate-700 border-slate-600 text-white" value={newIncentive.rate} onChange={(e) => setNewIncentive((p) => ({ ...p, rate: e.target.value }))} placeholder="e.g., 25" />
             </div>
+            <div className="flex items-center gap-2 pt-2">
+              <Checkbox
+                id="new_incentive_is_set"
+                checked={!!newIncentive.is_set}
+                onCheckedChange={(v) => setNewIncentive((p) => ({ ...p, is_set: !!v }))}
+                className="border-gray-400"
+              />
+              <Label htmlFor="new_incentive_is_set" className="text-white cursor-pointer">This product is a set</Label>
+            </div>
+            {newIncentive.is_set && (
+              <div>
+                <Label htmlFor="new_set_bonus">Set Bonus</Label>
+                <Input id="new_set_bonus" type="number" step="0.01" className="mt-1 bg-slate-700 border-slate-600 text-white" value={newIncentive.set_bonus} onChange={(e) => setNewIncentive((p) => ({ ...p, set_bonus: e.target.value }))} placeholder="e.g., 50" />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button onClick={saveNewIncentive} disabled={savingIncentive} className="w-full bg-purple-600 hover:bg-purple-700">

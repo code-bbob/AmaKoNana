@@ -211,14 +211,19 @@ class EmployeeTransactions(models.Model):
     desc = models.CharField(max_length=255, null=True, blank=True)
     employee_type = models.CharField(max_length=20,choices=(('incentive','Incentive'),('salary','Salary')),default='payment')
     transaction_type = models.CharField(max_length=20,choices=(('Salary Credited','Salary Credited'),('Payment','Payment'), ('Daily Wage','Daily Wage')),default='Payment')
+    bonus_for = models.ForeignKey('self', on_delete=models.CASCADE, related_name='bonus_transactions', null=True, blank=True)
     
     def __str__(self):
         return f"Employee Transaction {self.pk} of {self.employee.name}"
     
     @transaction.atomic
     def delete(self, *args, **kwargs):
-        self.employee.due = self.employee.due - self.amount
-        self.employee.save() 
+        # Reverse employee due for this transaction and any auto-posted set-bonus transactions linked to it
+        bonus_amount = sum(bonus.amount or 0 for bonus in self.bonus_transactions.all())
+        total = (self.amount or 0) + bonus_amount
+        self.employee.refresh_from_db()
+        self.employee.due = (self.employee.due or 0) - total
+        self.employee.save()
         super().delete(*args, **kwargs)
 
 class EmployeeTransactionDetail(models.Model):
