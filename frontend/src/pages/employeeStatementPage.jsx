@@ -600,16 +600,20 @@ const EmployeeStatementPage = () => {
       const name = detail.product_name || "Unknown Product";
       const qty = parseFloat(detail.quantity) || 0;
       const total = Number(detail.total?.parsedValue ?? detail.total) || 0;
-      const entry = acc.get(name) || { product: name, quantity: 0, total: 0, count: 0 };
+      const entry = acc.get(name) || { product: name, quantity: 0, total: 0, count: 0, is_set: false };
       entry.quantity += qty;
       entry.total += total;
       entry.count += 1;
+      entry.is_set = entry.is_set || !!detail.is_set;
       acc.set(name, entry);
     });
     return acc;
   }, new Map());
   const productBreakdownList = Array.from(productBreakdown.values()).sort((a, b) => b.total - a.total);
   const hasProductData = productBreakdownList.length > 0;
+  const totalSets = productBreakdownList
+    .filter((item) => item.is_set)
+    .reduce((sum, item) => sum + item.quantity, 0);
 
   const handleRowClick = (tx) => {
     navigate(`/employee-transactions/branch/${branchId}/editform/${tx.id}`);
@@ -1224,6 +1228,11 @@ const EmployeeStatementPage = () => {
               </TableBody>
             </Table>
           </div>
+          {totalSets > 0 && (
+            <div className="mt-3 text-sm font-semibold text-white">
+              Total Number of Sets: <span className="text-purple-400">{totalSets}</span>
+            </div>
+          )}
           <DialogFooter>
             <Button
               variant="outline"

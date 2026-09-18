@@ -1054,13 +1054,17 @@ class SalesReturnSerializer(serializers.ModelSerializer):
 
 class EmployeeTransactionDetailsSerializer(serializers.ModelSerializer):
     product_name = serializers.SerializerMethodField(read_only=True)
+    is_set = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = EmployeeTransactionDetail
-        fields = ['id', 'bill_no', 'product','product_name','quantity','rate','total']
+        fields = ['id', 'bill_no', 'product','product_name','quantity','rate','total','is_set']
         read_only_fields = ['total_price']
 
     def get_product_name(self, obj):
         return obj.product.name if obj.product else None
+
+    def get_is_set(self, obj):
+        return bool(obj.product and obj.product.is_set)
 
 class EmployeeTransactionSerializer(serializers.ModelSerializer):
     employee_name = serializers.SerializerMethodField(read_only=True)
