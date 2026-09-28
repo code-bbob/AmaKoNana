@@ -58,10 +58,12 @@ const AllWithdrawalsReport = () => {
 
   const handlePrint = () => window.print();
 
+  const csvEscape = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+
   const handleDownloadCSV = () => {
     if (!data || !data.items.length) return;
-    let csv = "Date,Employee,Amount\n";
-    data.items.forEach(item => { csv += `${item.date},"${(item.employee_name||'').replace(/"/g,'\"')}",${item.amount}` + "\n"; });
+    let csv = "Date,Employee,Description,Amount\n";
+    data.items.forEach(item => { csv += `${item.date},${csvEscape(item.employee_name)},${csvEscape(item.description)},${item.amount}` + "\n"; });
     csv += `\nTotal Withdrawals: ,,${data.total_withdrawals}\nTransactions: ,,${data.count}\n`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -77,10 +79,10 @@ const AllWithdrawalsReport = () => {
     if (!data || !data.items.length) return;
     const doc = new jsPDF();
     doc.text("Withdrawals Report", 14, 10);
-    const headers = [["Date","Employee","Amount"]];
-    const tableData = data.items.map(item => [item.date, item.employee_name || '', item.amount]);
-    tableData.push(["","Total", data.total_withdrawals]);
-    tableData.push(["","Transactions", data.count]);
+    const headers = [["Date","Employee","Description","Amount"]];
+    const tableData = data.items.map(item => [item.date, item.employee_name || '', item.description || '', item.amount]);
+    tableData.push(["","Total","", data.total_withdrawals]);
+    tableData.push(["","Transactions","", data.count]);
     doc.autoTable({ head: headers, body: tableData, startY: 20 });
     doc.save("Withdrawals_Report.pdf");
   };
@@ -104,7 +106,7 @@ const AllWithdrawalsReport = () => {
             <form onSubmit={handleSearch} className="w-full lg:w-auto">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <Input type="text" placeholder="Search amount..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} className="pl-10 w-full lg:w-64 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500" />
+                <Input type="text" placeholder="Search amount or description..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} className="pl-10 w-full lg:w-64 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500" />
               </div>
             </form>
             <form onSubmit={handleDateSearch} className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
@@ -137,6 +139,7 @@ const AllWithdrawalsReport = () => {
               <TableRow>
                 <TableHead className="w-[140px] text-white print:text-black">Date</TableHead>
                 <TableHead className="text-white print:text-black">Posted By</TableHead>
+                <TableHead className="text-white print:text-black">Description</TableHead>
                 <TableHead className="text-right text-white print:text-black">Amount</TableHead>
               </TableRow>
             </TableHeader>
@@ -145,6 +148,7 @@ const AllWithdrawalsReport = () => {
                 <TableRow key={idx}>
                   <TableCell className="font-medium text-white print:text-black">{item.date}</TableCell>
                   <TableCell className="text-white print:text-black">{item.employee_name || '—'}</TableCell>
+                  <TableCell className="text-white print:text-black whitespace-pre-wrap">{item.description || '—'}</TableCell>
                   <TableCell className="text-right text-white print:text-black">{(item.amount||0).toLocaleString("en-US")}</TableCell>
                 </TableRow>
               ))}

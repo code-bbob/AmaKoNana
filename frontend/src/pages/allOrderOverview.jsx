@@ -33,6 +33,8 @@ const OrderOverviewPage = () => {
     cash: "text-green-400",
     online: "text-blue-400",
     card: "text-purple-400",
+    fonepay: "text-fuchsia-400",
+    credit: "text-amber-400",
     default: "text-slate-200"
   }
 
@@ -69,13 +71,15 @@ const OrderOverviewPage = () => {
     if (!data || !data.orders.length) return
     let csv = "Due Date,Bill No,Customer,Phone,Status,Total,Advance,Adv Method,Remaining,Rem Method,Net Received,Outstanding\n"
     data.orders.forEach(o => {
-      let advMethod = o.advance_method || '';
+      const ncmAdv = o.is_ncm ? (o.prepaid ? o.prepaid_method : 'credit') : null;
+      const ncmRem = o.is_ncm ? 'credit' : null;
+      let advMethod = ncmAdv || o.advance_method || '';
       if (advMethod === 'mixed') {
-        advMethod = `mixed (C:${o.cash_advance||0} O:${o.online_advance||0} Cd:${o.card_advance||0})`;
+        advMethod = `mixed (C:${o.cash_advance||0} O:${o.online_advance||0} Cd:${o.card_advance||0} F:${o.fonepay_advance||0})`;
       }
-      let remMethod = o.remaining_received_method || '';
+      let remMethod = ncmRem || o.remaining_received_method || '';
       if (remMethod === 'mixed') {
-        remMethod = `mixed (C:${o.cash_remaining||0} O:${o.online_remaining||0} Cd:${o.card_remaining||0})`;
+        remMethod = `mixed (C:${o.cash_remaining||0} O:${o.online_remaining||0} Cd:${o.card_remaining||0} F:${o.fonepay_remaining||0})`;
       }
       csv += `${o.due_date || ''},${o.bill_no || ''},"${o.customer_name}",${o.customer_phone || ''},${o.status || ''},${o.total_amount || 0},${o.advance_received || 0},${advMethod},${o.remaining_received || 0},${remMethod},${o.net_received || 0},${o.outstanding || 0}\n`
     })
@@ -190,16 +194,22 @@ const OrderOverviewPage = () => {
               </TableHeader>
               <TableBody>
                 {data.orders.map((o, idx) => {
-                  const advColor = methodColor[o.advance_method] || methodColor.default
-                  const remColor = methodColor[o.remaining_received_method] || methodColor.default
+                  const ncmAdvMethod = o.is_ncm ? (o.prepaid ? o.prepaid_method : 'credit') : o.advance_method;
+                  const ncmRemMethod = o.is_ncm ? 'credit' : o.remaining_received_method;
+                  const advColor = methodColor[ncmAdvMethod] || methodColor.default
+                  const remColor = methodColor[ncmRemMethod] || methodColor.default
                   const outstandingColor = o.outstanding > 0 ? 'text-red-400' : 'text-green-400'
                   
-                  const advDisplay = o.advance_method === 'mixed' 
-                    ? `Mixed (C:${(o.cash_advance||0).toFixed(0)} O:${(o.online_advance||0).toFixed(0)} Cd:${(o.card_advance||0).toFixed(0)})`
+                  const advDisplay = o.is_ncm
+                    ? `${o.is_ncm ? 'NCM' : ''}${o.prepaid ? ` (prepaid to ${o.prepaid_method})` : ' (credit)'}`
+                    : ncmAdvMethod === 'mixed' 
+                    ? `Mixed (C:${(o.cash_advance||0).toFixed(0)} O:${(o.online_advance||0).toFixed(0)} Cd:${(o.card_advance||0).toFixed(0)} F:${(o.fonepay_advance||0).toFixed(0)})`
                     : (o.advance_received || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'});
-                  
-                  const remDisplay = o.remaining_received_method === 'mixed'
-                    ? `Mixed (C:${(o.cash_remaining||0).toFixed(0)} O:${(o.online_remaining||0).toFixed(0)} Cd:${(o.card_remaining||0).toFixed(0)})`
+                   
+                  const remDisplay = o.is_ncm
+                    ? 'NCM (credit)'
+                    : ncmRemMethod === 'mixed'
+                    ? `Mixed (C:${(o.cash_remaining||0).toFixed(0)} O:${(o.online_remaining||0).toFixed(0)} Cd:${(o.card_remaining||0).toFixed(0)} F:${(o.fonepay_remaining||0).toFixed(0)})`
                     : (o.remaining_received || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'});
                   
                   return (
@@ -210,8 +220,8 @@ const OrderOverviewPage = () => {
                       <TableCell className="text-white print:text-black">{o.customer_phone}</TableCell>
                       <TableCell className="text-white print:text-black">{o.status}</TableCell>
                       <TableCell className="text-right text-white print:text-black">{(o.total_amount || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
-                      <TableCell className={`text-right font-semibold print:text-black ${o.advance_method === 'mixed' ? 'text-xs' : advColor}`}>{advDisplay}</TableCell>
-                      <TableCell className={`text-right font-semibold print:text-black ${o.remaining_received_method === 'mixed' ? 'text-xs' : remColor}`}>{remDisplay}</TableCell>
+                      <TableCell className={`text-right font-semibold print:text-black ${!o.is_ncm && ncmAdvMethod === 'mixed' ? 'text-xs' : advColor}`}>{advDisplay}</TableCell>
+                      <TableCell className={`text-right font-semibold print:text-black ${!o.is_ncm && ncmRemMethod === 'mixed' ? 'text-xs' : remColor}`}>{remDisplay}</TableCell>
                       <TableCell className={`text-right text-white font-semibold print:text-black`}>{(o.net_received || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
                       <TableCell className={`text-right font-semibold print:text-black ${outstandingColor}`}>{(o.outstanding || 0).toLocaleString('en-US',{style:'currency',currency:'NPR'})}</TableCell>
                     </TableRow>

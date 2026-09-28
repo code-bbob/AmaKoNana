@@ -305,6 +305,7 @@ class Withdrawal(models.Model):
     enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE,related_name='all_withdrawals')
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True, blank=True)
     amount = models.FloatField(null=True,blank=True)
+    description = models.TextField(null=True,blank=True)
     # method = models.CharField(max_length=20,choices=(('cash','Cash'),('cheque','Cheque'),('transfer','Transfer')),default='cash')
     # cheque_number = models.CharField(max_length=255,null=True,blank=True)
     # cashout_date = models.DateField(null=True)

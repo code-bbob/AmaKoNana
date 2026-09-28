@@ -58,13 +58,15 @@ const AllExpensesReport = () => {
 
   const handlePrint = () => window.print()
 
+  const csvEscape = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`
+
   const handleDownloadCSV = () => {
     if (!data || !data.items.length) return
-    let csv = "Date,Method,Amount,Description\n"
+    let csv = "Date,Type,Method,Amount,Description\n"
     data.items.forEach(item => {
-      csv += `${item.date},${item.method},${item.amount},"${(item.desc||'').replace(/"/g,'\"')}"` + "\n"
+      csv += `${item.date},${item.type || "Expense"},${item.method},${item.amount},${csvEscape(item.desc)}` + "\n"
     })
-    csv += `\nTotal Expenses: ,,,${data.total_expenses}\nTransactions: ,,,${data.count}\n`
+    csv += `\nTotal Expenses: ,,,,${data.total_expenses}\nTotal Withdrawals: ,,,,${data.total_withdrawals}\nTransactions: ,,,,${data.count}\n`
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
@@ -78,19 +80,24 @@ const AllExpensesReport = () => {
   const handleDownloadPDF = () => {
     if (!data || !data.items.length) return
     const doc = new jsPDF()
-    doc.text("Expenses Report", 14, 10)
-    const headers = [["Date","Method","Amount","Description"]]
+    doc.text("Expenses & Withdrawals Report", 14, 10)
+    const headers = [["Date","Type","Method","Amount","Description"]]
     const tableData = data.items.map(item => [
       item.date,
+      item.type || "Expense",
       item.method,
       item.amount,
       item.desc || ''
     ])
-    tableData.push(["","","Total", data.total_expenses])
-    tableData.push(["","","Transactions", data.count])
+    tableData.push(["","","","Total Expenses", data.total_expenses])
+    tableData.push(["","","","Total Withdrawals", data.total_withdrawals])
+    tableData.push(["","","","Transactions", data.count])
     doc.autoTable({ head: headers, body: tableData, startY: 20 })
     doc.save("Expenses_Report.pdf")
   }
+
+  const amountClass = (item) =>
+    item.type === "Withdrawal" ? "text-yellow-400" : "text-green-400"
 
   if (loading) return <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">Loading...</div>
   if (error) return <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-red-500">{error}</div>
@@ -103,7 +110,7 @@ const AllExpensesReport = () => {
       </Button>
       <Card className="bg-gradient-to-b from-slate-800 to-slate-900 border-none shadow-lg print:shadow-none print:bg-white">
         <CardHeader className="border-b border-slate-700 print:border-gray-200">
-          <CardTitle className="text-2xl lg:text-3xl font-bold text-white print:text-black">Expenses Report</CardTitle>
+          <CardTitle className="text-2xl lg:text-3xl font-bold text-white print:text-black">Expenses &amp; Withdrawals Report</CardTitle>
           <p className="text-sm text-gray-400 print:text-gray-600">{format(new Date(), "MMMM d, yyyy")}</p>
         </CardHeader>
         <CardContent className="pt-6">
@@ -143,6 +150,7 @@ const AllExpensesReport = () => {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[140px] text-white print:text-black">Date</TableHead>
+                <TableHead className="text-white print:text-black">Type</TableHead>
                 <TableHead className="text-white print:text-black">Description</TableHead>
                 <TableHead className="text-white print:text-black">Method</TableHead>
                 <TableHead className="text-right text-white print:text-black">Amount</TableHead>
@@ -150,11 +158,14 @@ const AllExpensesReport = () => {
             </TableHeader>
             <TableBody>
               {data.items.map((item, idx) => (
-                <TableRow key={idx}>
+                <TableRow key={idx}
+                  onClick={() => navigate(item.type === "Withdrawal" ? `/withdrawals/branch/${branchId}/edit/${item.id}` : `/expenses/branch/${branchId}/edit/${item.id}`)}
+                  className="cursor-pointer hover:bg-slate-700 print:hover:bg-transparent">
                   <TableCell className="font-medium text-white print:text-black">{item.date}</TableCell>
-                  <TableCell className="text-white print:text-black">{item.desc}</TableCell>
+                  <TableCell className={`print:text-black ${item.type === "Withdrawal" ? "text-yellow-400" : "text-red-400"}`}>{item.type || "Expense"}</TableCell>
+                  <TableCell className="text-white print:text-black whitespace-pre-wrap">{item.desc || '—'}</TableCell>
                   <TableCell className="text-white print:text-black">{item.method}</TableCell>
-                  <TableCell className="text-right text-white print:text-black">{(item.amount||0).toLocaleString("en-US")}</TableCell>
+                  <TableCell className={`text-right font-semibold print:text-black ${amountClass(item)}`}>{(item.amount||0).toLocaleString("en-US")}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -170,17 +181,21 @@ const AllExpensesReport = () => {
                 <span className="font-semibold text-white print:text-black">Total Expenses:</span>
                 <span className="text-white print:text-black">{data?.total_expenses?.toLocaleString("en-US")}</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm mb-2">
                 <span className="text-white print:text-black">Cash:</span>
                 <span className="text-white print:text-black">{data?.cash_expenses?.toLocaleString("en-US")}</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm mb-2">
                 <span className="text-white print:text-black">Cheque:</span>
                 <span className="text-white print:text-black">{data?.cheque_expenses?.toLocaleString("en-US")}</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm mb-2">
                 <span className="text-white print:text-black">Transfer:</span>
                 <span className="text-white print:text-black">{data?.transfer_expenses?.toLocaleString("en-US")}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="font-semibold text-yellow-400 print:text-black">Total Withdrawals:</span>
+                <span className="text-yellow-400 print:text-black">{data?.total_withdrawals?.toLocaleString("en-US")}</span>
               </div>
             </div>
           </div>

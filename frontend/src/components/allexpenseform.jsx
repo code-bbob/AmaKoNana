@@ -54,6 +54,8 @@ export default function AllExpenseForm() {
         delete submissionData.method;
         delete submissionData.cheque_number;
         delete submissionData.cashout_date;
+        // Withdrawals store the note in `description` instead of `desc`
+        submissionData.description = submissionData.desc;
         delete submissionData.desc;
       } else {
         endpoint = "alltransaction/expenses/";
@@ -144,12 +146,10 @@ export default function AllExpenseForm() {
                 </div>
               )}
 
-              {formData.type === "expense" && (
               <div className="flex flex-col">
                 <Label htmlFor="desc" className="text-sm font-medium text-white mb-2">Description</Label>
-                <Input type="text" id="desc" name="desc" value={formData.desc} onChange={handleChange} placeholder="What is this expense for?" className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500" />
+                <Input type="text" id="desc" name="desc" value={formData.desc} onChange={handleChange} placeholder={formData.type === "withdrawal" ? "Why was this amount withdrawn?" : "What is this expense for?"} className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500" />
               </div>
-              )}
 
               <Button type="submit" disabled={subLoading} className="w-full bg-green-600 hover:bg-green-700 text-white">Submit Expense</Button>
             </form>

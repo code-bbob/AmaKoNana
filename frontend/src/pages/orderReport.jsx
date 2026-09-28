@@ -30,6 +30,8 @@ const OrderReport = () => {
     cash: "text-green-400",
     online: "text-blue-400",
     card: "text-purple-400",
+    fonepay: "text-fuchsia-400",
+    credit: "text-amber-400",
     default: "text-slate-200",
   }
 
@@ -47,6 +49,7 @@ const OrderReport = () => {
         cash: response.data.total_cash_amount || 0,
         card: response.data.total_card_amount || 0,
         online: response.data.total_online_amount || 0,
+        fonepay: response.data.total_fonepay_amount || 0,
         count: transactions.length,
         net: (response.data.total_income || 0),
       }
@@ -82,7 +85,7 @@ const OrderReport = () => {
       }
       csv += `${t.date},${t.bill_no || ''},${t.type || 'Order'},${method},"${(t.description || '').replace(/\n/g,' ')}",${t.net_amount || 0}\n`
     })
-    csv += `\nCash Total,,${data.totals.cash}\nOnline Total,,${data.totals.online}\nCard Total,,${data.totals.card}\nNet Total,,${data.totals.net}\nCount,,${data.totals.count}\n`
+    csv += `\nCash Total,,${data.totals.cash}\nOnline Total,,${data.totals.online}\nCard Total,,${data.totals.card}\nFonepay Total,,${data.totals.fonepay}\nNet Total,,${data.totals.net}\nCount,,${data.totals.count}\n`
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -109,6 +112,7 @@ const OrderReport = () => {
     body.push(["","","","","Cash Total", data.totals.cash])
     body.push(["","","","","Online Total", data.totals.online])
     body.push(["","","","","Card Total", data.totals.card])
+    body.push(["","","","","Fonepay Total", data.totals.fonepay])
     body.push(["","","","","Net Total", data.totals.net])
     body.push(["","","","","Transactions", data.totals.count])
     doc.autoTable({ head: headers, body, startY: 20 })
@@ -195,13 +199,14 @@ const OrderReport = () => {
               <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Cash Total:</span><span className="text-white print:text-black">{data.totals.cash.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
               <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Online Total:</span><span className="text-white print:text-black">{data.totals.online.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
               <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Card Total:</span><span className="text-white print:text-black">{data.totals.card.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
+              <div className="flex justify-between mb-2"><span className="font-semibold text-white print:text-black">Fonepay Total:</span><span className="text-white print:text-black">{data.totals.fonepay.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
               <div className="flex justify-between mb-2 border-t border-slate-600 pt-2"><span className="font-semibold text-white print:text-black">Net Total Income:</span><span className="text-white print:text-black">{data.total_income.toLocaleString('en-US',{style:'currency',currency:'NPR'})}</span></div>
             </div>
           </div>
 
           <div className="mt-8 text-center text-sm text-gray-400 print:text-gray-600">
             <p>This report is auto-generated and does not require a signature.</p>
-            <p className="mt-1 text-xs">* Mixed payments are split between Cash, Online, and Card - totals reflect the breakdown.</p>
+            <p className="mt-1 text-xs">* Mixed payments are split between Cash, Online, Card, and Fonepay - totals reflect the breakdown. NCM orders are reported as Credit.</p>
           </div>
         </CardContent>
       </Card>

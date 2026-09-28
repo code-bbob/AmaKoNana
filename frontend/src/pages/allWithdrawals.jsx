@@ -17,33 +17,25 @@ export default function AllWithdrawalsPage() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [currentPage, setCurrentPage] = useState()
-  const [totalPages, setTotalPages] = useState()
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [localSearchTerm, setLocalSearchTerm] = useState('')
-  const [metadata, setMetadata] = useState({
-    next: null,
-    previous: null,
-    count: 0
-  })
+  const [filters, setFilters] = useState({})
 
   const navigate = useNavigate()
   const { branchId } = useParams()
 
-  async function fetchPaginatedData(url) {
-    if (!url) return
+  const fetchPage = async (page = 1, activeFilters = {}) => {
     setLoading(true)
     try {
-      const response = await api.get(url)
+      const params = new URLSearchParams({ ...activeFilters, page: String(page) })
+      const response = await api.get(`alltransaction/withdrawals/branch/${branchId}/?${params}`)
       setRows(response.data.results)
-      setMetadata({
-        next: response.data.next,
-        previous: response.data.previous,
-        count: response.data.count
-      })
-      setTotalPages(response.data.total_pages)
       setCurrentPage(response.data.page)
+      setTotalPages(response.data.total_pages)
+      setError(null)
     } catch (err) {
       setError('Failed to fetch data')
     } finally {
@@ -51,64 +43,28 @@ export default function AllWithdrawalsPage() {
     }
   }
 
-  const fetchInitData = async () => {
-    try {
-      const response = await api.get(`alltransaction/withdrawals/branch/${branchId}/`) 
-      setRows(response.data.results)
-      setMetadata({
-        next: response.data.next,
-        previous: response.data.previous,
-        count: response.data.count
-      })
-      setTotalPages(response.data.total_pages)
-      setCurrentPage(response.data.page)
-    } catch (err) {
-      setError('Failed to fetch initial data')
-    } finally {
-      setLoading(false)
+  useEffect(() => { fetchPage(1) }, [])
+
+  // Both the search box and the date range feed the same filter set, so either
+  // submit re-runs the query from page 1 and paging keeps them applied.
+  const applyFilters = () => {
+    const next = {
+      ...(localSearchTerm ? { search: localSearchTerm } : {}),
+      ...(startDate ? { start_date: startDate } : {}),
+      ...(endDate ? { end_date: endDate } : {}),
     }
+    setFilters(next)
+    fetchPage(1, next)
   }
 
-  useEffect(() => { fetchInitData() }, [])
-
-  const handleSearch = async (e) => {
+  const handleSearch = (e) => {
     e.preventDefault()
-    setLoading(true)
-    try {
-      const response = await api.get(`alltransaction/withdrawals/branch/${branchId}/?search=${localSearchTerm}`)
-      setRows(response.data.results)
-      setMetadata({
-        next: response.data.next,
-        previous: response.data.previous,
-        count: response.data.count
-      })
-      setTotalPages(Math.ceil(response.data.count / 5))
-      setCurrentPage(1)
-    } catch (err) {
-      setError('Failed to search withdrawals')
-    } finally {
-      setLoading(false)
-    }
+    applyFilters()
   }
 
-  const handleDateSearch = async (e) => {
+  const handleDateSearch = (e) => {
     e.preventDefault()
-    setLoading(true)
-    try {
-      const response = await api.get(`alltransaction/withdrawals/branch/${branchId}/?start_date=${startDate}&end_date=${endDate}`)
-      setRows(response.data.results)
-      setMetadata({
-        next: response.data.next,
-        previous: response.data.previous,
-        count: response.data.count
-      })
-      setTotalPages(Math.ceil(response.data.count / 5))
-      setCurrentPage(1)
-    } catch (err) {
-      setError('Failed to filter withdrawals by date')
-    } finally {
-      setLoading(false)
-    }
+    applyFilters()
   }
 
   if (loading) {
@@ -140,7 +96,7 @@ export default function AllWithdrawalsPage() {
           <form onSubmit={handleSearch} className="w-full lg:w-auto">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input type="text" placeholder="Search by amount..." value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} className="pl-10 w-full lg:w-64 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500" />
+              <Input type="text" placeholder="Search by amount or description..." value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} className="pl-10 w-full lg:w-64 bg-slate-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500" />
             </div>
           </form>
 
@@ -174,6 +130,7 @@ export default function AllWithdrawalsPage() {
                 </CardHeader>
                 <CardContent className="pt-4">
                   <div className="mb-2 p-3 lg:p-4 bg-slate-800 rounded-lg">
+                    {wd.description && <div className="text-white font-medium mb-2">{wd.description}</div>}
                     <div className="flex justify-between items-center text-sm text-slate-300">
                       <span className='font-bold text-green-400 text-l'>Amount: RS. {wd.amount?.toLocaleString()}</span>
                       <span className="text-white">Posted by {wd?.employee_name || '—'}</span>
@@ -188,12 +145,12 @@ export default function AllWithdrawalsPage() {
         </div>
 
         <div className="flex justify-center mt-6 space-x-4">
-          <Button onClick={() => fetchPaginatedData(metadata.previous)} disabled={!metadata.previous} className="bg-slate-700 hover:bg-slate-600 text-white">
+          <Button onClick={() => fetchPage(currentPage - 1, filters)} disabled={currentPage <= 1 || loading} className="bg-slate-700 hover:bg-slate-600 text-white">
             <ChevronLeft className="w-4 h-4 mr-2" />
             Previous
           </Button>
           <span className="text-white self-center">Page {currentPage} of {totalPages}</span>
-          <Button onClick={() => fetchPaginatedData(metadata.next)} disabled={!metadata.next} className="bg-slate-700 hover:bg-slate-600 text-white">
+          <Button onClick={() => fetchPage(currentPage + 1, filters)} disabled={currentPage >= totalPages || loading} className="bg-slate-700 hover:bg-slate-600 text-white">
             Next
             <ChevronRight className="w-4 h-4 ml-2" />
           </Button>

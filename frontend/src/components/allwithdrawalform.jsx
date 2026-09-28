@@ -19,6 +19,7 @@ export default function AllWithdrawalForm() {
     date: new Date().toISOString().split("T")[0],
     branch: branchId,
     amount: "",
+    description: "",
   });
 
   const handleChange = (e) => {
@@ -63,6 +64,10 @@ export default function AllWithdrawalForm() {
                   <Label htmlFor="amount" className="text-sm font-medium text-white mb-2">Amount</Label>
                   <Input type="number" id="amount" name="amount" value={formData.amount} onChange={handleChange} className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500" required />
                 </div>
+              </div>
+              <div className="flex flex-col">
+                <Label htmlFor="description" className="text-sm font-medium text-white mb-2">Description</Label>
+                <Input type="text" id="description" name="description" value={formData.description} onChange={handleChange} placeholder="Why was this amount withdrawn?" className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500" />
               </div>
               <Button type="submit" disabled={subLoading} className="w-full bg-green-600 hover:bg-green-700 text-white">Submit Withdrawal</Button>
             </form>

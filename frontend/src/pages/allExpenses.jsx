@@ -17,32 +17,25 @@ export default function AllExpensesPage() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [currentPage, setCurrentPage] = useState()
-  const [totalPages, setTotalPages] = useState()
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [localSearchTerm, setLocalSearchTerm] = useState('')
-  const [metadata, setMetadata] = useState({
-    next: null,
-    previous: null,
-    count: 0
-  })
+  const [filters, setFilters] = useState({})
 
   const navigate = useNavigate()
   const { branchId } = useParams()
 
-  async function fetchPaginatedData(url) {
+  const fetchPage = async (page = 1, activeFilters = {}) => {
     setLoading(true)
     try {
-      const response = await api.get(url)
+      const params = new URLSearchParams({ ...activeFilters, page: String(page) })
+      const response = await api.get(`alltransaction/expenses/branch/${branchId}/?${params}`)
       setRows(response.data.results)
-      setMetadata({
-        next: response.data.next,
-        previous: response.data.previous,
-        count: response.data.count
-      })
-      setTotalPages(response.data.total_pages)
       setCurrentPage(response.data.page)
+      setTotalPages(response.data.total_pages)
+      setError(null)
     } catch (err) {
       setError('Failed to fetch data')
     } finally {
@@ -50,68 +43,31 @@ export default function AllExpensesPage() {
     }
   }
 
-  const fetchInitData = async () => {
-    try {
-      const response = await api.get(`alltransaction/expenses/branch/${branchId}/`) 
-      setRows(response.data.results)
-      setMetadata({
-        next: response.data.next,
-        previous: response.data.previous,
-        count: response.data.count
-      })
-      setTotalPages(response.data.total_pages)
-      setCurrentPage(response.data.page)
-    } catch (err) {
-      setError('Failed to fetch initial data')
-    } finally {
-      setLoading(false)
-    }
+  useEffect(() => { fetchPage(1) }, [])
+
+  // Both the search box and the date range feed the same filter set, so either
+  // submit re-runs the query from page 1 and paging keeps them applied.
+  const currentFilters = () => ({
+    ...(localSearchTerm ? { search: localSearchTerm } : {}),
+    ...(startDate ? { start_date: startDate } : {}),
+    ...(endDate ? { end_date: endDate } : {}),
+  })
+
+  const applyFilters = () => {
+    const next = currentFilters()
+    setFilters(next)
+    fetchPage(1, next)
   }
 
-  useEffect(() => { fetchInitData() }, [])
-
-  const handleSearch = async (e) => {
+  const handleSearch = (e) => {
     e.preventDefault()
-    setLoading(true)
-    try {
-      const response = await api.get(`alltransaction/expenses/branch/${branchId}/?search=${localSearchTerm}`)
-      setRows(response.data.results)
-      setMetadata({
-        next: response.data.next,
-        previous: response.data.previous,
-        count: response.data.count
-      })
-      setTotalPages(Math.ceil(response.data.count / 10))
-      setCurrentPage(1)
-    } catch (err) {
-      setError('Failed to search expenses')
-    } finally {
-      setLoading(false)
-    }
+    applyFilters()
   }
 
-  const handleDateSearch = async (e) => {
+  const handleDateSearch = (e) => {
     e.preventDefault()
-    setLoading(true)
-    try {
-      const response = await api.get(`alltransaction/expenses/branch/${branchId}/?start_date=${startDate}&end_date=${endDate}`)
-      setRows(response.data.results)
-      setMetadata({
-        next: response.data.next,
-        previous: response.data.previous,
-        count: response.data.count
-      })
-      setTotalPages(Math.ceil(response.data.count / 10))
-      setCurrentPage(1)
-    } catch (err) {
-      setError('Failed to filter expenses by date')
-    } finally {
-      setLoading(false)
-    }
+    applyFilters()
   }
-
-  // remove withdrawals from the list
-  const filteredRows = rows.filter(row => row.type === 'Expense')
 
   if (loading) {
     return (<div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">Loading...</div>)
@@ -163,16 +119,14 @@ export default function AllExpensesPage() {
         </div>
 
         <div className="space-y-6">
-          {filteredRows.length > 0 ? (
-            filteredRows.map((exp) => (
+          {rows.length > 0 ? (
+            rows.map((exp) => (
               <Card key={`${exp.id}-${exp.date}-${exp.type}`} onClick={() => {
-                if (exp.type === 'Expense') {
+                if (exp.type === 'Withdrawal') {
+                  navigate(`/withdrawals/branch/${branchId}/edit/${exp.id}`)
+                } else {
                   navigate(`/expenses/branch/${branchId}/edit/${exp.id}`)
                 }
-                else {
-                  navigate(`/withdrawals/branch/${branchId}/edit/${exp.id}`)
-                }
-                // Withdrawals are not editable, so no navigation
               }} className={`bg-gradient-to-b from-slate-800 to-slate-900 border-none shadow-lg hover:shadow-xl cursor-pointer transition-shadow duration-300`}>
                 <CardHeader className="border-b border-slate-700">
                   <CardTitle className="text-lg lg:text-xl font-medium text-white flex flex-col lg:flex-row justify-between items-start lg:items-center">
@@ -180,7 +134,8 @@ export default function AllExpensesPage() {
                       <p className={`text-sm font-semibold ${exp.type === 'Withdrawal' ? 'text-yellow-400' : 'text-red-400'}`}>
                         {exp.type === 'Withdrawal' ? 'WITHDRAWAL' : 'EXPENSE'}
                       </p>
-                      <p className='text-sm text-gray-400'>Method: {exp.method}</p>
+                      {exp.type === 'Withdrawal' && <p className='text-sm text-gray-400'>Cash out</p>}
+                      {exp.type !== 'Withdrawal' && <p className='text-sm text-gray-400'>Method: {exp.method}</p>}
                     </div>
                     <span className="mt-2 lg:mt-0 text-sm lg:text-base">{format(new Date(exp.date), 'dd MMM yyyy')}</span>
                   </CardTitle>
@@ -204,12 +159,12 @@ export default function AllExpensesPage() {
         </div>
 
         <div className="flex justify-center mt-6 space-x-4">
-          <Button onClick={() => fetchPaginatedData(metadata.previous)} disabled={!metadata.previous} className="bg-slate-700 hover:bg-slate-600 text-white">
+          <Button onClick={() => fetchPage(currentPage - 1, filters)} disabled={currentPage <= 1 || loading} className="bg-slate-700 hover:bg-slate-600 text-white">
             <ChevronLeft className="w-4 h-4 mr-2" />
             Previous
           </Button>
           <span className="text-white self-center">Page {currentPage} of {totalPages}</span>
-          <Button onClick={() => fetchPaginatedData(metadata.next)} disabled={!metadata.next} className="bg-slate-700 hover:bg-slate-600 text-white">
+          <Button onClick={() => fetchPage(currentPage + 1, filters)} disabled={currentPage >= totalPages || loading} className="bg-slate-700 hover:bg-slate-600 text-white">
             Next
             <ChevronRight className="w-4 h-4 ml-2" />
           </Button>

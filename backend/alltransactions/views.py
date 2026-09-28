@@ -1768,11 +1768,10 @@ class ExpensesView(APIView):
 
         if search:
             expenses = expenses.filter(Q(desc__icontains=search) | Q(method__icontains=search))
+            withdrawal_query = Q(description__icontains=search)
             if search.isdigit():
-                withdrawals = withdrawals.filter(amount=float(search))
-            else:
-                # If search is not numeric, exclude all withdrawals from results
-                withdrawals = withdrawals.none()
+                withdrawal_query |= Q(amount=float(search))
+            withdrawals = withdrawals.filter(withdrawal_query)
 
         if start_date and end_date:
             start_date = parse_date(start_date)
@@ -1808,7 +1807,7 @@ class ExpensesView(APIView):
                 'date': wit.date,
                 'amount': wit.amount,
                 'method': 'N/A',  # Withdrawals don't have method
-                'desc': 'Withdrawal',
+                'desc': wit.description or 'Withdrawal',
                 'employee_name': wit.employee.user.name if wit.employee else None,
                 'type': 'Withdrawal'
             })
@@ -1816,32 +1815,18 @@ class ExpensesView(APIView):
         # Sort combined list by date (descending) and id
         expenses_data.sort(key=lambda x: (x['date'], x['id']), reverse=True)
 
-        # Paginate combined results
+        # Paginate combined results. PageNumberPagination builds absolute next/
+        # previous links that keep the active search/date filters intact.
         paginator = PageNumberPagination()
         paginator.page_size = 5
-        # Manual pagination for combined list
-        page_number = request.GET.get('page', 1)
-        try:
-            page_number = int(page_number)
-        except ValueError:
-            page_number = 1
-        
-        start_idx = (page_number - 1) * paginator.page_size
-        end_idx = start_idx + paginator.page_size
-        page_data = expenses_data[start_idx:end_idx]
-        
-        total_count = len(expenses_data)
-        total_pages = (total_count + paginator.page_size - 1) // paginator.page_size
-        
-        return Response({
-            'count': total_count,
-            'next': f"?page={page_number + 1}" if page_number < total_pages else None,
-            'previous': f"?page={page_number - 1}" if page_number > 1 else None,
-            'results': page_data,
-            'total_pages': total_pages,
-            'page': page_number
-        })
-    
+        page = paginator.paginate_queryset(expenses_data, request)
+        if page is None:
+            return Response({"detail": "Invalid page."}, status=status.HTTP_404_NOT_FOUND)
+
+        response = paginator.get_paginated_response(page)
+        response.data['total_pages'] = paginator.page.paginator.num_pages
+        response.data['page'] = paginator.page.number
+        return response
 
     def post(self,request):
 
@@ -1886,19 +1871,25 @@ class ExpensesReportView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, branch=None):
-        """Return expense rows plus a summary object (last element)."""
+        """Return expense + withdrawal rows plus a summary object (last element)."""
         enterprise = request.user.employee.enterprise
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
         search = request.GET.get('search')
 
         expenses = Expenses.objects.filter(enterprise=enterprise)
+        withdrawals = Withdrawal.objects.filter(enterprise=enterprise)
         if branch:
             expenses = expenses.filter(branch=branch)
+            withdrawals = withdrawals.filter(branch=branch)
 
         # Apply search filter
         if search:
             expenses = expenses.filter(Q(desc__icontains=search) | Q(method__icontains=search))
+            withdrawal_query = Q(description__icontains=search)
+            if search.isdigit():
+                withdrawal_query |= Q(amount=float(search))
+            withdrawals = withdrawals.filter(withdrawal_query)
 
         # Apply date filters
         if start_date and end_date:
@@ -1906,26 +1897,33 @@ class ExpensesReportView(APIView):
             ed = parse_date(end_date)
             if sd and ed:
                 expenses = expenses.filter(date__range=(sd, ed))
+                withdrawals = withdrawals.filter(date__range=(sd, ed))
         elif start_date and not end_date:
             sd = parse_date(start_date)
             if sd:
                 expenses = expenses.filter(date__gte=sd)
-        elif end_date and not start_date:
+                withdrawals = withdrawals.filter(date__gte=sd)
+        elif not start_date and end_date:
             ed = parse_date(end_date)
             if ed:
                 expenses = expenses.filter(date__lte=ed)
+                withdrawals = withdrawals.filter(date__lte=ed)
 
-        # Default to today's expenses when no filters/search provided
+        # Default to today's expenses/withdrawals when no filters/search provided
         if not search and not start_date and not end_date:
-            expenses = expenses.filter(date=timezone.now().date())
+            today = timezone.now().date()
+            expenses = expenses.filter(date=today)
+            withdrawals = withdrawals.filter(date=today)
 
         expenses = expenses.order_by('date', 'id')
+        withdrawals = withdrawals.order_by('date', 'id')
 
-        count = expenses.count()
+        count = len(expenses) + len(withdrawals)
         total_expenses = 0
         cash_expenses = 0
         cheque_expenses = 0
         transfer_expenses = 0
+        total_withdrawals = 0
 
         rows = []
         for exp in expenses:
@@ -1945,7 +1943,24 @@ class ExpensesReportView(APIView):
                 'amount': amt,
                 'desc': exp.desc,
                 'employee_name': exp.employee.user.name if exp.employee else None,
+                'type': 'Expense',
             })
+
+        for wit in withdrawals:
+            amt = wit.amount or 0
+            total_withdrawals += amt
+
+            rows.append({
+                'id': wit.id,
+                'date': wit.date,
+                'method': 'N/A',  # Withdrawals don't have method
+                'amount': amt,
+                'desc': wit.description or 'Withdrawal',
+                'employee_name': wit.employee.user.name if wit.employee else None,
+                'type': 'Withdrawal',
+            })
+
+        rows.sort(key=lambda x: (x['date'], x['id']))
 
         rows.append({
             'count': count,
@@ -1953,6 +1968,7 @@ class ExpensesReportView(APIView):
             'cash_expenses': cash_expenses,
             'cheque_expenses': cheque_expenses,
             'transfer_expenses': transfer_expenses,
+            'total_withdrawals': total_withdrawals,
         })
 
         return Response(rows)
@@ -1981,6 +1997,7 @@ class WithdrawalView(APIView):
         if search:
             if search.isdigit():
                 withdrawals = withdrawals.filter(amount=float(search))
+            withdrawals = withdrawals.filter(description__icontains=search)
 
         if start_date and end_date:
             sd = parse_date(start_date)
@@ -2001,8 +2018,13 @@ class WithdrawalView(APIView):
         paginator = PageNumberPagination()
         paginator.page_size = 5
         page = paginator.paginate_queryset(withdrawals, request)
+        if page is None:
+            return Response({"detail": "Invalid page."}, status=status.HTTP_404_NOT_FOUND)
         serializer = WithdrawalSerializer(page, many=True)
-        return paginator.get_paginated_response(serializer.data)
+        response = paginator.get_paginated_response(serializer.data)
+        response.data['total_pages'] = paginator.page.paginator.num_pages
+        response.data['page'] = paginator.page.number
+        return response
 
     def post(self, request):
         data = request.data.copy()
@@ -2054,8 +2076,10 @@ class WithdrawalReportView(APIView):
         if branch:
             withdrawals = withdrawals.filter(branch=branch)
 
-        if search and search.isdigit():
-            withdrawals = withdrawals.filter(amount=float(search))
+        if search:
+            withdrawals = withdrawals.filter(description__icontains=search)
+            if search.isdigit():
+                withdrawals = withdrawals.filter(amount=float(search))
 
         if start_date and end_date:
             sd = parse_date(start_date); ed = parse_date(end_date)
@@ -2081,6 +2105,7 @@ class WithdrawalReportView(APIView):
                 'id': w.id,
                 'date': w.date,
                 'amount': amt,
+                'description': w.description,
                 'employee_name': w.employee.user.name if w.employee else None,
             })
         rows.append({
@@ -2169,25 +2194,29 @@ class IncomeExpenseReportView(APIView):
             for o in order.items.all():
                 desc += f"{o.item}), \n "
             order.description = desc.rstrip(", ")
+            method = order.effective_advance_method
             list1.append({
                 'id': order.id,
                 'bill_no': order.bill_no,
                 'net_amount': order.advance_received,
                 'description': order.description,
-                'method': order.advance_method,
+                'method': method,
                 'type': 'Order',
                 'date': order.received_date
             })
-            if order.advance_method == 'cash':
+            if method == 'cash':
                 total_cash_income += order.advance_received or 0
-            elif order.advance_method == 'card':
+            elif method == 'card':
                 total_card_income += order.advance_received or 0
-            elif order.advance_method == 'online':
+            elif method == 'online':
                 total_online_income += order.advance_received or 0
-            elif order.advance_method == 'mixed':
+            elif method == 'fonepay':
+                total_fonepay_income += order.advance_received or 0
+            elif method == 'mixed':
                 total_cash_income += order.cash_advance or 0
                 total_card_income += order.card_advance or 0
                 total_online_income += order.online_advance or 0
+                total_fonepay_income += order.fonepay_advance or 0
             total_income += order.advance_received or 0
 
         remaining_payment_orders = Order.objects.filter(enterprise=enterprise, remaining_received_date__range=(report_start_date, report_end_date))
@@ -2199,25 +2228,29 @@ class IncomeExpenseReportView(APIView):
             for o in order.items.all():
                 desc += f"{o.item}), \n "
             order.description = desc.rstrip(", ")
+            method = order.effective_remaining_method
             list1.append({
                 'id': order.id,
                 'bill_no': order.bill_no,
                 'net_amount': order.remaining_received,
                 'description': order.description,
-                'method': order.remaining_received_method,
+                'method': method,
                 'type': 'Order',
                 'date': order.remaining_received_date
             })
-            if order.remaining_received_method == 'cash':
+            if method == 'cash':
                 total_cash_income += order.remaining_received or 0
-            elif order.remaining_received_method == 'card':
+            elif method == 'card':
                 total_card_income += order.remaining_received or 0
-            elif order.remaining_received_method == 'online':
+            elif method == 'online':
                 total_online_income += order.remaining_received or 0
-            elif order.remaining_received_method == 'mixed':
+            elif method == 'fonepay':
+                total_fonepay_income += order.remaining_received or 0
+            elif method == 'mixed':
                 total_cash_income += order.cash_remaining or 0
                 total_card_income += order.card_remaining or 0
                 total_online_income += order.online_remaining or 0
+                total_fonepay_income += order.fonepay_remaining or 0
             total_income += order.remaining_received or 0
 
         dts = DebtorTransaction.objects.filter(enterprise=enterprise, date__range=(report_start_date, report_end_date))
@@ -2281,11 +2314,12 @@ class IncomeExpenseReportView(APIView):
         if branch:
             withdrawals = withdrawals.filter(branch=branch)
         for wd in withdrawals:
+            withdrawer = wd.employee.user.name if wd.employee else 'Unknown'
             list1.append({
                 'id': wd.id,
                 'bill_no': 'Withdrawal',
                 'net_amount': -wd.amount,
-                'description': f"Withdrawal by {wd.employee.user.name if wd.employee else 'Unknown'}",
+                'description': f"{wd.description} (By {withdrawer})" if wd.description else f"Withdrawal by {withdrawer}",
                 'method': 'N/A',
                 'type': 'Withdrawal',
                 'date': wd.date
@@ -2304,10 +2338,11 @@ class IncomeExpenseReportView(APIView):
             "transfer": 9,
             "cheque": 10,
         }
+        unknown_priority = len(sort_order) + 1
         net_cash_in_hand = (closing_cash.amount if closing_cash else 0) + total_cash_income - total_cash_expense - total_withdrawal
         list1.sort(key=lambda x: (
             x["date"],              # 1st: date (ascending)
-            sort_order[x["method"]]        # 2nd: type priority
+            sort_order.get(x["method"], unknown_priority)   # 2nd: type priority
         ))
 
         report = {

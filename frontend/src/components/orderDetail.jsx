@@ -95,6 +95,14 @@ function OrderDetail() {
     );
   }
 
+  const isNcm = !!orderData.is_ncm;
+  const advMethodLabel = isNcm
+    ? (orderData.prepaid ? `NCM (prepaid to ${orderData.prepaid_method})` : 'NCM (credit)')
+    : (orderData.advance_method || '').replace('_', ' ');
+  const remMethodLabel = isNcm
+    ? 'NCM (credit)'
+    : (orderData.remaining_received_method || '').replace('_', ' ');
+
   return (
     <>
       <div className="flex min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
@@ -346,9 +354,32 @@ function OrderDetail() {
                   <div className="flex justify-between items-center py-2">
                     <span className="text-slate-300">Payment Method:</span>
                     <span className="text-white capitalize">
-                      {orderData.advance_method.replace('_', ' ')}
+                      {advMethodLabel}
                     </span>
                   </div>
+                )}
+
+                {isNcm && (
+                  <>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-slate-300">NCM Prepaid:</span>
+                      <span className="text-white capitalize">
+                        {orderData.prepaid ? `Yes (${orderData.prepaid_method})` : 'No'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-slate-300">NCM COD Amount:</span>
+                      <span className="text-white">
+                        Rs. {(orderData.cod_amount || 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-slate-300">NCM Delivery Charge:</span>
+                      <span className="text-white">
+                        Rs. {(orderData.delivery_charge || 0).toLocaleString()}
+                      </span>
+                    </div>
+                  </>
                 )}
 
                 <div className="flex justify-between items-center py-2">
@@ -362,7 +393,7 @@ function OrderDetail() {
                   <div className="flex justify-between items-center py-2">
                     <span className="text-slate-300">Remaining Payment Method:</span>
                     <span className="text-white capitalize">
-                      {orderData.remaining_received_method.replace('_', ' ')}
+                      {remMethodLabel}
                     </span>
                   </div>
                 )}

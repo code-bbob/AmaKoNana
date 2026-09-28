@@ -65,6 +65,7 @@ const AllIncomeExpenseReport = () => {
     card: "text-purple-400",
     fonepay: "text-cyan-400",
     mixed: "text-yellow-400",
+    credit: "text-amber-400",
     default: "text-slate-200",
   };
 

@@ -22,6 +22,7 @@ export default function EditAllWithdrawal() {
     date: "",
     branch: branchId,
     amount: "",
+    description: "",
   });
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function EditAllWithdrawal() {
           date: res.data.date || "",
           branch: res.data.branch || branchId,
           amount: res.data.amount?.toString() || "",
+          description: res.data.description || "",
         });
       } catch (err) {
         setError("Failed to load withdrawal");
@@ -47,7 +49,8 @@ export default function EditAllWithdrawal() {
     if (!originalData) return;
     const changed = (
       originalData.date !== formData.date ||
-      originalData.amount?.toString() !== formData.amount
+      originalData.amount?.toString() !== formData.amount ||
+      (originalData.description || "") !== formData.description
     );
     setFormChanged(changed);
   }, [formData, originalData]);
@@ -108,6 +111,10 @@ export default function EditAllWithdrawal() {
                   <Label htmlFor="amount" className="text-sm font-medium text-white mb-2">Amount</Label>
                   <Input type="number" id="amount" name="amount" value={formData.amount} onChange={handleChange} className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500" required />
                 </div>
+              </div>
+              <div className="flex flex-col">
+                <Label htmlFor="description" className="text-sm font-medium text-white mb-2">Description</Label>
+                <Input type="text" id="description" name="description" value={formData.description} onChange={handleChange} placeholder="Why was this amount withdrawn?" className="bg-slate-700 border-slate-600 text-white focus:ring-purple-500 focus:border-purple-500" />
               </div>
               <Button type="submit" disabled={!formChanged || subLoading} className="w-full bg-green-600 hover:bg-green-700 text-white">Update Withdrawal</Button>
             </form>

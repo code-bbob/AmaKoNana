@@ -231,6 +231,7 @@ class OrderReportVie(APIView):
         total_cash_amount = 0
         total_card_amount = 0
         total_online_amount = 0
+        total_fonepay_amount = 0
         total_income = 0
         orders = Order.objects.filter(enterprise=enterprise, received_date__range=(report_start_date, report_end_date))
         if branch:
@@ -240,25 +241,29 @@ class OrderReportVie(APIView):
             for o in order.items.all():
                 desc += f"{o.item}), \n "
             order.description = desc.rstrip(", ")
+            method = order.effective_advance_method
             list.append({
                 'id': order.id,
                 'bill_no': order.bill_no,
                 'net_amount': order.advance_received,
                 'description': order.description,
-                'method': order.advance_method,
+                'method': method,
                 'type': 'Order',
                 'date': order.received_date
             })
-            if order.advance_method == 'cash':
+            if method == 'cash':
                 total_cash_amount += order.advance_received or 0
-            elif order.advance_method == 'card':
+            elif method == 'card':
                 total_card_amount += order.advance_received or 0
-            elif order.advance_method == 'online':
+            elif method == 'online':
                 total_online_amount += order.advance_received or 0
-            elif order.advance_method == 'mixed':
+            elif method == 'fonepay':
+                total_fonepay_amount += order.advance_received or 0
+            elif method == 'mixed':
                 total_cash_amount += order.cash_advance or 0
                 total_card_amount += order.card_advance or 0
                 total_online_amount += order.online_advance or 0
+                total_fonepay_amount += order.fonepay_advance or 0
             total_income += order.advance_received or 0
 
         remaining_payment_orders = Order.objects.filter(enterprise=enterprise, remaining_received_date__range=(report_start_date, report_end_date))
@@ -270,25 +275,29 @@ class OrderReportVie(APIView):
             for o in order.items.all():
                 desc += f"{o.item}), \n "
             order.description = desc.rstrip(", ")
+            method = order.effective_remaining_method
             list.append({
                 'id': order.id,
                 'bill_no': order.bill_no,
                 'net_amount': order.remaining_received,
                 'description': order.description,
-                'method': order.remaining_received_method,
+                'method': method,
                 'type': 'Order',
                 'date': order.remaining_received_date
             })
-            if order.remaining_received_method == 'cash':
+            if method == 'cash':
                 total_cash_amount += order.remaining_received or 0
-            elif order.remaining_received_method == 'card':
+            elif method == 'card':
                 total_card_amount += order.remaining_received or 0
-            elif order.remaining_received_method == 'online':
+            elif method == 'online':
                 total_online_amount += order.remaining_received or 0
-            elif order.remaining_received_method == 'mixed':
+            elif method == 'fonepay':
+                total_fonepay_amount += order.remaining_received or 0
+            elif method == 'mixed':
                 total_cash_amount += order.cash_remaining or 0
                 total_card_amount += order.card_remaining or 0
                 total_online_amount += order.online_remaining or 0
+                total_fonepay_amount += order.fonepay_remaining or 0
             total_income += order.remaining_received or 0
 
         report = {
@@ -296,6 +305,7 @@ class OrderReportVie(APIView):
             'total_cash_amount': total_cash_amount,
             'total_online_amount': total_online_amount,
             'total_card_amount': total_card_amount,
+            'total_fonepay_amount': total_fonepay_amount,
             'total_income': total_income,
         }
         return Response(report)
