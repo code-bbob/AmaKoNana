@@ -32,6 +32,7 @@ const AllSalesReport = () => {
     mixed: "text-yellow-400",
     default: "text-slate-200",
   }
+  const remarkColor = "text-lime-300 print:text-lime-800"
 
   useEffect(() => {
     fetchSalesData()
@@ -79,14 +80,14 @@ const AllSalesReport = () => {
     }
   
     // Create CSV header
-  let csvContent = "Date,Product,Quantity,Unit Price,Line Subtotal,Discount,Net Total\n"
+  let csvContent = "Date,Product,Quantity,Unit Price,Line Subtotal,Discount,Net Total,Remarks\n"
   
     // Convert each sale into a CSV row
   
     // Add summary row
-    csvContent += `\nTotal Sales: ,,,${data.total_sales}\n`
+  csvContent += `\nTotal Sales: ,,,${data.total_sales}\n`
     // csvContent += `Total Profit: ,,,${data.total_price}\n`
-    csvContent += `Total Transactions: ,,,${data.count}\n`
+  csvContent += `Total Transactions: ,,,${data.count}\n`
   
     // Create a downloadable CSV file
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
@@ -109,7 +110,7 @@ const AllSalesReport = () => {
     doc.text("Sales Report", 14, 10)
   
     // Table Headers
-  const headers = [["Date", "Product", "Qty", "Unit Price", "Subtotal", "Discount", "Net Total"]]
+  const headers = [["Date", "Product", "Qty", "Unit Price", "Subtotal", "Discount", "Net Total", "Remarks"]]
   
     // Table Data
     const tableData = (data.sales).map((item) => [
@@ -120,19 +121,23 @@ const AllSalesReport = () => {
       item.line_subtotal || (item.unit_price * item.quantity),
       item.discount || 0,
       item.total_price,
+      item.remark ? `Remarks: ${item.remark}` : "",
     ])
   
     // Add Summary Row
-  tableData.push(["", "", "", "", "Subtotal Sales", data.subtotal_sales])
-  tableData.push(["", "", "", "", "Total Discount", data.total_discount])
-  tableData.push(["", "", "", "", "Net Sales", data.total_sales])
-  tableData.push(["", "", "", "", "Total Transactions", data.count])
+  tableData.push(["", "", "", "", "", "Subtotal Sales", data.subtotal_sales])
+  tableData.push(["", "", "", "", "", "Total Discount", data.total_discount])
+  tableData.push(["", "", "", "", "", "Net Sales", data.total_sales])
+  tableData.push(["", "", "", "", "", "Total Transactions", data.count])
   
     // Generate table
     doc.autoTable({
       head: headers,
       body: tableData,
       startY: 20,
+      columnStyles: {
+        7: { textColor: [101, 163, 13], halign: "left" },
+      },
     })
   
     // Save PDF
@@ -248,6 +253,7 @@ const AllSalesReport = () => {
                 <TableHead className="text-right text-white print:text-black">Subtotal</TableHead>
                 <TableHead className="text-right text-white print:text-black">Discount</TableHead>
                 <TableHead className="text-right text-white print:text-black">Net</TableHead>
+                <TableHead className="text-white print:text-black">Remarks</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -267,6 +273,7 @@ const AllSalesReport = () => {
                     <TableCell className="text-right text-white print:text-black">{lineSubtotal.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
                     <TableCell className="text-right text-white print:text-black">{discount.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
                     <TableCell className={`text-right print:text-black ${methodColor[item.method] ?? methodColor.default}`}>{item.total_price.toLocaleString("en-US", { style: "currency", currency: "NPR" })}</TableCell>
+                    <TableCell className={`whitespace-pre-wrap ${remarkColor}`}>{item.remark ? `Remarks: ${item.remark}` : ""}</TableCell>
                   </TableRow>
                 )
               })}

@@ -68,6 +68,9 @@ const AllIncomeExpenseReport = () => {
     credit: "text-amber-400",
     default: "text-slate-200",
   };
+  const remarkColor = "text-lime-300 print:text-lime-800";
+  const withRemark = (t) =>
+    t.remark ? `${t.description || ""}\nRemarks: ${t.remark}`.trim() : t.description || "";
 
   useEffect(() => {
     fetchIncomeExpenseData();
@@ -187,7 +190,7 @@ console.log(data);
     if (!data || !data.transactions.length) return;
     let csv = "Date,Bill No,Type,Method,Description,Net Amount\n";
     data.transactions.forEach((t) => {
-      csv += `${t.date},${t.bill_no || ""},${t.type || ""},${t.method || ""},"${(t.description || "").replace(/\n/g, " ")}",${t.net_amount || 0}\n`;
+      csv += `${t.date},${t.bill_no || ""},${t.type || ""},${t.method || ""},"${withRemark(t).replace(/\n/g, " ")}",${t.net_amount || 0}\n`;
     });
     csv += `\nCash Total,,${data.totals.cash}\nCheque Total,,${data.totals.cheque}\nTransfer Total,,${data.totals.transfer}\nNet Total,,${data.totals.net}\nNet Cash In Hand,,${data.net_cash_in_hand}\nCount,,${data.totals.count}\n`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -210,7 +213,7 @@ console.log(data);
       t.bill_no || "",
       t.type || "",
       t.method || "",
-      (t.description || "").replace(/\n/g, " "),
+      (t.description || "").replace(/\n/g, " ") + (t.remark ? ` Remarks: ${t.remark}` : ""),
       t.net_amount || 0,
     ]);
     body.push(["", "", "", "", "Cash Total", data.totals.cash]);
@@ -408,6 +411,9 @@ console.log(data);
                     </TableCell>
                     <TableCell className="text-white print:text-black whitespace-pre-wrap">
                       {t.description}
+                      {t.remark ? (
+                        <div className={remarkColor}>Remarks: {t.remark}</div>
+                      ) : null}
                     </TableCell>
                     <TableCell
                       className={`text-right font-semibold print:text-black ${t.type === "Expense" ? "text-red-400" : t.type === "Withdrawal" ? "text-yellow-400" : (methodColor[t.method] ?? methodColor.default)}`}

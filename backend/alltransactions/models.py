@@ -109,6 +109,7 @@ class SalesTransaction(models.Model):
     exchange_previous_balance = models.FloatField(null=True, blank=True, default=0)
     exchange_exceeded_amount = models.FloatField(null=True, blank=True, default=0)
     hidden = models.BooleanField(default=False)
+    remark = models.TextField(null=True, blank=True)
     
     def __str__(self):
         return f"Sales Transaction {self.pk} of {self.enterprise.name}"

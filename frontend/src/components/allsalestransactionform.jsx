@@ -61,6 +61,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
     date: new Date().toISOString().split("T")[0],
     phone_number: "",
     bill_no: "",
+    remark: "",
     branch: branchId, // New branch field added to state
     sales: [
       {
@@ -361,6 +362,7 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
             date: data.date || prev.date,
             phone_number: data.phone_number?.toString() || "",
             bill_no: data.bill_no?.toString() || "",
+            remark: data.remark || "",
             branch: data.branch?.toString() || prev.branch,
             sales: mappedSales.length
               ? mappedSales
@@ -1265,6 +1267,26 @@ function AllSalesTransactionForm({ isExchange = false, isEdit = false }) {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="flex flex-col">
+                <Label
+                  htmlFor="remark"
+                  className="text-sm font-medium text-lime-300 mb-2"
+                >
+                  Remark
+                </Label>
+                <Input
+                  type="text"
+                  id="remark"
+                  name="remark"
+                  placeholder="Enter remark for this sale"
+                  value={formData.remark}
+                  onChange={(e) =>
+                    setFormData({ ...formData, remark: e.target.value })
+                  }
+                  className="bg-slate-700 border-slate-600 text-lime-200 placeholder:text-lime-200/40 focus:ring-lime-500 focus:border-lime-500"
+                />
               </div>
 
               {/* Branch Select – added exactly like in your purchase form */}

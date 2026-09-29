@@ -46,6 +46,7 @@ export default function EditAllSalesTransactionForm() {
     name: "",
     phone_number: "",
     bill_no: "",
+    remark: "",
     branch: branchId,
     sales: [],
     method: "cash",
@@ -149,6 +150,7 @@ export default function EditAllSalesTransactionForm() {
           name: data.name,
           phone_number: data.phone_number,
           bill_no: data.bill_no,
+          remark: data.remark || "",
           branch: data.branch?.toString() || "",
           sales: data.sales.map((s) => {
             // Determine discount type based on the original discount amount
@@ -747,6 +749,7 @@ const handleNewProductVendorChange = (ids) => {
       formData.name !== originalSalesData.name ||
       formData.phone_number !== originalSalesData.phone_number?.toString() ||
       formData.bill_no !== originalSalesData.bill_no ||
+      String(formData.remark || "") !== String(originalSalesData.remark ?? "") ||
       formData.branch !== originalSalesData.branch?.toString() ||
       formData.method !== originalSalesData.method ||
       formData.debtor !== originalSalesData.debtor ||
@@ -1009,6 +1012,23 @@ const handleNewProductVendorChange = (ids) => {
                   </DialogContent>
                 </Dialog> */}
               </div>
+            </div>
+            {/* Remark */}
+            <div className="flex flex-col col-span-12">
+              <Label
+                htmlFor="remark"
+                className="text-lg font-medium text-lime-300 mb-2"
+                >
+                Remark
+              </Label>
+              <Input
+                type="text"
+                id="remark"
+                name="remark"
+                value={formData.remark}
+                onChange={handleChange}
+                className="w-full bg-slate-700 border-slate-600 text-lime-200 placeholder:text-lime-200/40 focus:ring-lime-500 focus:border-lime-500"
+                />
             </div>
             {/* end header grid */}
             </div>

@@ -864,6 +864,7 @@ class SalesReportView(APIView):
                 "discount": line_discount,
                 "total_price": line_net,
                 "method": sale.sales_transaction.method,
+                "remark": sale.sales_transaction.remark,
                 "transaction_id": sale.sales_transaction.id
             })
         net_sales = subtotal_sales - total_discount
@@ -2166,12 +2167,13 @@ class IncomeExpenseReportView(APIView):
                 desc += "Sale Exchange for balance amounting to " + str(sale.exchange_previous_balance) + ". \nTotal: " + str(sale.total_amount) + ". \t Prev: " + str(sale.exchange_previous_balance) + ". \t Exceeding: " + str(sale.exchange_exceeded_amount) + ". \nProducts: "
             for s in sale.sales.all():
                 desc += f"{s.product.name} (x{s.quantity}), \n "
-            sale.description = desc.rstrip(", ")
+            sale.description = desc.rstrip(", ")      
             list1.append({
                 'id': sale.id,
                 'bill_no': sale.bill_no,
                 'net_amount': sale.amount_paid,
                 'description': sale.description,
+                'remark': sale.remark,
                 'method': sale.method,
                 'cash_amount': sale.cash_amount,
                 'card_amount': sale.card_amount,
