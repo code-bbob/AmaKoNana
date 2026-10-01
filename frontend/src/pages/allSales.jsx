@@ -377,6 +377,9 @@ export default function AllSalesTransactions() {
                       </div>
                     </div>
                   ))}
+                  {transaction.remark && (
+                    <div className="mt-4 whitespace-pre-wrap text-lime-300">Remarks: {transaction.remark}</div>
+                  )}
                   <div className="mt-4 flex justify-between text-white font-bold">
                     {/* <Button onClick={(e)=> handleInvoice(e,transaction.id)} className="bg-purple-600 hover:bg-purple-700 text-white">View Invoice</Button> */}
                     <div>Posted by {transaction?.employee_name}</div>
